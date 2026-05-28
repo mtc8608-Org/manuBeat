@@ -1,8 +1,27 @@
 # ManuSpine
 
+![React](https://img.shields.io/badge/React-Ionic-61DAFB?logo=react&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-Express-339933?logo=nodedotjs&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
+![Python](https://img.shields.io/badge/Python-FastAPI-3776AB?logo=python&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-green)
+
 A full-stack SaaS framework for building data-driven web apps. Provides auth, a component-tree CMS, surveys, file storage, and a Python computation layer — all in one Docker stack.
 
 Use it as a **GitHub Template** to bootstrap new apps.
+
+---
+
+## Screenshots
+
+| Sign In | Surveys | Content |
+|---------|---------|---------|
+| ![Sign In](pwa/public/screenshots/app-signin.png) | ![Surveys](pwa/public/screenshots/app-surveys-questions.png) | ![Content](pwa/public/screenshots/app-content-build.png) |
+
+| Stats | Files | Config |
+|-------|-------|--------|
+| ![Stats](pwa/public/screenshots/app-surveys-stats.png) | ![Files](pwa/public/screenshots/app-files.png) | ![Config](pwa/public/screenshots/app-config.png) |
 
 ---
 

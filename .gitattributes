@@ -1,0 +1,3 @@
+# Mark generated files so GitHub Linguist ignores them
+pwa/package-lock.json linguist-generated=true
+nodejs/package-lock.json linguist-generated=true
