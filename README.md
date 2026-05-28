@@ -1,4 +1,4 @@
-# ManuSpine
+# manuBeat
 
 ![React](https://img.shields.io/badge/React-Ionic-61DAFB?logo=react&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-Express-339933?logo=nodedotjs&logoColor=white)
@@ -7,9 +7,22 @@
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-A full-stack SaaS framework for building data-driven web apps. Provides auth, a component-tree CMS, surveys, file storage, and a Python computation layer — all in one Docker stack.
+A cardiovascular modelling and simulation platform demonstrating the **Embedded Gradient Descent (EGD)** calibration framework for mechanistic ODE-based cardiovascular models. Built on the [ManuSpine](https://github.com/mtc8608-Org/ManuSpine) full-stack framework.
 
-Use it as a **GitHub Template** to bootstrap new apps.
+---
+
+## Research
+
+manuBeat is the development and demonstration environment for **ICUTwin** — a closed-loop lumped-parameter cardiovascular digital twin — and the EGD calibration strategy that drives it.
+
+**EGD** calibrates ODE-based cardiovascular models by promoting selected parameters to dynamic states and embedding controller equations that drive them toward prescribed haemodynamic targets. This exploits the qualitative structure of the governing equations to enforce physiologically consistent parameter–variable relationships, yielding unique solutions that are robust to initial conditions and scale efficiently with model complexity.
+
+The framework is described in full in the paper:
+
+> *A Physiologically Constrained Calibration Framework for Cardiovascular Models applied in Paediatric Sepsis*  
+> MT Cabeleira, S Ray, NC Ovenden, V Diaz-Zuccarini — UCL / Great Ormond Street Hospital
+
+The full paper is rendered as content in the running application under **EGD Paper**.
 
 ---
 
@@ -27,13 +40,15 @@ Use it as a **GitHub Template** to bootstrap new apps.
 
 ## What's included
 
+### Platform stack
+
 | Layer | Tech | Purpose |
 |-------|------|---------|
 | Frontend | React + Ionic + Vite | SPA with shell components, routing, auth |
 | Backend | Node.js + Express + GraphQL | API, auth, business logic |
 | DB | PostgreSQL 16 | Relational store; JSONB for flexible component data |
 | Storage | MinIO | Object storage for files / images |
-| Computation | Python + FastAPI | Domain-specific compute; Node.js proxies here |
+| Computation | Python + FastAPI | Cardiovascular simulation engine; Node.js proxies here |
 
 ### Framework features
 
@@ -44,6 +59,14 @@ Use it as a **GitHub Template** to bootstrap new apps.
 - **Auth** — JWT-based login, roles (`admin` / `user`), change-password.
 - **Shell components** — `SplitPageLayout`, `TabPanel`, `ResourcePanel`, `DataTable`, `ModalShell`, `EmptyState`, `TreeEditor`.
 
+### Medical domain
+
+- **Cardiovascular model** — closed-loop nine-compartment lumped-parameter ODE model (ICUTwin) implemented in Python/JAX with explicit Euler integration.
+- **EGD calibration** — embedded controller equations that calibrate model parameters to prescribed haemodynamic targets in real time during simulation.
+- **Simulation engine** — FastAPI routes exposing the model runner; results stored as HDF5 via the HDF5 engine and served back to the frontend.
+- **Simulator page** — browser-based interface for configuring and running simulations, inspecting results, and visualising time-series outputs.
+- **EGD Paper** — full manuscript rendered in-browser as content cards (abstract, introduction, model equations, calibration framework, convergence analysis, population results with all figures).
+
 ---
 
 ## Running
@@ -51,7 +74,7 @@ Use it as a **GitHub Template** to bootstrap new apps.
 ```bash
 cp .env.example .env          # edit credentials
 ./run                         # start all services
-./run reset                   # wipe DB + MinIO and restart
+./run reset                   # wipe DB + MinIO and restart (re-runs init-scripts)
 ./run rebuild <service>       # rebuild after Dockerfile changes
 ./run down                    # stop everything
 ```
@@ -65,7 +88,7 @@ Service URLs:
 
 ## Adding a domain
 
-A domain is a vertical slice of functionality (e.g. finance, medical, e-commerce). Each domain adds:
+A domain is a vertical slice of functionality. Each domain adds five files in predictable locations — mark every addition with `// [MY DOMAIN]` (or `-- [MY DOMAIN]` in SQL) so domain code can be found by a single grep.
 
 ### 1. DB tables — `init-scripts/02-init-<domain>.sql`
 
@@ -77,13 +100,12 @@ CREATE TABLE my_things (
 );
 ```
 
-File is picked up alphabetically by postgres on first start. Run `./run reset` to apply.
+Picked up alphabetically by Postgres on first start. Run `./run reset` to apply.
 
 ### 2. Node.js routes — `nodejs/routes/<domain>/things.js`
 
 ```js
-const express = require('express');
-const router = express.Router();
+const router = require('express').Router();
 const { pool } = require('../../db');
 // ... REST endpoints
 module.exports = router;
@@ -91,34 +113,25 @@ module.exports = router;
 
 Register in `nodejs/backend.js`:
 ```js
-// [MY DOMAIN]
-server.use('/api', require('./routes/<domain>/things'));
+server.use('/api', require('./routes/<domain>/things')); // [MY DOMAIN]
 ```
 
 ### 3. GraphQL resolvers — `nodejs/schema/resolvers/<domain>/things.js`
 
 ```js
-module.exports = {
-  queries: { /* ... */ },
-  mutations: { /* ... */ },
-};
+module.exports = { queries: { /* ... */ }, mutations: { /* ... */ } };
 ```
 
-Register in `nodejs/schema/index.js`:
-```js
-const thingResolvers = require('./resolvers/<domain>/things');
-// add to Query fields and Mutation fields
-```
+Register in `nodejs/schema/index.js` by spreading into the `Query` and `Mutation` fields.
 
-### 4. Python routes (optional) — `python/api/domains/<domain>/`
+### 4. Python routes (optional) — `python/api/domains/<domain>/routes.py`
 
 ```python
 from fastapi import APIRouter
 router = APIRouter()
 
 @router.get("/<domain>/health")
-def domain_health():
-    return {"ok": True}
+def health(): return {"ok": True}
 ```
 
 Register in `python/api/main.py`:
@@ -127,19 +140,8 @@ from .domains.<domain>.routes import router as domain_router
 app.include_router(domain_router)
 ```
 
-### 5. Frontend — `pwa/src/pages/<domain>/` and `pwa/src/domains/<domain>/constants.ts`
+### 5. Frontend — `pwa/src/pages/<domain>/`
 
-- Add page files following the `SplitPageLayout` pattern (see existing pages).
+- Add page files following the `SplitPageLayout` pattern.
 - Add constants to `pwa/src/constants.ts` marked `// [MY DOMAIN]`.
 - Register routes in `pwa/src/App.tsx` and nav in `pwa/src/components/shell/Menu.tsx`.
-
----
-
-## Template usage
-
-1. Click **Use this template** on GitHub.
-2. Clone your new repo.
-3. Copy `.env.example` → `.env` and set your credentials.
-4. `./run` to start.
-5. Sign in at http://localhost:8100 with your `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
-6. Add your domain following the steps above.
