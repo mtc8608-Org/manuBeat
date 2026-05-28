@@ -1,0 +1,96 @@
+version: "3.9"
+services:
+  # Python container
+  python:
+    build: ./python
+    image: ${COMPOSE_PROJECT_NAME}_python
+    container_name: ${COMPOSE_PROJECT_NAME}_python
+    env_file: .env
+    volumes:
+      - ./python:/src
+    ports:
+      - 0.0.0.0:${PYTHON_PORT}:5000
+    networks:
+      - default
+    command: ./api/watch
+  # Nodejs container
+  nodejs:
+    build: ./nodejs
+    image: ${COMPOSE_PROJECT_NAME}_nodejs
+    container_name: ${COMPOSE_PROJECT_NAME}_nodejs
+    env_file: .env
+    volumes:
+      - ./nodejs:/src
+      - ./pwa/public:/public:ro
+    ports:
+      - 0.0.0.0:${NODE_PORT}:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      python:
+        condition: service_started
+      minio:
+        condition: service_started
+    networks:
+      - default
+      - db
+    command: backend
+  # Ionic Client container
+  pwa:
+    build: ./pwa
+    tty: true
+    stdin_open: true
+    image: ${COMPOSE_PROJECT_NAME}_pwa
+    container_name: ${COMPOSE_PROJECT_NAME}_pwa
+    volumes:
+      - ./pwa:/src
+    networks:
+      - default
+    ports:
+      - 0.0.0.0:${PWA_PORT}:8100 # pwa
+      - 0.0.0.0:35729:35729 # livereload
+      - 0.0.0.0:53703:53703 # websocket
+    command: serve --external
+  # MinIO object storage
+  minio:
+    image: minio/minio:latest
+    container_name: ${COMPOSE_PROJECT_NAME}_minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+    command: server /data --console-address ":9001"
+    ports:
+      - 0.0.0.0:9000:9000
+      - 0.0.0.0:9001:9001
+    volumes:
+      - .persist/minio:/data
+    networks:
+      - default
+  # Postgres container
+  postgres:
+    image: postgres:16.2
+    container_name: ${COMPOSE_PROJECT_NAME}_db
+    stop_grace_period: 60s
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PG_PORT: ${PG_PORT}
+    networks:
+      - db
+    volumes:
+      - .persist/db:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+
+networks:
+  default:
+    name: ${COMPOSE_PROJECT_NAME}
+  db:
+    name: ${COMPOSE_PROJECT_NAME}-db
+    external: false

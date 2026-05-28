@@ -1,0 +1,73 @@
+#!/bin/bash
+set -e
+
+. .env
+
+name="${COMPOSE_PROJECT_NAME}"
+pwa_name="${name}_pwa"
+args=("$@")
+
+down() {
+  docker compose down
+}
+
+build() {
+  local service="${1:-}"
+  if [ -n "$service" ]; then
+    docker compose build \
+      --build-arg UID=$(id -u) \
+      --build-arg GID=$(id -g) \
+      "$service"
+  else
+    docker compose build \
+      --build-arg UID=$(id -u) \
+      --build-arg GID=$(id -g)
+  fi
+}
+
+case "${args[0]}" in
+
+  "down")
+    down
+    ;;
+
+  "rebuild")
+    down
+    build "${args[1]}"
+    docker compose up
+    ;;
+
+  "reset")
+    down
+    sudo sh -c "rm -rf $(pwd)/.persist/db/* $(pwd)/.persist/minio/*"
+    docker compose up
+    ;;
+
+  "rebuild-reset")
+    down
+    sudo sh -c "rm -rf $(pwd)/.persist/db/* $(pwd)/.persist/minio/*"
+    build "${args[1]}"
+    docker compose up
+    ;;
+
+  "")
+    down
+    if [ "$(docker images -q $pwa_name:latest 2> /dev/null)" == "" ]; then
+      build
+    fi
+    trap 'docker compose down' INT TERM
+    docker compose up
+    ;;
+
+  *)
+    echo "Usage: ./run [down|rebuild [service]|reset|rebuild-reset [service]]"
+    exit 1
+    ;;
+
+esac
+
+# hard reset — wipes ALL docker images/containers/networks on the machine, not just this project
+# use only when docker cache is corrupted or disk space is critical
+# ./run reset-hard:
+#   down
+#   docker system prune --all

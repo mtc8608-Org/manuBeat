@@ -1,0 +1,51 @@
+# ── OS & editors ─────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*.swo
+
+# ── VS Code — ignore personal/generated files, keep shared project settings ──
+.vscode/*
+!.vscode/settings.json
+
+# ── Environment & secrets ────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Node.js ──────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-error.log*
+*.log
+
+# ── Frontend build output ────────────────────────────────────
+pwa/dist/
+pwa/.vite/
+pwa/coverage/
+pwa/cypress/screenshots/
+pwa/cypress/videos/
+pwa/.ionic/
+pwa/android/
+pwa/ios/
+
+# ── Python ───────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+.pytest_cache/
+htmlcov/
+.coverage
+*.egg-info/
+.ipynb_checkpoints/
+*.ipynb
+
+# ── Database & persistent storage ────────────────────────────
+.persist/
+
+# ── Claude Code ──────────────────────────────────────────────
+.claude/

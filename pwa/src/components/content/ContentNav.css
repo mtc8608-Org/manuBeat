@@ -1,0 +1,38 @@
+.content-nav-toolbar {
+  --padding-start: 8px;
+  --padding-end: 8px;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  --min-height: auto;
+  border-bottom: 1px solid var(--ion-border-color, rgba(0,0,0,0.12));
+}
+
+.content-nav-row {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 2px;
+  scrollbar-width: none;
+}
+
+.content-nav-row::-webkit-scrollbar {
+  display: none;
+}
+
+.content-nav-sub {
+  border-top: 1px solid var(--ion-border-color, rgba(0,0,0,0.08));
+  padding-top: 2px;
+}
+
+.content-nav-btn {
+  --color: var(--ion-color-medium);
+  font-size: 0.85rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.content-nav-btn.active {
+  --color: var(--ion-color-primary);
+  font-weight: 600;
+  border-bottom: 2px solid var(--ion-color-primary);
+}
