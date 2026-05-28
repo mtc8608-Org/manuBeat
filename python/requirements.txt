@@ -4,3 +4,8 @@ psycopg2-binary
 requests
 minio
 pandas
+numpy
+jax[cpu]
+equinox
+h5py
+scipy

@@ -6,6 +6,8 @@ const permissions = require('../permissions');
 const componentResolvers = require('./resolvers/framework/components');
 const surveyResolvers    = require('./resolvers/framework/survey');
 const userResolvers      = require('./resolvers/framework/users');
+// [MEDICAL]
+const modelResolvers     = require('./resolvers/medical/models');
 
 const Query = new GraphQLObjectType({
   name: 'Query',
@@ -13,6 +15,7 @@ const Query = new GraphQLObjectType({
     ...componentResolvers.queries,
     ...surveyResolvers.queries,
     ...userResolvers.queries,
+    ...modelResolvers.queries,
   },
 });
 
@@ -21,6 +24,7 @@ const Mutation = new GraphQLObjectType({
   fields: {
     ...componentResolvers.mutations,
     ...surveyResolvers.mutations,
+    ...modelResolvers.mutations,
   },
 });
 

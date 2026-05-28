@@ -1,7 +1,11 @@
 import axios from 'axios';
 import { createClient } from 'graphql-http';
 import { API_BASE, GQL_URL, ENDPOINT } from '../constants';
-import { ComponentResults, FileRecord, Survey, SurveyAnswer } from '../interfaces/types';
+import {
+  ComponentResults, FileRecord, Survey, SurveyAnswer,
+  ModelConfig, ModelRun, CardioJobStatus, CardioResult,
+  CardioPlotConfig, CardioProcConfig, HdfNode, HdfDataset,
+} from '../interfaces/types';
 
 // ── Setup ────────────────────────────────────────────────────────────────────
 
@@ -397,6 +401,212 @@ const deleteFile = async (id: string) => {
   return res.json();
 };
 
+// ── [MEDICAL] Cardio model configs ───────────────────────────────────────────
+
+const getModelConfigs = async (): Promise<ModelConfig[]> => {
+  try {
+    const result = await gql(`{ modelConfigs { id name description config created_at } }`);
+    return result?.data?.modelConfigs ?? [];
+  } catch (e) { console.error('getModelConfigs error:', e); return []; }
+};
+
+const createModelConfig = async (name: string, description: string, config: Record<string, any>): Promise<ModelConfig> => {
+  const result = await gql(
+    `mutation CreateModelConfig($name: String!, $description: String, $config: JSON!) {
+       createModelConfig(name: $name, description: $description, config: $config) {
+         id name description config created_at
+       }
+     }`,
+    { name, description, config },
+  );
+  return result?.data?.createModelConfig;
+};
+
+const updateModelConfig = async (id: string, fields: { name?: string; description?: string; config?: Record<string, any> }): Promise<ModelConfig> => {
+  const result = await gql(
+    `mutation UpdateModelConfig($id: ID!, $name: String, $description: String, $config: JSON) {
+       updateModelConfig(id: $id, name: $name, description: $description, config: $config) {
+         id name description config created_at
+       }
+     }`,
+    { id, ...fields },
+  );
+  return result?.data?.updateModelConfig;
+};
+
+const deleteModelConfig = async (id: string): Promise<void> => {
+  await gql(`mutation { deleteModelConfig(id: "${id}") }`);
+};
+
+const deleteModelRun = async (id: string): Promise<void> => {
+  await gql(`mutation { deleteModelRun(id: "${id}") }`);
+};
+
+const getModelRuns = async (config_id?: string): Promise<ModelRun[]> => {
+  try {
+    const result = await gql(
+      `query ModelRuns($config_id: ID) {
+         modelRuns(config_id: $config_id) {
+           id config_id status minio_key metadata created_at completed_at
+         }
+       }`,
+      { config_id: config_id ?? null },
+    );
+    return result?.data?.modelRuns ?? [];
+  } catch (e) { console.error('getModelRuns error:', e); return []; }
+};
+
+// ── [MEDICAL] Cardio plot configs ─────────────────────────────────────────────
+
+const getPlotConfigs = async (): Promise<CardioPlotConfig[]> => {
+  try {
+    const result = await gql(`{ plotConfigs { id name description config created_at } }`);
+    return result?.data?.plotConfigs ?? [];
+  } catch (e) { console.error('getPlotConfigs error:', e); return []; }
+};
+
+const createPlotConfig = async (name: string, description: string, config: Record<string, any>): Promise<CardioPlotConfig> => {
+  const result = await gql(
+    `mutation CreatePlotConfig($name: String!, $description: String, $config: JSON!) {
+       createPlotConfig(name: $name, description: $description, config: $config) {
+         id name description config created_at
+       }
+     }`,
+    { name, description, config },
+  );
+  return result?.data?.createPlotConfig;
+};
+
+const updatePlotConfig = async (id: string, fields: { name?: string; description?: string; config?: Record<string, any> }): Promise<CardioPlotConfig> => {
+  const result = await gql(
+    `mutation UpdatePlotConfig($id: ID!, $name: String, $description: String, $config: JSON) {
+       updatePlotConfig(id: $id, name: $name, description: $description, config: $config) {
+         id name description config created_at
+       }
+     }`,
+    { id, ...fields },
+  );
+  return result?.data?.updatePlotConfig;
+};
+
+const deletePlotConfig = async (id: string): Promise<void> => {
+  await gql(`mutation { deletePlotConfig(id: "${id}") }`);
+};
+
+// ── [MEDICAL] Cardio proc configs ─────────────────────────────────────────────
+
+const getProcConfigs = async (): Promise<CardioProcConfig[]> => {
+  try {
+    const result = await gql(`{ procConfigs { id name description config created_at } }`);
+    return result?.data?.procConfigs ?? [];
+  } catch (e) { console.error('getProcConfigs error:', e); return []; }
+};
+
+const createProcConfig = async (name: string, description: string, config: Record<string, any>): Promise<CardioProcConfig> => {
+  const result = await gql(
+    `mutation CreateProcConfig($name: String!, $description: String, $config: JSON!) {
+       createProcConfig(name: $name, description: $description, config: $config) {
+         id name description config created_at
+       }
+     }`,
+    { name, description, config },
+  );
+  return result?.data?.createProcConfig;
+};
+
+const updateProcConfig = async (id: string, fields: { name?: string; description?: string; config?: Record<string, any> }): Promise<CardioProcConfig> => {
+  const result = await gql(
+    `mutation UpdateProcConfig($id: ID!, $name: String, $description: String, $config: JSON) {
+       updateProcConfig(id: $id, name: $name, description: $description, config: $config) {
+         id name description config created_at
+       }
+     }`,
+    { id, ...fields },
+  );
+  return result?.data?.updateProcConfig;
+};
+
+const deleteProcConfig = async (id: string): Promise<void> => {
+  await gql(`mutation { deleteProcConfig(id: "${id}") }`);
+};
+
+// ── [MEDICAL] Cardio REST (run, status, result, HDF5, processing) ─────────────
+
+const runCardioModel = async (
+  config_id: string | null,
+  model_json: Record<string, any>,
+  simulation_params: Record<string, any>,
+  name?: string,
+): Promise<{ run_id: string; job_id: string; status: string }> => {
+  const res = await http.post('/cardio/run', { config_id, model_json, simulation_params, name });
+  return res.data;
+};
+
+const getCardioStatus = async (job_id: string): Promise<CardioJobStatus> => {
+  const res = await http.get(`/cardio/status/${job_id}`);
+  return res.data;
+};
+
+const getCardioResult = async (job_id: string): Promise<CardioResult> => {
+  const res = await http.get(`/cardio/result/${job_id}`);
+  return res.data;
+};
+
+const getCardioResultByRunId = async (run_id: string): Promise<CardioResult> => {
+  const res = await http.get(`/cardio/result-by-run/${run_id}`);
+  return res.data;
+};
+
+const getCardioConfigs = async (): Promise<{ filename: string; name: string }[]> => {
+  const res = await http.get('/cardio/configs');
+  return res.data;
+};
+
+const getCardioModel = async (filename: string): Promise<Record<string, any>> => {
+  const res = await http.get(`/cardio/model/${filename}`);
+  return res.data;
+};
+
+const getHdf5Tree = async (run_id: string): Promise<HdfNode> => {
+  const res = await http.get(`/cardio/hdf5/tree/${run_id}`);
+  return res.data;
+};
+
+const getHdf5Dataset = async (
+  run_id: string,
+  path:   string,
+  start?: number,
+  end?:   number,
+): Promise<HdfDataset> => {
+  const params = new URLSearchParams({ path });
+  if (start !== undefined) params.set('start', String(start));
+  if (end   !== undefined) params.set('end',   String(end));
+  const res = await http.get(`/cardio/hdf5/dataset/${run_id}?${params}`);
+  return res.data;
+};
+
+const repackHdf5 = async (run_id: string): Promise<void> => {
+  await http.post(`/cardio/hdf5/repack/${run_id}`);
+};
+
+const deleteHdf5Dataset = async (run_id: string, path: string): Promise<void> => {
+  await http.delete(`/cardio/hdf5/dataset/${run_id}`, { data: { path } });
+};
+
+const processRun = async (run_id: string, proc_config_id: string, proc_run_name: string): Promise<void> => {
+  await http.post(`/cardio/process/${run_id}`, { proc_config_id, proc_run_name });
+};
+
+const getProcessedGroups = async (run_id: string): Promise<string[]> => {
+  const res = await http.get(`/cardio/processed-groups/${run_id}`);
+  return res.data.group_names ?? [];
+};
+
+const getProcessedOutputs = async (run_id: string, proc_config_id: string): Promise<Record<string, number[]>> => {
+  const res = await http.get(`/cardio/processed/${run_id}/${proc_config_id}`);
+  return res.data.outputs ?? {};
+};
+
 // ── AI content generation ─────────────────────────────────────────────────────
 
 export interface GenMessage { role: 'user' | 'assistant'; content: string; }
@@ -467,5 +677,17 @@ const ApiService = {
   getFiles, uploadFile, patchFile, deleteFile,
   // AI content generation
   generateContent,
+  // [MEDICAL] model configs
+  getModelConfigs, createModelConfig, updateModelConfig, deleteModelConfig, deleteModelRun, getModelRuns,
+  // [MEDICAL] plot configs
+  getPlotConfigs, createPlotConfig, updatePlotConfig, deletePlotConfig,
+  // [MEDICAL] proc configs
+  getProcConfigs, createProcConfig, updateProcConfig, deleteProcConfig,
+  // [MEDICAL] cardio REST
+  runCardioModel, getCardioStatus, getCardioResult, getCardioResultByRunId, getCardioConfigs, getCardioModel,
+  // [MEDICAL] HDF5
+  getHdf5Tree, getHdf5Dataset, repackHdf5, deleteHdf5Dataset,
+  // [MEDICAL] processing
+  processRun, getProcessedGroups, getProcessedOutputs,
 };
 export default ApiService;

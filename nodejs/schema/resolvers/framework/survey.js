@@ -99,7 +99,7 @@ const queries = {
       );
       const answers = aRes.rows.map(r => r.answers);
 
-      const pythonUrl = `http://${process.env.PYTHON_HOST}:${process.env.PYTHON_PORT}/compute/survey-stats`;
+      const pythonUrl = `http://python:${process.env.PYTHON_PORT}/compute/survey-stats`;
       const { data } = await axios.post(pythonUrl, { questions, answers });
       return data;
     },

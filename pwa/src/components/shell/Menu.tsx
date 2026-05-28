@@ -23,6 +23,7 @@ import {
   constructOutline, folderOutline,
   personOutline, logOutOutline,
   moonOutline, homeOutline,
+  pulseOutline, gitNetworkOutline, statsChartOutline, optionsOutline, layersOutline,
 } from 'ionicons/icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -66,6 +67,15 @@ const Menu: React.FC = () => {
         <IonList>
           <IonListHeader>Surveys</IonListHeader>
           {navItem(ROUTE.SURVEYS, clipboardOutline, 'Surveys')}
+        </IonList>
+
+        <IonList>
+          <IonListHeader>Physiology Simulator</IonListHeader>
+          {navItem(ROUTE.SIMULATOR,     pulseOutline,       'Simulator')}
+          {navItem(ROUTE.MODEL_SANDBOX, gitNetworkOutline,  'Model Sandbox')}
+          {navItem(ROUTE.PLOT_SANDBOX,  statsChartOutline,  'Plot Sandbox')}
+          {navItem(ROUTE.PROC_SANDBOX,  optionsOutline,     'Processing Sandbox')}
+          {navItem(ROUTE.HDF_INSPECTOR, layersOutline,      'HDF Inspector')}
         </IonList>
 
         {isAdmin && (

@@ -77,3 +77,76 @@ export interface PanelConfig {
     type?: { enabled: boolean; options?: readonly string[] };
   };
 }
+
+// ╔══════════════════════════════════════════════════════════════════════════════╗
+// ║                          MEDICAL / PHYSIOLOGY                                ║
+// ╚══════════════════════════════════════════════════════════════════════════════╝
+
+export interface ModelConfig {
+  id:          string;
+  name:        string;
+  description: string | null;
+  config:      Record<string, any>;
+  created_at:  string;
+}
+
+export interface ModelRun {
+  id:           string;
+  config_id:    string | null;
+  status:       'pending' | 'running' | 'done' | 'error';
+  minio_key:    string | null;
+  metadata:     Record<string, any> | null;
+  created_at:   string;
+  completed_at: string | null;
+}
+
+export interface CardioJobStatus {
+  job_id:      string;
+  status:      'pending' | 'running' | 'done' | 'error';
+  duration_s:  number | null;
+  state_count: number | null;
+  minio_key:   string | null;
+  error:       string | null;
+}
+
+export interface CardioResult {
+  stateNames:   string[];
+  t:            number[];
+  ys:           Record<string, number[]>;
+  finalStates:  Record<string, number>;
+  metadata:     Record<string, any>;
+}
+
+export interface CardioPlotConfig {
+  id:          string;
+  name:        string;
+  description: string | null;
+  config:      Record<string, any>;
+  created_at:  string;
+}
+
+export interface CardioProcConfig {
+  id:          string;
+  name:        string;
+  description: string | null;
+  config:      Record<string, any>;
+  created_at:  string;
+}
+
+export interface HdfNode {
+  name:      string;
+  path:      string;
+  type:      'group' | 'dataset';
+  attrs:     Record<string, any>;
+  children?: HdfNode[];
+  shape?:    number[];
+  dtype?:    string;
+  fields?:   string[];
+}
+
+export interface HdfDataset {
+  type:    'numeric' | 'string' | 'compound';
+  shape?:  number[];
+  data:    any;
+  fields?: string[];
+}

@@ -116,6 +116,8 @@ export const FORM_ID = {
   NEW_SURVEY:   'form_new_survey',
   // Content page
   NEW_PAGE:     'form_new_page',
+  // [MEDICAL] — Model Sandbox
+  ADD_MODEL_CONFIG: 'form_add_model_config',
 } as const;
 // #endregion
 ///////////////////////////////////////////////////////////////////////////////
@@ -203,6 +205,62 @@ export const PANEL_CONFIG = {
       type: { enabled: true, options: ['contentHtml', 'contentImage', 'contentHtmlImage', 'contentLatex'] },
     },
   },
+  // [MEDICAL]
+  MODEL_CONFIGS: {
+    title: 'Configurations', emptyMessage: 'No configs yet.',
+    add: { enabled: true, label: 'New Config' },
+    filter: { text: { enabled: false }, type: { enabled: false } },
+  },
+  MODEL_RUNS: {
+    title: 'Runs', emptyMessage: 'No runs yet.',
+    add: { enabled: true, label: 'New Run' },
+    filter: { text: { enabled: false }, type: { enabled: false } },
+  },
+  COMPARTMENTS: {
+    title: 'Compartments', emptyMessage: 'No compartments yet.',
+    add: { enabled: true, label: 'Add' },
+    filter: { text: { enabled: false }, type: { enabled: false } },
+  },
+  CONNECTIONS: {
+    title: 'Connections', emptyMessage: 'No connections yet.',
+    add: { enabled: true, label: 'Add' },
+    filter: { text: { enabled: false }, type: { enabled: false } },
+  },
+  CYCLES: {
+    title: 'Cycles', emptyMessage: 'No cycles yet.',
+    add: { enabled: true, label: 'Add' },
+    filter: { text: { enabled: false }, type: { enabled: false } },
+  },
+  OTHER: {
+    title: 'Other', emptyMessage: 'No other entries yet.',
+    add: { enabled: true, label: 'Add' },
+    filter: { text: { enabled: false }, type: { enabled: false } },
+  },
+  PLOT_CONFIGS: {
+    title: 'Plot Configs', emptyMessage: 'No configs yet.',
+    add: { enabled: true, label: 'New Config' },
+    filter: { text: { enabled: false }, type: { enabled: false } },
+  },
+  PLOT_AXES: {
+    title: 'Axes', emptyMessage: 'No axes yet.',
+    add: { enabled: true, label: 'Add Axis' },
+    filter: { text: { enabled: false }, type: { enabled: false } },
+  },
+  PROC_CONFIGS: {
+    title: 'Processing Configs', emptyMessage: 'No configs yet.',
+    add: { enabled: true, label: 'New Config' },
+    filter: { text: { enabled: false }, type: { enabled: false } },
+  },
+  PROC_STAGES: {
+    title: 'Stages', emptyMessage: 'No stages yet.',
+    add: { enabled: true, label: 'Add Stage' },
+    filter: { text: { enabled: false }, type: { enabled: false } },
+  },
+  PROC_OPS: {
+    title: 'Operations', emptyMessage: 'Select a stage.',
+    add: { enabled: true, label: 'Add Op' },
+    filter: { text: { enabled: false }, type: { enabled: false } },
+  },
 } as const satisfies Record<string, PanelConfig>;
 // #endregion
 ///////////////////////////////////////////////////////////////////////////////
@@ -219,6 +277,12 @@ export const ROUTE = {
   CONFIGURATION: '/folder/Configuration',
   FILES:         '/folder/Files',
   CONTENT:       '/folder/Content',
+  // [MEDICAL]
+  SIMULATOR:      '/folder/Simulator',
+  MODEL_SANDBOX:  '/folder/ModelSandbox',
+  PLOT_SANDBOX:   '/folder/PlotSandbox',
+  PROC_SANDBOX:   '/folder/ProcessingSandbox',
+  HDF_INSPECTOR:  '/folder/HdfInspector',
 } as const;
 
 // #endregion
@@ -232,6 +296,14 @@ export const AREA_NAV = {
   SURVEYS: [
     { label: 'Surveys', route: '/folder/Surveys', icon: 'clipboard' },
   ],
+  // [MEDICAL]
+  PHYSIOLOGY: [
+    { label: 'Simulator',           route: '/folder/Simulator',          icon: 'pulse'          },
+    { label: 'Model Sandbox',       route: '/folder/ModelSandbox',       icon: 'git-network'    },
+    { label: 'Plot Sandbox',        route: '/folder/PlotSandbox',        icon: 'stats-chart'    },
+    { label: 'Processing Sandbox',  route: '/folder/ProcessingSandbox',  icon: 'options-outline'},
+    { label: 'HDF Inspector',       route: '/folder/HdfInspector',       icon: 'layers-outline' },
+  ],
   BACKOFFICE: [
     { label: 'Content',       route: '/folder/Content',       icon: 'document-text' },
     { label: 'Files',         route: '/folder/Files',         icon: 'folder'        },
@@ -241,16 +313,23 @@ export const AREA_NAV = {
 
 // Section groupings — used by AppHeader nav (authenticated users only)
 export const NAV_SECTIONS = [
-  { label: 'Surveys',    routes: ['/folder/Surveys'],                                             link: '/folder/Surveys',       icon: 'clipboard'  },
-  { label: 'Backoffice', routes: ['/folder/Content', '/folder/Files', '/folder/Configuration'],   link: '/folder/Content',       icon: 'construct',  adminOnly: true },
+  { label: 'Surveys',              routes: ['/folder/Surveys'],                                                                                                              link: '/folder/Surveys',   icon: 'clipboard' },
+  { label: 'Physiology Simulator', routes: ['/folder/Simulator', '/folder/ModelSandbox', '/folder/PlotSandbox', '/folder/ProcessingSandbox', '/folder/HdfInspector'],       link: '/folder/Simulator', icon: 'pulse'     },
+  { label: 'Backoffice',           routes: ['/folder/Content', '/folder/Files', '/folder/Configuration'],                                                                   link: '/folder/Content',   icon: 'construct', adminOnly: true },
 ] as const;
 // #endregion
 ///////////////////////////////////////////////////////////////////////////////
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// #region Misc
-export const DEFAULT_COLOR = '#5470c6';
+// #region Chart / Visualisation
+// ECharts default color sequence, used by Simulator and PlotSandbox to assign series colors.
+export const ECHARTS_PALETTE = [
+  '#5470c6', '#91cc75', '#fac858', '#ee6666',
+  '#73c0de', '#3ba272', '#fc8452',
+] as const;
+
+export const DEFAULT_COLOR = ECHARTS_PALETTE[0]; // '#5470c6'
 // #endregion
 ///////////////////////////////////////////////////////////////////////////////
 

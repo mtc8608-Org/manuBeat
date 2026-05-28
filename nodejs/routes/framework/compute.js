@@ -39,7 +39,7 @@ router.get('/surveys/:id/stats/export', async (req, res) => {
     }));
     const answers = aRes.rows.map(r => r.answers);
 
-    const pythonUrl = `http://${process.env.PYTHON_HOST}:${process.env.PYTHON_PORT}/compute/survey-stats/export`;
+    const pythonUrl = `http://python:${process.env.PYTHON_PORT}/compute/survey-stats/export`;
     const { data, headers } = await axios.post(
       pythonUrl,
       { questions, answers },

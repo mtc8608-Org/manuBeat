@@ -14,6 +14,11 @@ import Surveys from './pages/surveys/Surveys';
 import Content from './pages/backoffice/Content';
 import Files from './pages/backoffice/Files';
 import Configuration from './pages/backoffice/Configuration';
+import Simulator from './pages/models/Simulator';
+import ModelSandbox from './pages/models/ModelSandbox';
+import PlotSandbox from './pages/models/PlotSandbox';
+import ProcessingSandbox from './pages/models/ProcessingSandbox';
+import HdfInspector from './pages/models/HdfInspector';
 import { ROUTE } from './constants';
 
 /* Core CSS required for Ionic components to work properly */
@@ -53,6 +58,13 @@ const App: React.FC = () => {
                 {/* Authenticated */}
                 <PrivateRoute path={ROUTE.ACCOUNT}  exact={true} component={Account} />
                 <PrivateRoute path={ROUTE.SURVEYS}  exact={true} component={Surveys} />
+
+                {/* [MEDICAL] Physiology Simulator */}
+                <PrivateRoute path={ROUTE.SIMULATOR}     exact={true} component={Simulator} />
+                <PrivateRoute path={ROUTE.MODEL_SANDBOX} exact={true} component={ModelSandbox} />
+                <PrivateRoute path={ROUTE.PLOT_SANDBOX}  exact={true} component={PlotSandbox} />
+                <PrivateRoute path={ROUTE.PROC_SANDBOX}  exact={true} component={ProcessingSandbox} />
+                <PrivateRoute path={ROUTE.HDF_INSPECTOR} exact={true} component={HdfInspector} />
 
                 {/* Admin only */}
                 <AdminRoute path={ROUTE.CONTENT}       exact={true} component={Content} />
