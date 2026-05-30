@@ -9,7 +9,6 @@ const {
   ComponentType,
   ComponentRelationType,
   ComponentInputType,
-  PlotType,
   GraphQLJSON,
 } = require('../../types');
 const {
@@ -94,19 +93,6 @@ const queries = {
       }
     },
   },
-  plotList: {
-    type: new GraphQLList(PlotType),
-    async resolve() {
-      console.log('-> Get plot list');
-      try {
-        const res = await pool.query('SELECT * FROM plots ORDER BY updated_at DESC');
-        return res.rows;
-      } catch (error) {
-        console.error(error);
-        throw new Error('Error fetching plots');
-      }
-    },
-  },
 };
 
 const mutations = {
@@ -188,61 +174,6 @@ const mutations = {
         [byId[child_id_a], parent_id, child_id_b]
       );
       return true;
-    },
-  },
-  createPlot: {
-    type: PlotType,
-    args: {
-      name:   { type: GraphQLString },
-      config: { type: GraphQLJSON },
-    },
-    async resolve(_, args) {
-      console.log('-> Create plot:', args.name);
-      try {
-        const res = await pool.query(
-          'INSERT INTO plots (name, config) VALUES ($1, $2::jsonb) RETURNING *',
-          [args.name, JSON.stringify(args.config ?? {})]
-        );
-        return res.rows[0];
-      } catch (error) {
-        console.error(error);
-        throw new Error('Error creating plot');
-      }
-    },
-  },
-  updatePlot: {
-    type: PlotType,
-    args: {
-      id:     { type: GraphQLID },
-      name:   { type: GraphQLString },
-      config: { type: GraphQLJSON },
-    },
-    async resolve(_, args) {
-      console.log('-> Update plot:', args.id);
-      try {
-        const res = await pool.query(
-          'UPDATE plots SET name=$1, config=$2::jsonb, updated_at=NOW() WHERE id=$3::uuid RETURNING *',
-          [args.name, JSON.stringify(args.config), args.id]
-        );
-        return res.rows[0];
-      } catch (error) {
-        console.error(error);
-        throw new Error('Error updating plot');
-      }
-    },
-  },
-  deletePlot: {
-    type: GraphQLBoolean,
-    args: { id: { type: GraphQLID } },
-    async resolve(_, { id }) {
-      console.log('-> Delete plot:', id);
-      try {
-        await pool.query('DELETE FROM plots WHERE id = $1::uuid', [id]);
-        return true;
-      } catch (error) {
-        console.error(error);
-        throw new Error('Error deleting plot');
-      }
     },
   },
 };

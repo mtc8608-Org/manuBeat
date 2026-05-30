@@ -29,7 +29,7 @@ module.exports = {
   ],
 
   // Everything else requires role === 'admin'.
-  // (This list is informational — enforcement uses the fallback rule above.)
+  // (Informational — enforcement uses the fallback rule above. Only list real mutations.)
   admin: [
     'surveyStats',
     'createComponent', 'updateComponent', 'deleteComponent',
@@ -37,12 +37,5 @@ module.exports = {
     'createSurveyComponent', 'updateSurveyComponent', 'deleteSurveyComponent',
     'createSurveyComponentRelation', 'deleteSurveyComponentRelation',
     'createSurvey', 'updateSurvey', 'deleteSurvey', 'deleteAnswer',
-    'createAsset', 'updateAsset', 'deleteAsset',
-    'createPlot', 'updatePlot', 'deletePlot',
-    'createModelConfig', 'updateModelConfig', 'deleteModelConfig',
-    'createModelRun', 'updateModelRun', 'deleteModelRun',
-    'createPlotConfig', 'updatePlotConfig', 'deletePlotConfig',
-    'createProcConfig', 'updateProcConfig', 'deleteProcConfig',
-    'createSimulation', 'updateSimulation', 'deleteSimulation',
   ],
 };
