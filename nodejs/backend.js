@@ -54,12 +54,15 @@ server.use('/api', require('./routes/framework/compute'));
 server.use('/api', require('./routes/medical/models'));
 // [BEDSIDE]
 server.use('/api', require('./routes/bedside/patients'));
+server.use('/api', require('./routes/bedside/ingest'));
 
 // ── Startup ───────────────────────────────────────────────────────────────────
 // Start listening immediately so the container is healthy, then seed the admin
 // user in the background with retries (postgres may not be ready yet).
 
-server.listen(PORT, () => console.log('Server running on PORT http://localhost:' + PORT));
+const httpServer = server.listen(PORT, () => console.log('Server running on PORT http://localhost:' + PORT));
+// [BEDSIDE] attach the live telemetry WebSocket hub to the same HTTP server
+require('./realtime').attach(httpServer);
 
 (async () => {
   const MAX = 15;

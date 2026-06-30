@@ -1,19 +1,26 @@
 // [BEDSIDE] Data Collection — patient creation + per-patient data file.
 //
-// A patient IS a Patient Registration survey answer (survey f000). Creating a
-// patient here: (1) inserts the survey answer (demographics), (2) mints an empty
-// data file in MinIO + a `files` row, (3) links them via `patient_files`.
+// A patient is a first-class `patients` row (detached from the survey system).
+// Creating a patient here: (1) inserts the demographics (real columns + extra),
+// (2) mints an empty data file in MinIO + a `files` row, (3) links them via
+// `patient_files`.
 //
-// File generation needs MinIO + a multi-step write, so it lives in REST (mirrors
-// routes/framework/files.js). Reads + bed-linking live in the GraphQL resolver.
-// All endpoints are admin-only (PHI).
+// The demographic form is rendered by FormRenderer (app component tree
+// form_patient_demographics); its field keys = the columns below. Unknown keys
+// fall into `extra`. File generation needs MinIO + a multi-step write, so it lives
+// in REST (mirrors routes/framework/files.js). Reads + bed-linking live in the
+// GraphQL resolver. All endpoints are admin-only (PHI).
 const express = require('express');
 const { pool, minioClient, BUCKET } = require('../../db');
 
 const router = express.Router();
 
-// Patient Registration survey — hardcoded seed UUID (01-init-db.sql).
-const PATIENT_SURVEY_ID = 'c51c1e5f-5cc1-4b77-8832-2d10cc97f000';
+// Demographic columns the form maps onto; anything else goes to `extra`.
+const PATIENT_COLUMNS = [
+  'first_name', 'last_name', 'date_of_birth', 'sex',
+  'identifier', 'email', 'phone', 'address', 'notes',
+];
+const DATE_COLUMNS = new Set(['date_of_birth']);
 
 const requireAdmin = (req, res) => {
   if (req.user?.role !== 'admin') {
@@ -23,23 +30,39 @@ const requireAdmin = (req, res) => {
   return true;
 };
 
-// POST /api/bedside/patients  { answers, filename? }
-// Creates the patient (survey answer) + an empty HDF5 data file.
+// Split a flat {key: value} demographics object into known columns + extra.
+const splitDemographics = (demographics = {}) => {
+  const cols = {}, extra = {};
+  for (const [k, v] of Object.entries(demographics)) {
+    if (PATIENT_COLUMNS.includes(k)) {
+      cols[k] = (DATE_COLUMNS.has(k) && v === '') ? null : v;  // empty date → NULL
+    } else {
+      extra[k] = v;
+    }
+  }
+  return { cols, extra };
+};
+
+// POST /api/bedside/patients  { demographics: { first_name, ... } }
+// Creates the patient row + an empty HDF5 data file.
 router.post('/bedside/patients', async (req, res) => {
   if (!requireAdmin(req, res)) return;
-  const answers = req.body?.answers ?? {};
-  let answerId, fileKey;
+  const { cols, extra } = splitDemographics(req.body?.demographics ?? req.body?.answers ?? {});
+  let patientId, fileKey;
   try {
-    // 1. demographics → survey answer
-    const ansRes = await pool.query(
-      'INSERT INTO survey_answers (survey_id, answers) VALUES ($1::uuid, $2) RETURNING id',
-      [PATIENT_SURVEY_ID, JSON.stringify(answers)],
+    // 1. demographics → patients row
+    const names = [...Object.keys(cols), 'extra'];
+    const vals  = [...Object.values(cols), JSON.stringify(extra)];
+    const ph    = vals.map((_, i) => `$${i + 1}`);
+    const ins = await pool.query(
+      `INSERT INTO patients (${names.join(', ')}) VALUES (${ph.join(', ')}) RETURNING id`,
+      vals,
     );
-    answerId = ansRes.rows[0].id;
+    patientId = ins.rows[0].id;
 
     // 2. mint an empty data file (HDF5 structure deferred — placeholder for now)
-    fileKey = `bedside/patients/${answerId}.h5`;
-    const filename = (req.body?.filename ?? `patient-${answerId}.h5`).toString();
+    fileKey = `bedside/patients/${patientId}.h5`;
+    const filename = (req.body?.filename ?? `patient-${patientId}.h5`).toString();
     const empty = Buffer.alloc(0);
     await minioClient.putObject(BUCKET, fileKey, empty, 0, { 'Content-Type': 'application/x-hdf5' });
 
@@ -58,33 +81,31 @@ router.post('/bedside/patients', async (req, res) => {
 
     // 3. link file ↔ patient
     await pool.query(
-      'INSERT INTO patient_files (patient_answer_id, file_id) VALUES ($1::uuid, $2::uuid)',
-      [answerId, fileRow.id],
+      'INSERT INTO patient_files (patient_id, file_id) VALUES ($1::uuid, $2::uuid)',
+      [patientId, fileRow.id],
     );
 
-    res.json({ patient_answer_id: answerId, file_id: fileRow.id, file_key: fileKey });
+    res.json({ patient_id: patientId, file_id: fileRow.id, file_key: fileKey });
   } catch (err) {
     console.error('bedside/patients create error:', err.message);
-    // best-effort rollback of the answer if a later step failed
-    if (answerId) await pool.query('DELETE FROM survey_answers WHERE id = $1::uuid', [answerId]).catch(() => {});
+    if (patientId) await pool.query('DELETE FROM patients WHERE id = $1::uuid', [patientId]).catch(() => {});
     res.status(500).json({ error: err.message });
   }
 });
 
-// DELETE /api/bedside/patients/:answerId
-// Removes the patient (survey answer → cascades patient_files + bed_assignments),
-// then its data file (MinIO object + files row).
-router.delete('/bedside/patients/:answerId', async (req, res) => {
+// DELETE /api/bedside/patients/:patientId
+// Removes the patient (cascades patient_files + bed_assignments), then its data file.
+router.delete('/bedside/patients/:patientId', async (req, res) => {
   if (!requireAdmin(req, res)) return;
-  const { answerId } = req.params;
+  const { patientId } = req.params;
   try {
     const pf = await pool.query(
       `SELECT pf.file_id, f.key FROM patient_files pf
        JOIN files f ON f.id = pf.file_id
-       WHERE pf.patient_answer_id = $1::uuid`,
-      [answerId],
+       WHERE pf.patient_id = $1::uuid`,
+      [patientId],
     );
-    await pool.query('DELETE FROM survey_answers WHERE id = $1::uuid', [answerId]);
+    await pool.query('DELETE FROM patients WHERE id = $1::uuid', [patientId]);
     if (pf.rows.length) {
       const { file_id, key } = pf.rows[0];
       await pool.query('DELETE FROM files WHERE id = $1::uuid', [file_id]).catch(e => console.error('file row delete:', e.message));

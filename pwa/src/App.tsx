@@ -21,6 +21,7 @@ import ProcessingSandbox from './pages/models/ProcessingSandbox';
 import HdfInspector from './pages/models/HdfInspector';
 import Patients from './pages/bedside/Patients';
 import Devices from './pages/bedside/Devices';
+import Monitor from './pages/bedside/Monitor';
 import { ROUTE } from './constants';
 
 /* Core CSS required for Ionic components to work properly */
@@ -71,6 +72,7 @@ const App: React.FC = () => {
                 {/* [BEDSIDE] Data Collection — admin only */}
                 <AdminRoute path={ROUTE.PATIENTS} exact={true} component={Patients} />
                 <AdminRoute path={ROUTE.DEVICES}  exact={true} component={Devices} />
+                <AdminRoute path={ROUTE.MONITOR}  exact={true} component={Monitor} />
 
                 {/* Admin only */}
                 <AdminRoute path={ROUTE.CONTENT}       exact={true} component={Content} />

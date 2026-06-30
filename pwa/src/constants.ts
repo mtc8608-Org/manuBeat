@@ -125,10 +125,10 @@ export const FORM_ID = {
 
 ///////////////////////////////////////////////////////////////////////////////
 // #region [BEDSIDE] Data Collection IDs
-// A patient IS a Patient Registration survey answer. These hardcoded seed UUIDs
-// (init-scripts/01-init-db.sql) tie the Data Collection area to that survey.
-export const PATIENT_SURVEY_ID = 'c51c1e5f-5cc1-4b77-8832-2d10cc97f000'; // surveys row (for answers)
-export const PATIENT_SURVEY_COMPONENT_ID = 'c51c1e5f-5cc1-4b77-8832-2d10cc97e000'; // survey_components root (for the form tree)
+// Patients are a first-class table (detached from surveys). The demographic form is
+// an app-domain component tree (seeded in 03-init-bedside.sql); each input's
+// options.label = the patients column it writes to.
+export const PATIENT_FORM_COMPONENT_ID = 'c51c1e5f-5cc1-4b77-8832-2d10cc97b200'; // components root (demographic form)
 // #endregion
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -158,6 +158,7 @@ export const SURVEY_EDITOR_ID: Record<string, string> = {
 // The backend reads its own port from .env (NODE_PORT); keep these in sync.
 export const API_BASE    = 'http://localhost:3000/api';
 export const GQL_URL     = 'http://localhost:3000/graphql';
+export const WS_BASE     = 'ws://localhost:3000';   // [BEDSIDE] live telemetry hub
 
 // REST endpoint paths (relative to API_BASE)
 export const ENDPOINT = {
@@ -281,7 +282,7 @@ export const PANEL_CONFIG = {
   },
   BEDSIDE_DEVICES: {
     title: 'Devices', emptyMessage: 'No devices yet.',
-    add: { enabled: false, label: '' },
+    add: { enabled: true, label: 'New Device' },
     filter: { text: { enabled: false }, type: { enabled: false } },
   },
 } as const satisfies Record<string, PanelConfig>;
@@ -309,6 +310,7 @@ export const ROUTE = {
   // [BEDSIDE] Data Collection
   PATIENTS:       '/folder/Patients',
   DEVICES:        '/folder/Devices',
+  MONITOR:        '/folder/Monitor',
 } as const;
 
 // #endregion
@@ -339,6 +341,7 @@ export const AREA_NAV = {
   DATA_COLLECTION: [
     { label: 'Patients', route: '/folder/Patients', icon: 'bed'           },
     { label: 'Devices',  route: '/folder/Devices',  icon: 'hardware-chip' },
+    { label: 'Monitor',  route: '/folder/Monitor',  icon: 'pulse'         },
   ],
 } as const;
 
@@ -346,7 +349,7 @@ export const AREA_NAV = {
 export const NAV_SECTIONS = [
   { label: 'Surveys',              routes: ['/folder/Surveys'],                                                                                                              link: '/folder/Surveys',   icon: 'clipboard' },
   { label: 'Physiology Simulator', routes: ['/folder/Simulator', '/folder/ModelSandbox', '/folder/PlotSandbox', '/folder/ProcessingSandbox', '/folder/HdfInspector'],       link: '/folder/Simulator', icon: 'pulse'     },
-  { label: 'Data Collection',      routes: ['/folder/Patients', '/folder/Devices'],                                                                                         link: '/folder/Patients',  icon: 'bed',       adminOnly: true },
+  { label: 'Data Collection',      routes: ['/folder/Patients', '/folder/Devices', '/folder/Monitor'],                                                                       link: '/folder/Patients',  icon: 'bed',       adminOnly: true },
   { label: 'Backoffice',           routes: ['/folder/Content', '/folder/Files', '/folder/Configuration'],                                                                   link: '/folder/Content',   icon: 'construct', adminOnly: true },
 ] as const;
 // #endregion

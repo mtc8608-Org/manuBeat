@@ -1,11 +1,11 @@
 // Page: Patients — the patient roster for the Data Collection area (admin only).
 //
-// A patient IS a Patient Registration survey answer (survey f000). This page lists
-// those answers, lets an admin register a new patient (which also mints an empty
-// HDF5 data file), link a patient to a bed, and inspect demographics + data file +
-// bed-assignment history.
+// Patients are a first-class record (detached from surveys). The demographic form
+// is an app-domain component tree (form_patient_demographics) whose input keys =
+// the patients columns; FormRenderer (mode="app") collects them and createPatient
+// writes the columns + mints an empty HDF5 data file.
 //
-// Reuses: SplitPageLayout, ResourcePanel, ModalShell, FormRenderer (survey mode),
+// Reuses: SplitPageLayout, ResourcePanel, ModalShell, FormRenderer (app mode),
 // DataTable (assignment history), DetailList, EmptyState.
 import React, { useEffect, useState } from 'react';
 import {
@@ -23,31 +23,28 @@ import DetailList from '../../components/shell/DetailList';
 import DataTable from '../../components/shell/DataTable';
 import FormRenderer from '../../components/forms/FormRenderer';
 import { Patient, Bed, BedAssignment, ComponentResults } from '../../interfaces/types';
-import {
-  AREA_NAV, PANEL_CONFIG, API_BASE, ENDPOINT,
-  PATIENT_SURVEY_COMPONENT_ID, SURVEY_QUESTION_TYPES,
-} from '../../constants';
+import { AREA_NAV, PANEL_CONFIG, API_BASE, ENDPOINT, PATIENT_FORM_COMPONENT_ID } from '../../constants';
 
-// Demographic field UUIDs used for the patient's display name (01-init-db.sql).
-const FIRST_NAME_ID = 'c51c1e5f-5cc1-4b77-8832-2d10cc97e001';
-const LAST_NAME_ID  = 'c51c1e5f-5cc1-4b77-8832-2d10cc97e002';
+// Demographic columns shown in the detail view (label + patients column key).
+const DEMOGRAPHIC_FIELDS: Array<{ key: keyof Patient; label: string }> = [
+  { key: 'first_name',    label: 'First name' },
+  { key: 'last_name',     label: 'Last name' },
+  { key: 'date_of_birth', label: 'Date of birth' },
+  { key: 'sex',           label: 'Sex' },
+  { key: 'identifier',    label: 'Hospital number' },
+  { key: 'email',         label: 'Email' },
+  { key: 'phone',         label: 'Phone' },
+  { key: 'address',       label: 'Address' },
+  { key: 'notes',         label: 'Notes' },
+];
 
 const patientName = (p: Patient): string => {
-  const name = `${p.answers?.[FIRST_NAME_ID] ?? ''} ${p.answers?.[LAST_NAME_ID] ?? ''}`.trim();
+  const name = `${p.first_name ?? ''} ${p.last_name ?? ''}`.trim();
   return name || '(unnamed patient)';
 };
 
 const statusColor = (status?: string | null): string =>
   status === 'online' ? 'success' : status === 'unknown' ? 'warning' : 'medium';
-
-// Build an ordered UUID → question-label map from the survey component tree.
-const buildLabelMap = (node: ComponentResults, map = new Map<string, string>()): Map<string, string> => {
-  if (node.id && SURVEY_QUESTION_TYPES.has(node.type)) {
-    map.set(node.id, node.data?.text ?? node.name ?? node.id);
-  }
-  node.children?.forEach((c: ComponentResults) => buildLabelMap(c, map));
-  return map;
-};
 
 const fmtDate = (v?: string | null) => {
   if (!v) return '—';
@@ -57,22 +54,21 @@ const fmtDate = (v?: string | null) => {
 
 const Patients: React.FC = () => {
   const [formComponent, setFormComponent] = useState<ComponentResults | null>(null);
-  const [labelMap, setLabelMap]           = useState<Map<string, string>>(new Map());
 
-  const [patients, setPatients]               = useState<Patient[]>([]);
-  const [selected, setSelected]               = useState<Patient | null>(null);
-  const [beds, setBeds]                        = useState<Bed[]>([]);
-  const [assignments, setAssignments]          = useState<BedAssignment[]>([]);
-  const [search, setSearch]                    = useState('');
-  const [bedChoice, setBedChoice]              = useState<string>('');
+  const [patients, setPatients]      = useState<Patient[]>([]);
+  const [selected, setSelected]      = useState<Patient | null>(null);
+  const [beds, setBeds]              = useState<Bed[]>([]);
+  const [assignments, setAssignments] = useState<BedAssignment[]>([]);
+  const [search, setSearch]          = useState('');
+  const [bedChoice, setBedChoice]    = useState<string>('');
 
   const [addOpen, setAddOpen]   = useState(false);
   const [creating, setCreating] = useState(false);
 
   // ── data loading ────────────────────────────────────────────────────────────
   useEffect(() => {
-    ApiService.getSurveyComponent(PATIENT_SURVEY_COMPONENT_ID).then(tree => {
-      if (tree) { setFormComponent(tree); setLabelMap(buildLabelMap(tree)); }
+    ApiService.getComponent(PATIENT_FORM_COMPONENT_ID).then(tree => {
+      if (tree) setFormComponent(tree);
     });
   }, []);
 
@@ -127,7 +123,9 @@ const Patients: React.FC = () => {
 
   // ── detail rows ─────────────────────────────────────────────────────────────
   const demographicRows = selected
-    ? Array.from(labelMap.entries()).map(([id, label]) => ({ label, value: selected.answers?.[id] ?? '' }))
+    ? DEMOGRAPHIC_FIELDS
+        .map(f => ({ label: f.label, value: (selected[f.key] as any) ?? '' }))
+        .filter(r => r.value !== '' && r.value != null)
     : [];
 
   const renderDetail = () => {
@@ -251,7 +249,7 @@ const Patients: React.FC = () => {
           <IonItem lines="none"><IonSpinner slot="start" name="dots" /><IonLabel>&nbsp;Loading form…</IonLabel></IonItem>
         ) : (
           <FormRenderer
-            mode="survey"
+            mode="app"
             component={formComponent}
             onSubmit={handleCreate}
             submitLabel={creating ? 'Creating…' : 'Create Patient'}

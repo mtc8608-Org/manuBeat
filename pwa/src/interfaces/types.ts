@@ -156,16 +156,20 @@ export interface HdfDataset {
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
 export interface BedsideNode {
-  id:         string;
-  name:       string;
-  hostname:   string | null;
-  ip_address: string | null;
-  location:   string | null;
-  status:     string;            // online | offline | unknown
-  last_seen:  string | null;
-  hardware:   Record<string, any>;
-  created_at: string;
-  bed_label:  string | null;     // the bed this Pi serves
+  id:            string;
+  node_key:      string | null;  // the id the agent reports (agent.toml node_id)
+  name:          string;
+  hostname:      string | null;
+  ip_address:    string | null;
+  location:      string | null;
+  status:        string;            // online | offline | unknown
+  online:        boolean;           // derived from last_seen freshness
+  last_seen:     string | null;
+  agent_version: string | null;
+  hardware:      Record<string, any>;
+  created_at:    string;
+  bed_label:     string | null;     // the bed this Pi serves
+  token?:        string | null;     // only present right after create / rotate
 }
 
 export interface Bed {
@@ -178,25 +182,72 @@ export interface Bed {
   created_at:    string;
 }
 
-// A patient IS a Patient Registration survey answer, augmented with bedside data.
+// Patient — a first-class record (detached from the survey system).
 export interface Patient {
-  id:           string;                 // survey_answers.id
-  answers:      Record<string, any>;    // demographics
-  submitted_at: string;
-  file_id:      string | null;
-  file_key:     string | null;
-  bed_id:       string | null;          // current (active) bed
-  bed_label:    string | null;
-  node_name:    string | null;
-  node_status:  string | null;
+  id:            string;
+  first_name:    string | null;
+  last_name:     string | null;
+  date_of_birth: string | null;
+  sex:           string | null;
+  identifier:    string | null;
+  email:         string | null;
+  phone:         string | null;
+  address:       string | null;
+  notes:         string | null;
+  extra:         Record<string, any>;
+  created_at:    string;
+  file_id:       string | null;
+  file_key:      string | null;
+  bed_id:        string | null;          // current (active) bed
+  bed_label:     string | null;
+  node_key:      string | null;          // serving node (for the live Monitor link)
+  node_name:     string | null;
+  node_status:   string | null;
 }
 
 export interface BedAssignment {
-  id:                string;
-  patient_answer_id: string;
-  bed_id:            string;
-  bed_label:         string | null;
-  started_at:        string;
-  ended_at:          string | null;
-  active:            boolean;
+  id:         string;
+  patient_id: string;
+  bed_id:     string;
+  bed_label:  string | null;
+  started_at: string;
+  ended_at:   string | null;
+  active:     boolean;
+}
+
+// ── Telemetry (live) ──────────────────────────────────────────────────────────
+export interface BedsideStream {
+  id:           string;
+  stream_id:    string;
+  modality:     string | null;
+  group:        string | null;
+  channel:      string | null;
+  units:        string | null;
+  metric:       string | null;
+  sampling_hz:  number | null;
+  source:       string | null;
+  last_seq:     number | null;
+  last_time_us: number | null;
+}
+
+export interface BedsideSegment {
+  id:            string;
+  stream_id:     string;
+  seq:           number;
+  start_time_us: number;
+  sampling_hz:   number;
+  duration:      number;
+  samples:       number[];
+  quality:       Array<[number, number]>;
+}
+
+export interface NodeHeartbeat {
+  id:              string;
+  ts_ms:           number | null;
+  cpu_temp_c:      number | null;
+  disk_free_bytes: number | null;
+  buffer_pending:  number | null;
+  last_sample_us:  Record<string, number>;
+  agent_version:   string | null;
+  received_at:     string;
 }

@@ -39,5 +39,6 @@ module.exports = {
     'createSurvey', 'updateSurvey', 'deleteSurvey', 'deleteAnswer',
     // [BEDSIDE] Data Collection
     'createBed', 'updateBedsideNode', 'assignPatientToBed', 'endBedAssignment',
+    'createBedsideNode', 'rotateNodeToken', 'deleteBedsideNode',
   ],
 };

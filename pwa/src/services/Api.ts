@@ -1,11 +1,12 @@
 import axios from 'axios';
 import { createClient } from 'graphql-http';
-import { API_BASE, GQL_URL, ENDPOINT } from '../constants';
+import { API_BASE, GQL_URL, ENDPOINT, WS_BASE } from '../constants';
 import {
   ComponentResults, FileRecord, Survey, SurveyAnswer,
   ModelConfig, ModelRun, CardioJobStatus, CardioResult,
   CardioPlotConfig, CardioProcConfig, HdfNode, HdfDataset,
   Patient, Bed, BedsideNode, BedAssignment,
+  BedsideStream, BedsideSegment, NodeHeartbeat,
 } from '../interfaces/types';
 
 // ── Setup ────────────────────────────────────────────────────────────────────
@@ -610,14 +611,14 @@ const getProcessedOutputs = async (run_id: string, proc_config_id: string): Prom
 
 // ── [BEDSIDE] Data Collection ─────────────────────────────────────────────────
 
+const PATIENT_FIELDS = `
+  id first_name last_name date_of_birth sex identifier email phone address notes extra
+  created_at file_id file_key bed_id bed_label node_key node_name node_status
+`.trim();
+
 const getPatients = async (): Promise<Patient[]> => {
   try {
-    const result = await gql(`{
-      patients {
-        id answers submitted_at file_id file_key
-        bed_id bed_label node_name node_status
-      }
-    }`);
+    const result = await gql(`{ patients { ${PATIENT_FIELDS} } }`);
     return result?.data?.patients ?? [];
   } catch (e) { console.error('getPatients error:', e); return []; }
 };
@@ -631,37 +632,38 @@ const getBeds = async (): Promise<Bed[]> => {
   } catch (e) { console.error('getBeds error:', e); return []; }
 };
 
+const NODE_FIELDS = `
+  id node_key name hostname ip_address location status online last_seen
+  agent_version hardware created_at bed_label
+`.trim();
+
 const getBedsideNodes = async (): Promise<BedsideNode[]> => {
   try {
-    const result = await gql(`{
-      bedsideNodes {
-        id name hostname ip_address location status last_seen hardware created_at bed_label
-      }
-    }`);
+    const result = await gql(`{ bedsideNodes { ${NODE_FIELDS} } }`);
     return result?.data?.bedsideNodes ?? [];
   } catch (e) { console.error('getBedsideNodes error:', e); return []; }
 };
 
-const getBedAssignments = async (patient_answer_id?: string): Promise<BedAssignment[]> => {
+const getBedAssignments = async (patient_id?: string): Promise<BedAssignment[]> => {
   try {
     const result = await gql(`
-      query BedAssignments($patient_answer_id: ID) {
-        bedAssignments(patient_answer_id: $patient_answer_id) {
-          id patient_answer_id bed_id bed_label started_at ended_at active
+      query BedAssignments($patient_id: ID) {
+        bedAssignments(patient_id: $patient_id) {
+          id patient_id bed_id bed_label started_at ended_at active
         }
       }`,
-      { patient_answer_id: patient_answer_id ?? null },
+      { patient_id: patient_id ?? null },
     );
     return result?.data?.bedAssignments ?? [];
   } catch (e) { console.error('getBedAssignments error:', e); return []; }
 };
 
-// Create a patient (survey answer + empty data file). REST — touches MinIO.
-const createPatient = async (answers: Record<string, any>): Promise<{ patient_answer_id: string; file_id: string; file_key: string }> => {
+// Create a patient (patients row + empty data file). REST — touches MinIO.
+const createPatient = async (demographics: Record<string, any>): Promise<{ patient_id: string; file_id: string; file_key: string }> => {
   const res = await fetch(`${API_BASE}${ENDPOINT.BEDSIDE_PATIENTS}`, {
     method:  'POST',
     headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-    body:    JSON.stringify({ answers }),
+    body:    JSON.stringify({ demographics }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -670,20 +672,87 @@ const createPatient = async (answers: Record<string, any>): Promise<{ patient_an
   return res.json();
 };
 
-const deletePatient = async (answerId: string): Promise<void> => {
-  const res = await fetch(`${API_BASE}${ENDPOINT.BEDSIDE_PATIENTS}/${answerId}`, {
+const deletePatient = async (patientId: string): Promise<void> => {
+  const res = await fetch(`${API_BASE}${ENDPOINT.BEDSIDE_PATIENTS}/${patientId}`, {
     method: 'DELETE', headers: getAuthHeader(),
   });
   if (!res.ok) throw new Error('Failed to delete patient');
 };
 
-const assignPatientToBed = async (patient_answer_id: string, bed_id: string): Promise<void> => {
+const assignPatientToBed = async (patient_id: string, bed_id: string): Promise<void> => {
   await gql(`
-    mutation Assign($patient_answer_id: ID!, $bed_id: ID!) {
-      assignPatientToBed(patient_answer_id: $patient_answer_id, bed_id: $bed_id) { id }
+    mutation Assign($patient_id: ID!, $bed_id: ID!) {
+      assignPatientToBed(patient_id: $patient_id, bed_id: $bed_id) { id }
     }`,
-    { patient_answer_id, bed_id },
+    { patient_id, bed_id },
   );
+};
+
+// ── nodes + device tokens ─────────────────────────────────────────────────────
+const createBedsideNode = async (name: string, node_key: string, location?: string): Promise<BedsideNode | undefined> => {
+  const result = await gql(`
+    mutation CreateNode($name: String!, $node_key: String!, $location: String) {
+      createBedsideNode(name: $name, node_key: $node_key, location: $location) { ${NODE_FIELDS} token }
+    }`,
+    { name, node_key, location: location ?? null },
+  );
+  return result?.data?.createBedsideNode;
+};
+
+const rotateNodeToken = async (id: string): Promise<BedsideNode | undefined> => {
+  const result = await gql(`
+    mutation Rotate($id: ID!) { rotateNodeToken(id: $id) { id token } }`, { id });
+  return result?.data?.rotateNodeToken;
+};
+
+const deleteBedsideNode = async (id: string): Promise<void> => {
+  await gql(`mutation Del($id: ID!) { deleteBedsideNode(id: $id) }`, { id });
+};
+
+// ── live telemetry reads ──────────────────────────────────────────────────────
+const getBedsideStreams = async (node_id: string): Promise<BedsideStream[]> => {
+  try {
+    const result = await gql(`
+      query Streams($node_id: ID!) {
+        bedsideStreams(node_id: $node_id) {
+          id stream_id modality group channel units metric sampling_hz source last_seq last_time_us
+        }
+      }`, { node_id });
+    return result?.data?.bedsideStreams ?? [];
+  } catch (e) { console.error('getBedsideStreams error:', e); return []; }
+};
+
+const getLatestSegments = async (node_id: string, stream_id?: string, limit = 50): Promise<BedsideSegment[]> => {
+  try {
+    const result = await gql(`
+      query Segments($node_id: ID!, $stream_id: String, $limit: Int) {
+        latestSegments(node_id: $node_id, stream_id: $stream_id, limit: $limit) {
+          id stream_id seq start_time_us sampling_hz duration samples quality
+        }
+      }`, { node_id, stream_id: stream_id ?? null, limit });
+    return result?.data?.latestSegments ?? [];
+  } catch (e) { console.error('getLatestSegments error:', e); return []; }
+};
+
+const getNodeHeartbeats = async (node_id: string, limit = 20): Promise<NodeHeartbeat[]> => {
+  try {
+    const result = await gql(`
+      query Heartbeats($node_id: ID!, $limit: Int) {
+        nodeHeartbeats(node_id: $node_id, limit: $limit) {
+          id ts_ms cpu_temp_c disk_free_bytes buffer_pending last_sample_us agent_version received_at
+        }
+      }`, { node_id, limit });
+    return result?.data?.nodeHeartbeats ?? [];
+  } catch (e) { console.error('getNodeHeartbeats error:', e); return []; }
+};
+
+// Live segment stream over WebSocket. Returns the socket; caller handles messages + close.
+const subscribeBedside = (nodeKey: string, onMessage: (msg: any) => void, streamId?: string): WebSocket => {
+  const params = new URLSearchParams({ node: nodeKey });
+  if (streamId) params.set('stream', streamId);
+  const ws = new WebSocket(`${WS_BASE}/ws/bedside?${params}`);
+  ws.onmessage = (ev) => { try { onMessage(JSON.parse(ev.data)); } catch { /* ignore */ } };
+  return ws;
 };
 
 const endBedAssignment = async (id: string): Promise<void> => {
@@ -803,5 +872,7 @@ const ApiService = {
   getPatients, getBeds, getBedsideNodes, getBedAssignments,
   createPatient, deletePatient, assignPatientToBed, endBedAssignment,
   createBed, updateBedsideNode,
+  createBedsideNode, rotateNodeToken, deleteBedsideNode,
+  getBedsideStreams, getLatestSegments, getNodeHeartbeats, subscribeBedside,
 };
 export default ApiService;
