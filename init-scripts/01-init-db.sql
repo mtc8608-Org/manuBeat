@@ -207,31 +207,10 @@ SELECT p.id, c.id, pos.ord FROM reg p JOIN reg c ON true
     ) AS pos(parent_name, child_name, ord)
     ON p.name = pos.parent_name AND c.name = pos.child_name;
 
--- ── Vital Signs section — appended to Patient Registration ───────────────────
--- UUID range: e013–e019  (prefix c51c1e5f-5cc1-4b77-8832-2d10cc97e0XX)
--- Added as a nested sub-survey ("Vital Signs") at position 11, mirroring the
--- Address section pattern. These numeric fields are processed by the Python
--- compute engine (pandas) on the Vitals analytics page.
-
-INSERT INTO survey_components (id, name, type, data, options) VALUES
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e013', 'surv_reg_vitals', 'survey', '{"text": "Vital Signs"}',                        '{}'),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e014', 'surv_reg_spo2',   'number', '{"text": "SpO2 (%)"}',                           '{"placeholder": "95–100"}'),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e015', 'surv_reg_hr',     'number', '{"text": "Heart Rate (bpm)"}',                   '{"placeholder": "60–100"}'),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e016', 'surv_reg_sbp',    'number', '{"text": "Systolic BP (mmHg)"}',                 '{"placeholder": "90–140"}'),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e017', 'surv_reg_dbp',    'number', '{"text": "Diastolic BP (mmHg)"}',                '{"placeholder": "60–90"}'),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e018', 'surv_reg_temp',   'number', '{"text": "Temperature (°C)"}',                   '{"placeholder": "36.1–37.5"}'),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e019', 'surv_reg_rr',     'number', '{"text": "Respiratory Rate (breaths/min)"}',     '{"placeholder": "12–20"}')
-ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO survey_components_relationships (parent_id, child_id, position) VALUES
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e000', 'c51c1e5f-5cc1-4b77-8832-2d10cc97e013', 11),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e013', 'c51c1e5f-5cc1-4b77-8832-2d10cc97e014',  1),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e013', 'c51c1e5f-5cc1-4b77-8832-2d10cc97e015',  2),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e013', 'c51c1e5f-5cc1-4b77-8832-2d10cc97e016',  3),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e013', 'c51c1e5f-5cc1-4b77-8832-2d10cc97e017',  4),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e013', 'c51c1e5f-5cc1-4b77-8832-2d10cc97e018',  5),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e013', 'c51c1e5f-5cc1-4b77-8832-2d10cc97e019',  6)
-ON CONFLICT DO NOTHING;
+-- NOTE: Physiological parameters (the former "Vital Signs" sub-survey, e013–e019)
+-- were removed — the Patient Registration survey now holds demographics only.
+-- Live physiological data is collected via the Data Collection domain (bedside
+-- Pis streaming into per-patient HDF5 files; see init-scripts/03-init-bedside.sql).
 
 -- Hardcoded UUID so seed-sample-surveys.sql can reference the survey by ID.
 INSERT INTO surveys (id, component_id, title)

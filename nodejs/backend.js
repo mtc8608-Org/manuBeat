@@ -52,6 +52,8 @@ server.use('/api', require('./routes/framework/content'));
 server.use('/api', require('./routes/framework/compute'));
 // [MEDICAL]
 server.use('/api', require('./routes/medical/models'));
+// [BEDSIDE]
+server.use('/api', require('./routes/bedside/patients'));
 
 // ── Startup ───────────────────────────────────────────────────────────────────
 // Start listening immediately so the container is healthy, then seed the admin

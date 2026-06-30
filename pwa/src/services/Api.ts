@@ -5,6 +5,7 @@ import {
   ComponentResults, FileRecord, Survey, SurveyAnswer,
   ModelConfig, ModelRun, CardioJobStatus, CardioResult,
   CardioPlotConfig, CardioProcConfig, HdfNode, HdfDataset,
+  Patient, Bed, BedsideNode, BedAssignment,
 } from '../interfaces/types';
 
 // ── Setup ────────────────────────────────────────────────────────────────────
@@ -607,6 +608,115 @@ const getProcessedOutputs = async (run_id: string, proc_config_id: string): Prom
   return res.data.outputs ?? {};
 };
 
+// ── [BEDSIDE] Data Collection ─────────────────────────────────────────────────
+
+const getPatients = async (): Promise<Patient[]> => {
+  try {
+    const result = await gql(`{
+      patients {
+        id answers submitted_at file_id file_key
+        bed_id bed_label node_name node_status
+      }
+    }`);
+    return result?.data?.patients ?? [];
+  } catch (e) { console.error('getPatients error:', e); return []; }
+};
+
+const getBeds = async (): Promise<Bed[]> => {
+  try {
+    const result = await gql(`{
+      beds { id label node_id node_name node_status node_location created_at }
+    }`);
+    return result?.data?.beds ?? [];
+  } catch (e) { console.error('getBeds error:', e); return []; }
+};
+
+const getBedsideNodes = async (): Promise<BedsideNode[]> => {
+  try {
+    const result = await gql(`{
+      bedsideNodes {
+        id name hostname ip_address location status last_seen hardware created_at bed_label
+      }
+    }`);
+    return result?.data?.bedsideNodes ?? [];
+  } catch (e) { console.error('getBedsideNodes error:', e); return []; }
+};
+
+const getBedAssignments = async (patient_answer_id?: string): Promise<BedAssignment[]> => {
+  try {
+    const result = await gql(`
+      query BedAssignments($patient_answer_id: ID) {
+        bedAssignments(patient_answer_id: $patient_answer_id) {
+          id patient_answer_id bed_id bed_label started_at ended_at active
+        }
+      }`,
+      { patient_answer_id: patient_answer_id ?? null },
+    );
+    return result?.data?.bedAssignments ?? [];
+  } catch (e) { console.error('getBedAssignments error:', e); return []; }
+};
+
+// Create a patient (survey answer + empty data file). REST — touches MinIO.
+const createPatient = async (answers: Record<string, any>): Promise<{ patient_answer_id: string; file_id: string; file_key: string }> => {
+  const res = await fetch(`${API_BASE}${ENDPOINT.BEDSIDE_PATIENTS}`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+    body:    JSON.stringify({ answers }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as any).error ?? 'Failed to create patient');
+  }
+  return res.json();
+};
+
+const deletePatient = async (answerId: string): Promise<void> => {
+  const res = await fetch(`${API_BASE}${ENDPOINT.BEDSIDE_PATIENTS}/${answerId}`, {
+    method: 'DELETE', headers: getAuthHeader(),
+  });
+  if (!res.ok) throw new Error('Failed to delete patient');
+};
+
+const assignPatientToBed = async (patient_answer_id: string, bed_id: string): Promise<void> => {
+  await gql(`
+    mutation Assign($patient_answer_id: ID!, $bed_id: ID!) {
+      assignPatientToBed(patient_answer_id: $patient_answer_id, bed_id: $bed_id) { id }
+    }`,
+    { patient_answer_id, bed_id },
+  );
+};
+
+const endBedAssignment = async (id: string): Promise<void> => {
+  await gql(`mutation EndAssignment($id: ID!) { endBedAssignment(id: $id) }`, { id });
+};
+
+const createBed = async (label: string, node_id?: string): Promise<Bed | undefined> => {
+  const result = await gql(`
+    mutation CreateBed($label: String!, $node_id: ID) {
+      createBed(label: $label, node_id: $node_id) {
+        id label node_id node_name node_status node_location created_at
+      }
+    }`,
+    { label, node_id: node_id ?? null },
+  );
+  return result?.data?.createBed;
+};
+
+const updateBedsideNode = async (
+  id: string,
+  fields: { name?: string; hostname?: string; ip_address?: string; location?: string; status?: string; hardware?: Record<string, any> },
+): Promise<BedsideNode | undefined> => {
+  const result = await gql(`
+    mutation UpdateNode($id: ID!, $name: String, $hostname: String, $ip_address: String, $location: String, $status: String, $hardware: JSON) {
+      updateBedsideNode(id: $id, name: $name, hostname: $hostname, ip_address: $ip_address, location: $location, status: $status, hardware: $hardware) {
+        id name hostname ip_address location status last_seen hardware created_at bed_label
+      }
+    }`,
+    { id, ...fields },
+  );
+  return result?.data?.updateBedsideNode;
+};
+
 // ── AI content generation ─────────────────────────────────────────────────────
 
 export interface GenMessage { role: 'user' | 'assistant'; content: string; }
@@ -689,5 +799,9 @@ const ApiService = {
   getHdf5Tree, getHdf5Dataset, repackHdf5, deleteHdf5Dataset,
   // [MEDICAL] processing
   processRun, getProcessedGroups, getProcessedOutputs,
+  // [BEDSIDE] Data Collection
+  getPatients, getBeds, getBedsideNodes, getBedAssignments,
+  createPatient, deletePatient, assignPatientToBed, endBedAssignment,
+  createBed, updateBedsideNode,
 };
 export default ApiService;

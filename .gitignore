@@ -47,5 +47,11 @@ htmlcov/
 # ── Database & persistent storage ────────────────────────────
 .persist/
 
+# ── Large data files — never commit ──────────────────────────
+*.pdf
+*.h5
+*.hdf5
+*.he5
+
 # ── Claude Code ──────────────────────────────────────────────
 .claude/

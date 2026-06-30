@@ -19,6 +19,8 @@ import ModelSandbox from './pages/models/ModelSandbox';
 import PlotSandbox from './pages/models/PlotSandbox';
 import ProcessingSandbox from './pages/models/ProcessingSandbox';
 import HdfInspector from './pages/models/HdfInspector';
+import Patients from './pages/bedside/Patients';
+import Devices from './pages/bedside/Devices';
 import { ROUTE } from './constants';
 
 /* Core CSS required for Ionic components to work properly */
@@ -65,6 +67,10 @@ const App: React.FC = () => {
                 <PrivateRoute path={ROUTE.PLOT_SANDBOX}  exact={true} component={PlotSandbox} />
                 <PrivateRoute path={ROUTE.PROC_SANDBOX}  exact={true} component={ProcessingSandbox} />
                 <PrivateRoute path={ROUTE.HDF_INSPECTOR} exact={true} component={HdfInspector} />
+
+                {/* [BEDSIDE] Data Collection — admin only */}
+                <AdminRoute path={ROUTE.PATIENTS} exact={true} component={Patients} />
+                <AdminRoute path={ROUTE.DEVICES}  exact={true} component={Devices} />
 
                 {/* Admin only */}
                 <AdminRoute path={ROUTE.CONTENT}       exact={true} component={Content} />

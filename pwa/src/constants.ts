@@ -124,6 +124,16 @@ export const FORM_ID = {
 
 
 ///////////////////////////////////////////////////////////////////////////////
+// #region [BEDSIDE] Data Collection IDs
+// A patient IS a Patient Registration survey answer. These hardcoded seed UUIDs
+// (init-scripts/01-init-db.sql) tie the Data Collection area to that survey.
+export const PATIENT_SURVEY_ID = 'c51c1e5f-5cc1-4b77-8832-2d10cc97f000'; // surveys row (for answers)
+export const PATIENT_SURVEY_COMPONENT_ID = 'c51c1e5f-5cc1-4b77-8832-2d10cc97e000'; // survey_components root (for the form tree)
+// #endregion
+///////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////
 // #region Survey Question Editor Form UUIDs
 // Maps each SURVEY_TYPE to its editor form name (seeded in init-scripts/01-init-db.sql,
 // dd00–dd08 range). Used by Surveys.tsx to load the right form per question type.
@@ -158,6 +168,8 @@ export const ENDPOINT = {
   FILES_UPLOAD:     '/files/upload',
   GENERATE_CONTENT: '/generate-content',
   SURVEY_EXPORT:    '/surveys',   // + `/${id}/stats/export`
+  // [BEDSIDE]
+  BEDSIDE_PATIENTS: '/bedside/patients',
 } as const;
 // #endregion
 ///////////////////////////////////////////////////////////////////////////////
@@ -190,7 +202,7 @@ export const PANEL_CONFIG = {
   FILES_LIST: {
     title: 'Files', emptyMessage: 'No files found.',
     add: { enabled: true, label: 'Upload' },
-    filter: { text: { enabled: true, placeholder: 'Search files…' }, type: { enabled: false } },
+    filter: { text: { enabled: true, placeholder: 'Search files…' }, type: { enabled: true } },
   },
   CONTENT_PAGES: {
     title: 'Pages', emptyMessage: 'No pages yet.',
@@ -261,6 +273,17 @@ export const PANEL_CONFIG = {
     add: { enabled: true, label: 'Add Op' },
     filter: { text: { enabled: false }, type: { enabled: false } },
   },
+  // [BEDSIDE] Data Collection
+  PATIENTS: {
+    title: 'Patients', emptyMessage: 'No patients yet.',
+    add: { enabled: true, label: 'New Patient' },
+    filter: { text: { enabled: true, placeholder: 'Search patients…' }, type: { enabled: false } },
+  },
+  BEDSIDE_DEVICES: {
+    title: 'Devices', emptyMessage: 'No devices yet.',
+    add: { enabled: false, label: '' },
+    filter: { text: { enabled: false }, type: { enabled: false } },
+  },
 } as const satisfies Record<string, PanelConfig>;
 // #endregion
 ///////////////////////////////////////////////////////////////////////////////
@@ -283,6 +306,9 @@ export const ROUTE = {
   PLOT_SANDBOX:   '/folder/PlotSandbox',
   PROC_SANDBOX:   '/folder/ProcessingSandbox',
   HDF_INSPECTOR:  '/folder/HdfInspector',
+  // [BEDSIDE] Data Collection
+  PATIENTS:       '/folder/Patients',
+  DEVICES:        '/folder/Devices',
 } as const;
 
 // #endregion
@@ -309,12 +335,18 @@ export const AREA_NAV = {
     { label: 'Files',         route: '/folder/Files',         icon: 'folder'        },
     { label: 'Configuration', route: '/folder/Configuration', icon: 'construct'     },
   ],
+  // [BEDSIDE] Data Collection
+  DATA_COLLECTION: [
+    { label: 'Patients', route: '/folder/Patients', icon: 'bed'           },
+    { label: 'Devices',  route: '/folder/Devices',  icon: 'hardware-chip' },
+  ],
 } as const;
 
 // Section groupings — used by AppHeader nav (authenticated users only)
 export const NAV_SECTIONS = [
   { label: 'Surveys',              routes: ['/folder/Surveys'],                                                                                                              link: '/folder/Surveys',   icon: 'clipboard' },
   { label: 'Physiology Simulator', routes: ['/folder/Simulator', '/folder/ModelSandbox', '/folder/PlotSandbox', '/folder/ProcessingSandbox', '/folder/HdfInspector'],       link: '/folder/Simulator', icon: 'pulse'     },
+  { label: 'Data Collection',      routes: ['/folder/Patients', '/folder/Devices'],                                                                                         link: '/folder/Patients',  icon: 'bed',       adminOnly: true },
   { label: 'Backoffice',           routes: ['/folder/Content', '/folder/Files', '/folder/Configuration'],                                                                   link: '/folder/Content',   icon: 'construct', adminOnly: true },
 ] as const;
 // #endregion

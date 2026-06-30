@@ -2,12 +2,13 @@
 // Reads/writes: MinIO object storage (via Node.js REST endpoints). Metadata in postgres files table.
 // Admin-only (upload/delete). All authenticated users can browse.
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   IonButton, IonSpinner,
   IonItem, IonLabel,
   IonCard, IonCardContent, IonCardHeader, IonCardTitle,
   IonIcon, IonText,
+  useIonViewWillEnter,
 } from '@ionic/react';
 import { documentOutline, trashOutline } from 'ionicons/icons';
 import { FileRecord, ComponentResults } from '../../interfaces/types';
@@ -51,6 +52,9 @@ const mimeCategory = (mime: string | null): 'image' | 'pdf' | 'text' | 'other' =
   return 'other';
 };
 
+const mimeSubtype = (mime: string | null) =>
+  mime ? (mime.split('/')[1] ?? mime) : 'unknown';
+
 const Files: React.FC = () => {
   const { isAdmin, logout } = useAuth();
 
@@ -77,7 +81,9 @@ const Files: React.FC = () => {
 
 
   const [fileVersion, setFileVersion] = useState(0);
+  const [files, setFiles]             = useState<FileRecord[]>([]);
   const [search, setSearch]           = useState('');
+  const [fileType, setFileType]       = useState('');
   const [selected, setSelected]       = useState<FileRecord | null>(null);
   const [formTree, setFormTree]       = useState<ComponentResults | null>(null);
 
@@ -104,6 +110,17 @@ const Files: React.FC = () => {
   useEffect(() => {
     ApiService.getComponentByName(FORM_ID.FILE_DETAIL).then(form => { if (form) setFormTree(form); });
   }, []);
+
+  useEffect(() => {
+    ApiService.getFiles().then(setFiles).catch(console.error);
+  }, [fileVersion]);
+
+  useIonViewWillEnter(() => setFileVersion(v => v + 1));
+
+  const typeOptions = useMemo(
+    () => [...new Set(files.map(f => mimeSubtype(f.mime_type)))].sort(),
+    [files],
+  );
 
 
 /*
@@ -214,20 +231,24 @@ const Files: React.FC = () => {
         label: 'Files',
         content: (
           <ResourcePanel
-            fetcher={ApiService.getFiles}
-            refreshToken={fileVersion}
+            data={files}
             config={PANEL_CONFIG.FILES_LIST}
             selectedId={selected?.id}
             getLabel={f => f.filename}
             getSubLabel={f => `${formatSize(f.size)} · ${formatDate(f.created_at)}`}
             getIcon={() => documentOutline}
-            getBadge={f => f.mime_type ? { label: f.mime_type.split('/')[1] ?? f.mime_type, color: 'medium' } : null}
+            getBadge={f => f.mime_type ? { label: mimeSubtype(f.mime_type), color: 'medium' } : null}
             onSelect={handleSelect}
             onAdd={() => { setUploadError(''); setUploadOpen(true); }}
-            filterFn={(f, text) => f.filename.toLowerCase().includes(text.toLowerCase())}
+            filterFn={(f, text, type) =>
+              f.filename.toLowerCase().includes(text.toLowerCase()) &&
+              (!type || mimeSubtype(f.mime_type) === type)}
             filter={{
               text: search,
               onTextChange: setSearch,
+              types: typeOptions,
+              typeValue: fileType,
+              onTypeChange: setFileType,
             }}
           />
         ),

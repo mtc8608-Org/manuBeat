@@ -150,3 +150,53 @@ export interface HdfDataset {
   data:    any;
   fields?: string[];
 }
+
+// ╔══════════════════════════════════════════════════════════════════════════════╗
+// ║                       DATA COLLECTION (BEDSIDE)                              ║
+// ╚══════════════════════════════════════════════════════════════════════════════╝
+
+export interface BedsideNode {
+  id:         string;
+  name:       string;
+  hostname:   string | null;
+  ip_address: string | null;
+  location:   string | null;
+  status:     string;            // online | offline | unknown
+  last_seen:  string | null;
+  hardware:   Record<string, any>;
+  created_at: string;
+  bed_label:  string | null;     // the bed this Pi serves
+}
+
+export interface Bed {
+  id:            string;
+  label:         string;
+  node_id:       string | null;
+  node_name:     string | null;
+  node_status:   string | null;
+  node_location: string | null;
+  created_at:    string;
+}
+
+// A patient IS a Patient Registration survey answer, augmented with bedside data.
+export interface Patient {
+  id:           string;                 // survey_answers.id
+  answers:      Record<string, any>;    // demographics
+  submitted_at: string;
+  file_id:      string | null;
+  file_key:     string | null;
+  bed_id:       string | null;          // current (active) bed
+  bed_label:    string | null;
+  node_name:    string | null;
+  node_status:  string | null;
+}
+
+export interface BedAssignment {
+  id:                string;
+  patient_answer_id: string;
+  bed_id:            string;
+  bed_label:         string | null;
+  started_at:        string;
+  ended_at:          string | null;
+  active:            boolean;
+}
