@@ -168,7 +168,7 @@ INSERT INTO model_configs (id, name, description, config) VALUES (
         "R_Vent_SAS": 2.0,
         "Q_Vent_SAS": 0.006,
 
-        "R_SAS_Vt": 15.0,
+        "R_SAS_Vt": 3.0,
         "Q_SAS_Vt": 0.006,
 
         "R_SAS_Spinal": 36.0,
@@ -212,7 +212,7 @@ INSERT INTO model_configs (id, name, description, config) VALUES (
 
             "ChP_Vent":{"from":"ChP","to":"Vent","type":"resistor","params":{"R":2500.0}},
             "Vent_SAS":{"from":"Vent","to":"SAS","type":"resistor","params":{"R":2.0}},
-            "SAS_Vt":{"from":"SAS","to":"Vt","type":"resistor","params":{"R":15.0}},
+            "SAS_Vt":{"from":"SAS","to":"Vt","type":"resistor","params":{"R":3.0}},
             "SAS_Spinal":{"from":"SAS","to":"Spinal","type":"resistor","params":{"R":36.0}},
             "As_CaBV":{"from":"As","to":"CaBV","type":"resistor","params":{"R":1.0}},
             "CaBV_Vt":{"from":"CaBV","to":"Vt","type":"resistor","params":{"R":5.0}},
