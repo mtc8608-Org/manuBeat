@@ -147,7 +147,7 @@ INSERT INTO model_configs (id, name, description, config) VALUES (
         "V_Vent": 25.0,
         "P_Vent": 770.0,
 
-        "C_SAS": 1.0,
+        "C_SAS": 0.3,
         "V0_SAS": 0.0,
         "V_SAS": 125.0,
         "P_SAS": 770.0,
@@ -177,8 +177,11 @@ INSERT INTO model_configs (id, name, description, config) VALUES (
         "R_As_CaBV": 2.0,
         "Q_As_CaBV": 1.0,
 
-        "R_CaBV_Vt": 4.0,
+        "R_CaBV_Vt": 5.0,
         "Q_CaBV_Vt": 1.0,
+
+        "R_CaBV_SAS": 50.0,
+        "Q_CaBV_SAS": 0.1,
 
         "min_P_SAS": 0.0,
         "keep_min_P_SAS": 0.0,
@@ -209,10 +212,11 @@ INSERT INTO model_configs (id, name, description, config) VALUES (
 
             "ChP_Vent":{"from":"ChP","to":"Vent","type":"resistor","params":{"R":2500.0}},
             "Vent_SAS":{"from":"Vent","to":"SAS","type":"resistor","params":{"R":2.0}},
-            "SAS_Vt":{"from":"SAS","to":"Vt","type":"resistor","params":{"R":400.0}},
+            "SAS_Vt":{"from":"SAS","to":"Vt","type":"resistor","params":{"R":15.0}},
             "SAS_Spinal":{"from":"SAS","to":"Spinal","type":"resistor","params":{"R":1.0}},
             "As_CaBV":{"from":"As","to":"CaBV","type":"resistor","params":{"R":2.0}},
-            "CaBV_Vt":{"from":"CaBV","to":"Vt","type":"resistor","params":{"R":4.0}}
+            "CaBV_Vt":{"from":"CaBV","to":"Vt","type":"resistor","params":{"R":5.0}},
+            "CaBV_SAS":{"from":"CaBV","to":"SAS","type":"resistor","params":{"R":20.0}}
         },
         "bias":{
             "As":"Atm","Cs":"Atm","Vs":"Atm","Vt":"Atm","Hr":"Atm",
@@ -221,13 +225,13 @@ INSERT INTO model_configs (id, name, description, config) VALUES (
             "Vp_Hl":"Atm","Hl_As":"Atm","As_Cs":"Atm","Cs_Vs":"Atm","Vs_Vt":"Atm",
 
             "ChP":"Atm","Vent":"Atm","SAS":"Atm","Spinal":"Atm","CaBV":"Atm",
-            "ChP_Vent":"Atm","Vent_SAS":"Atm","SAS_Vt":"Atm","SAS_Spinal":"Atm","As_CaBV":"Atm","CaBV_Vt":"Atm"
+            "ChP_Vent":"Atm","Vent_SAS":"Atm","SAS_Vt":"Atm","SAS_Spinal":"Atm","As_CaBV":"Atm","CaBV_Vt":"Atm","CaBV_SAS":"Atm"
         },
         "regions":{
             "As":[],"Cs":[],"Vs":[],"Vt":[],"Hr":[],
             "Ap":[],"Cp":[],"Vp":[],"Hl":[],"Atm":[],
 
-            "ChP":[],"Vent":[],"SAS":["CaBV"],"Spinal":[],"CaBV":[]
+            "ChP":[],"Vent":[],"SAS":[],"Spinal":[],"CaBV":[]
         },
         "cycles":{
             "As":"","Cs":"","Vs":"","Vt":"","Hr":"HC",
@@ -253,7 +257,7 @@ INSERT INTO model_configs (id, name, description, config) VALUES (
 
         "ChP":{"gasRegion":"bloodPlr","type":"component","capacitor":{"type":"constantPressure","params":{"p0":785.0,"y0":0.0}}},
         "Vent":{"gasRegion":"bloodPlr","type":"component","capacitor":{"type":"capacitor","params":{"C":5.0,"V0":0.0,"y0":25.0,"p0":770.0}}},
-        "SAS":{"gasRegion":"bloodPlr","type":"component","capacitor":{"type":"capacitor","params":{"C":1.0,"V0":0.0,"y0":125.0,"p0":770.0}}},
+        "SAS":{"gasRegion":"bloodPlr","type":"component","capacitor":{"type":"capacitor","params":{"C":0.3,"V0":0.0,"y0":125.0,"p0":770.0}}},
         "Spinal":{"gasRegion":"bloodPlr","type":"component","capacitor":{"type":"capacitor","params":{"C":10.0,"V0":0.0,"y0":25.0,"p0":770.0}}},
         "CaBV":{"gasRegion":"bloodPlr","type":"component","capacitor":{"type":"capacitor","params":{"C":0.2,"V0":0.0,"y0":3.0,"p0":770.0}}}
     },
