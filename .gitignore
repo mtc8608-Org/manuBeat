@@ -55,3 +55,6 @@ htmlcov/
 
 # ── Claude Code ──────────────────────────────────────────────
 .claude/
+
+# ── Clinical cases — keep private, never commit ──────────────
+cases/
