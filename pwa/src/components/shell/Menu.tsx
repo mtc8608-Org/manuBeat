@@ -29,7 +29,7 @@ import './Menu.css';
 
 const Menu: React.FC = () => {
   const location = useLocation();
-  const { user, isAdmin, isUser, logout } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -60,7 +60,7 @@ const Menu: React.FC = () => {
           {navItem(ROUTE.LANDING, homeOutline, 'Home')}
         </IonList>
 
-        {isUser && (
+        {user && (
           <IonList>
             <IonListHeader>Surveys</IonListHeader>
             {navItem(ROUTE.SURVEYS, clipboardOutline, 'Surveys')}

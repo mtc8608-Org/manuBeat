@@ -44,10 +44,7 @@ module.exports = {
     'userSecrets',
     'setUserSecret',
     'clearUserSecret',
-  ],
-
-  // GraphQL query/mutation field names requiring role 'user' (or 'admin')
-  user: [
+    // surveys — viewing and answering is open to every signed-in account
     'surveyList',
     'surveyComponent',
     'surveyComponentList',
@@ -56,6 +53,10 @@ module.exports = {
     'submitAnswer',
     'updateAnswer',
   ],
+
+  // GraphQL query/mutation field names requiring role 'user' (or 'admin').
+  // Empty in the framework — forks add their owner-scoped domain ops here.
+  user: [],
 
   // Everything else requires role === 'admin'.
   // (Informational — enforcement uses the fallback rule above. Only list real mutations.)

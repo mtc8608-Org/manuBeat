@@ -292,7 +292,7 @@ export const AREA_NAV = {
 // Section groupings — used by AppHeader nav (authenticated users only).
 // The User area is deliberately absent: it is reached via the header person icon.
 export const NAV_SECTIONS = [
-  { label: 'Surveys',    routes: ['/folder/Surveys'],                                             link: '/folder/Surveys',       icon: 'clipboard',  userOnly: true },
+  { label: 'Surveys',    routes: ['/folder/Surveys'],                                             link: '/folder/Surveys',       icon: 'clipboard'  },
   { label: 'Backoffice', routes: ['/folder/Content', '/folder/Files', '/folder/Configuration', '/folder/Users', '/folder/Roles'],   link: '/folder/Content',       icon: 'construct',  adminOnly: true },
 ] as const;
 // #endregion
