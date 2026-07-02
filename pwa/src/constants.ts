@@ -167,6 +167,35 @@ export const ROLE_TIERS = ['registered', 'user', 'admin'] as const;
 
 
 ///////////////////////////////////////////////////////////////////////////////
+// #region Form Usage Registry
+// Component-tree name → the app UI it powers. Trees are bound to pages only
+// by fetch-by-name calls in code (the constant groups above), so this registry
+// is the single place that records the binding for display — the Configuration
+// page shows it so admins can tell what each tree drives before touching it.
+// Keep in sync when adding a form constant; forks append entries // [MY DOMAIN]
+export const FORM_USAGE: Record<string, string> = {
+  [EDITOR_ID.DEFAULT]:            'Configuration — component editor modal',
+  [EDITOR_ID.PLOT]:               'Configuration — plot editor modal',
+  [CONTENT_EDITOR_ID.HTML]:       'Content — HTML / LaTeX card editor',
+  [CONTENT_EDITOR_ID.IMAGE]:      'Content — image card editor',
+  [CONTENT_EDITOR_ID.HTML_IMAGE]: 'Content — HTML+image card editor',
+  [FORM_ID.FILE_DETAIL]:          'Files — detail form',
+  [FORM_ID.NEW_SURVEY]:           'Surveys — new survey modal',
+  [FORM_ID.NEW_PAGE]:             'Content — new page modal',
+  form_survey_q_text:             'Surveys — question editor (text / number / textarea)',
+  form_survey_q_scale:            'Surveys — question editor (scale)',
+  form_survey_q_default:          'Surveys — question editor (select / check / date / section)',
+  [USER_PROFILE_FORM]:            'Profile — user profile form',
+  [USER_FORM.EDITOR]:             'Users — detail editor',
+  [USER_FORM.CREATE]:             'Users — new user modal',
+  [ROLE_FORM.EDITOR]:             'Roles — detail editor',
+  [ROLE_FORM.CREATE]:             'Roles — new role modal',
+};
+// #endregion
+///////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////
 // #region API Configuration
 // Node.js backend service address. Change here if the port or host moves.
 // The backend reads its own port from .env (NODE_PORT); keep these in sync.
@@ -207,9 +236,9 @@ export const PANEL_CONFIG = {
     },
   },
   CONFIG_COMPONENTS: {
-    title: 'Components', emptyMessage: 'Select a type to load.',
+    title: 'Components', emptyMessage: 'No components yet.',
     add: { enabled: true, label: 'New Component' },
-    filter: { text: { enabled: false }, type: { enabled: true, options: ['form', 'input', 'select', 'check', 'plot', 'plotGrid'] } },
+    filter: { text: { enabled: false }, type: { enabled: true, allLabel: 'Tree roots', options: ['form', 'input', 'select', 'check', 'plot', 'plotGrid'] } },
   },
   FILES_LIST: {
     title: 'Files', emptyMessage: 'No files found.',

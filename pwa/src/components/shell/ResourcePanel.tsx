@@ -24,6 +24,7 @@ export interface ResourcePanelFilter {
   types?:           readonly string[];
   typeValue?:       string;
   onTypeChange?:    (v: string) => void;
+  typeAllLabel?:    string;   // label for the empty ("all") option, default 'All types'
 }
 
 interface ResourcePanelBase<T extends { id: string }> {
@@ -31,7 +32,7 @@ interface ResourcePanelBase<T extends { id: string }> {
   selectedId?: string | null;
 
   getLabel:     (item: T) => string;
-  getSubLabel?: (item: T) => string;
+  getSubLabel?: (item: T) => string | undefined;
   getBadge?:    (item: T) => ResourceBadge | ResourceBadge[] | null;
   getIcon?:     (item: T) => string | undefined;
 
@@ -114,6 +115,9 @@ function ResourcePanel<T extends { id: string }>({
     ...(config?.filter?.type?.options?.length
       ? { types: config.filter.type.options as string[] }
       : {}),
+    ...(config?.filter?.type?.allLabel
+      ? { typeAllLabel: config.filter.type.allLabel }
+      : {}),
   } : filter;
 
   return (
@@ -151,7 +155,7 @@ function ResourcePanel<T extends { id: string }>({
               value={effectiveFilter.typeValue ?? ''}
               onIonChange={e => effectiveFilter.onTypeChange?.(e.detail.value ?? '')}
             >
-              <IonSelectOption value="">All types</IonSelectOption>
+              <IonSelectOption value="">{effectiveFilter.typeAllLabel ?? 'All types'}</IonSelectOption>
               {effectiveFilter.types.map(t => (
                 <IonSelectOption key={t} value={t}>{t}</IonSelectOption>
               ))}

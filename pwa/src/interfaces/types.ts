@@ -76,6 +76,6 @@ export interface PanelConfig {
   };
   filter?: {
     text?: { enabled: boolean; placeholder?: string };
-    type?: { enabled: boolean; options?: readonly string[] };
+    type?: { enabled: boolean; options?: readonly string[]; allLabel?: string };
   };
 }
