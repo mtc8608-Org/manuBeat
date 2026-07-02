@@ -240,16 +240,144 @@ ON CONFLICT (id) DO NOTHING;
 -- #endregion
 
 
--- #region Users & Auth
+-- #region Users & Auth · roles + user_profile + user_secrets · editor forms d000/d010/d030/d040/d050
+-- Role catalogue. A role maps a name to a permissions *tier* — the fixed
+-- three-rung ladder enforced by nodejs/permissions.js + schema/index.js
+-- ('registered' < 'user' < 'admin'). New roles are aliases into that ladder:
+-- they never grant finer-grained access than their tier. The tier is resolved
+-- at login and embedded in the JWT, so tier/role changes apply on next login.
+-- is_system rows are the three the code relies on: name and tier immutable,
+-- never deletable. Managed in the backoffice Roles page.
+CREATE TABLE roles (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name        TEXT UNIQUE NOT NULL,
+  tier        TEXT NOT NULL DEFAULT 'registered',  -- 'registered' | 'user' | 'admin'
+  description TEXT,
+  is_system   BOOLEAN NOT NULL DEFAULT false,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO roles (id, name, tier, description, is_system) VALUES
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d020', 'admin',      'admin',      'Full access: backoffice, user management, every operation.', true),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d021', 'user',       'user',       'Full app user: everything a registered account can do, plus the user-tier operations (surveys).', true),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d022', 'registered', 'registered', 'Self-registered account: own profile and self-service operations only.', true);
+
 CREATE TABLE users (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email         TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
-  role          TEXT NOT NULL DEFAULT 'user',  -- 'admin' | 'user'
+  role          TEXT NOT NULL DEFAULT 'user' REFERENCES roles(name) ON UPDATE CASCADE,
   is_active     BOOLEAN NOT NULL DEFAULT true,
   created_at    TIMESTAMPTZ DEFAULT NOW()
 );
 -- Admin user is seeded at Node.js startup from ADMIN_EMAIL + ADMIN_PASSWORD env vars.
+
+-- Per-user display data (framework table; each app defines the *shape* via its
+-- seeded FormRenderer form). owner_id is UNIQUE (not the PK) and nullable so an
+-- app can seed a sample profile NULL and re-stamp it to the admin at startup
+-- (backend.js). New users get their row on first save.
+CREATE TABLE user_profile (
+    id       UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    owner_id UUID UNIQUE REFERENCES users(id) ON DELETE CASCADE,  -- NULL = unclaimed seed
+    data     JSONB NOT NULL DEFAULT '{}'::jsonb
+);
+
+-- Per-user keychain. One row per (user, secret name); names are validated
+-- against nodejs/secrets-registry.js — adding a key is a registry entry, never
+-- a migration. Write-only over the API: the raw value is encrypted here and
+-- only ever decrypted inside nodejs/lib/secrets.js. Never seeded (owner_id NOT
+-- NULL — no unclaimed row, unlike user_profile).
+CREATE TABLE user_secrets (
+    id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    owner_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name        TEXT NOT NULL,          -- registry-validated, e.g. 'anthropic_api_key'
+    ciphertext  BYTEA NOT NULL,         -- nonce || auth tag || AES-256-GCM ciphertext
+    last4       TEXT,                   -- computed once at write time, for masked display
+    key_version SMALLINT NOT NULL DEFAULT 1,
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (owner_id, name)
+);
+CREATE INDEX idx_user_secrets_owner ON user_secrets(owner_id);
+
+-- User editor form (backoffice Users page, Detail column). Email is shown
+-- read-only by the page itself; the form covers the two PATCHable fields.
+INSERT INTO components (id, name, type, data, options) VALUES
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d000', 'form_user_editor',     'form',   '{"text": "User"}',     '{"label": "form_user_editor"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d001', 'user_edit_role',       'select', '{"text": "Role"}',     '{"label": "role"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d002', 'user_edit_role_user',  'option', '{"text": "user"}',     '{"label": "user"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d003', 'user_edit_role_admin', 'option', '{"text": "admin"}',    '{"label": "admin"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d005', 'user_edit_role_registered', 'option', '{"text": "registered"}', '{"label": "registered"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d004', 'user_edit_active',     'check',  '{"text": "Active"}',   '{"label": "is_active"}');
+INSERT INTO components_relationships (parent_id, child_id, position) VALUES
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d000', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d001', 1),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d000', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d004', 2),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d001', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d002', 1),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d001', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d003', 2),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d001', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d005', 3);
+
+-- User create form (backoffice Users page, New modal).
+INSERT INTO components (id, name, type, data, options) VALUES
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d010', 'form_user_create',    'form',   '{"text": "New User"}', '{"label": "form_user_create"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d011', 'user_new_email',      'input',  '{"text": "Email"}',    '{"label": "email"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d012', 'user_new_password',   'input',  '{"text": "Password"}', '{"label": "password"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d013', 'user_new_role',       'select', '{"text": "Role"}',     '{"label": "role"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d014', 'user_new_role_user',  'option', '{"text": "user"}',     '{"label": "user"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d015', 'user_new_role_admin', 'option', '{"text": "admin"}',    '{"label": "admin"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d016', 'user_new_role_registered', 'option', '{"text": "registered"}', '{"label": "registered"}');
+INSERT INTO components_relationships (parent_id, child_id, position) VALUES
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d010', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d011', 1),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d010', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d012', 2),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d010', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d013', 3),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d013', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d014', 1),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d013', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d015', 2),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d013', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d016', 3);
+
+-- Role editor form (backoffice Roles page, Detail column). Name is shown
+-- read-only by the page; tier is disabled for system roles page-side (and
+-- rejected server-side).
+INSERT INTO components (id, name, type, data, options) VALUES
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d030', 'form_role_editor',          'form',     '{"text": "Role"}',        '{"label": "form_role_editor"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d031', 'role_edit_tier',            'select',   '{"text": "Tier"}',        '{"label": "tier"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d032', 'role_edit_tier_registered', 'option',   '{"text": "registered"}',  '{"label": "registered"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d033', 'role_edit_tier_user',       'option',   '{"text": "user"}',        '{"label": "user"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d034', 'role_edit_tier_admin',      'option',   '{"text": "admin"}',       '{"label": "admin"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d035', 'role_edit_description',     'textarea', '{"text": "Description"}', '{"label": "description"}');
+INSERT INTO components_relationships (parent_id, child_id, position) VALUES
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d030', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d031', 1),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d030', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d035', 2),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d031', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d032', 1),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d031', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d033', 2),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d031', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d034', 3);
+
+-- Role create form (backoffice Roles page, New modal).
+INSERT INTO components (id, name, type, data, options) VALUES
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d040', 'form_role_create',         'form',     '{"text": "New Role"}',    '{"label": "form_role_create"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d041', 'role_new_name',            'input',    '{"text": "Name"}',        '{"label": "name"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d042', 'role_new_tier',            'select',   '{"text": "Tier"}',        '{"label": "tier"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d043', 'role_new_tier_registered', 'option',   '{"text": "registered"}',  '{"label": "registered"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d044', 'role_new_tier_user',       'option',   '{"text": "user"}',        '{"label": "user"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d045', 'role_new_tier_admin',      'option',   '{"text": "admin"}',       '{"label": "admin"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d046', 'role_new_description',     'textarea', '{"text": "Description"}', '{"label": "description"}');
+INSERT INTO components_relationships (parent_id, child_id, position) VALUES
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d040', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d041', 1),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d040', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d042', 2),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d040', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d046', 3),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d042', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d043', 1),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d042', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d044', 2),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d042', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d045', 3);
+
+-- User profile form (user area Profile page). Minimal generic starter shape —
+-- each app replaces these fields with its own profile form (keep the form name;
+-- the frontend fetches it via USER_PROFILE_FORM in constants.ts).
+INSERT INTO components (id, name, type, data, options) VALUES
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d050', 'form_user_profile', 'form',  '{"text": "Profile"}',       '{"label": "form_user_profile"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d051', 'profile_name',      'input', '{"text": "Name"}',          '{"label": "name"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d052', 'profile_email',     'input', '{"text": "Contact email"}', '{"label": "email"}'),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d053', 'profile_website',   'input', '{"text": "Website"}',       '{"label": "website"}');
+INSERT INTO components_relationships (parent_id, child_id, position) VALUES
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d050', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d051', 1),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d050', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d052', 2),
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d050', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d053', 3);
 -- #endregion
 
 
