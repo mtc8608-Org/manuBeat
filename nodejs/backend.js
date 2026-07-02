@@ -22,6 +22,10 @@ server.use((req, res, next) => {
   if (auth?.startsWith('Bearer ')) {
     try {
       req.user = jwt.verify(auth.slice(7), process.env.JWT_SECRET);
+      // All auth checks compare req.user.tier (the roles-table tier resolved
+      // at login). Tokens issued before the tier claim existed carry only the
+      // role name — for the three system roles name === tier, so fall back.
+      if (req.user && !req.user.tier) req.user.tier = req.user.role;
     } catch (_) {
       req.user = null;
     }
@@ -54,6 +58,10 @@ server.use('/api', require('./routes/framework/compute'));
 // ── Startup ───────────────────────────────────────────────────────────────────
 // Start listening immediately so the container is healthy, then seed the admin
 // user in the background with retries (postgres may not be ready yet).
+
+if (!/^[0-9a-fA-F]{64}$/.test(process.env.SECRETS_MASTER_KEY ?? '')) {
+  console.warn('-> SECRETS_MASTER_KEY missing or not 64 hex chars — the user_secrets keychain is disabled (generate one with `openssl rand -hex 32` and add it to .env)');
+}
 
 server.listen(PORT, () => console.log('Server running on PORT http://localhost:' + PORT));
 

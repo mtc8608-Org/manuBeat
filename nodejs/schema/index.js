@@ -6,6 +6,7 @@ const permissions = require('../permissions');
 const componentResolvers = require('./resolvers/framework/components');
 const surveyResolvers    = require('./resolvers/framework/survey');
 const userResolvers      = require('./resolvers/framework/users');
+const roleResolvers      = require('./resolvers/framework/roles');
 
 const Query = new GraphQLObjectType({
   name: 'Query',
@@ -13,6 +14,7 @@ const Query = new GraphQLObjectType({
     ...componentResolvers.queries,
     ...surveyResolvers.queries,
     ...userResolvers.queries,
+    ...roleResolvers.queries,
   },
 });
 
@@ -21,6 +23,8 @@ const Mutation = new GraphQLObjectType({
   fields: {
     ...componentResolvers.mutations,
     ...surveyResolvers.mutations,
+    ...userResolvers.mutations,
+    ...roleResolvers.mutations,
   },
 });
 
@@ -31,19 +35,24 @@ const handler = createHandler({
   context: (req) => ({ user: req.raw?.user ?? null }),
   execute: async (args) => {
     const { document, contextValue } = args;
-    const op   = document.definitions[0]?.operation;
     const name = document.definitions[0]?.selectionSet?.selections[0]?.name?.value ?? '';
     const user = contextValue?.user;
 
-    if (op === 'mutation') {
+    // Same rule for queries and mutations. The `public` list (componentByName
+    // only — see permissions.js) is the single anonymous escape hatch; every
+    // other GraphQL operation requires a valid JWT. Then: registered list →
+    // any JWT, user list → tier user/admin, everything else → admin. Checks
+    // use the JWT's `tier` claim — the roles-table tier resolved at login
+    // (backend.js normalises legacy tokens), so any role aliased onto a tier
+    // passes its rung.
+    if (!permissions.public.includes(name)) {
+      if (!user) return { errors: [{ message: 'Authentication required' }] };
       if (permissions.user.includes(name)) {
-        if (!user) return { errors: [{ message: 'Authentication required' }] };
-      } else if (!permissions.public.includes(name)) {
-        if (user?.role !== 'admin') return { errors: [{ message: 'Admin access required' }] };
-      }
-    } else {
-      if (permissions.user.includes(name) && !user) {
-        return { errors: [{ message: 'Authentication required' }] };
+        if (user.tier !== 'user' && user.tier !== 'admin') {
+          return { errors: [{ message: 'User access required' }] };
+        }
+      } else if (!permissions.registered.includes(name)) {
+        if (user.tier !== 'admin') return { errors: [{ message: 'Admin access required' }] };
       }
     }
     return graphqlExecute(args);
