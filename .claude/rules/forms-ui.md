@@ -30,6 +30,7 @@ Both modes consume the same `ComponentResults` tree from GraphQL; the DB tables 
 ## Wiring a form into a page
 
 - Forms are fetched **by name** (`componentByName` via `Api.ts`), with the name in a `constants.ts` group (`FORM_ID`, `EDITOR_ID`, `CONTENT_EDITOR_ID`, …; forks add their own groups) whose comment names the init script that seeds it as source of truth.
+- Every fetched-by-name form is also registered in `FORM_USAGE` (`constants.ts`) — name → "Page — purpose". The Configuration browse view reads it to show where each tree is used (nested nodes inherit their root's entry); an unregistered form shows up usage-less there. Forks append their entries `// [MY DOMAIN]`.
 - Runtime-only select choices (e.g. a list fetched from the DB) go through the `injectedOptions` prop keyed by field key — never by mutating the fetched tree.
 - Prefill with `defaultValues`; submit handler receives the collected values object and passes it to the mutation.
 

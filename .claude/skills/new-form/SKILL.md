@@ -14,7 +14,7 @@ Create a form as a seeded component tree rendered by `FormRenderer` — never be
    - Field key = `options.label`, named **exactly** after the DB column / mutation arg it feeds; display text = `data.text`.
    - `select` fields get `option` children (stored value = `options.label`, display = `data.text`).
    - Link everything with `components_relationships(parent_id, child_id, position)`, 1-based, in display order.
-2. **Constants** — add the form's *name* to the right group in `pwa/src/constants.ts` (`FORM_ID` / `EDITOR_ID` style; forks use a `// [MY DOMAIN]` region), with a comment naming the init script as source of truth.
+2. **Constants** — add the form's *name* to the right group in `pwa/src/constants.ts` (`FORM_ID` / `EDITOR_ID` style; forks use a `// [MY DOMAIN]` region), with a comment naming the init script as source of truth. Also register it in `FORM_USAGE` (name → "Page — purpose") so the Configuration browse view shows where it is used.
 3. **Wire the page** — fetch by name via `Api.ts` (`componentByName`), render `<FormRenderer mode='app' component={...} defaultValues={...} onSubmit={...}>` inside a `ModalShell` (per `code-reuse.md`). Runtime select choices go through `injectedOptions`, never by mutating the tree. Because field keys match mutation args, the submit handler passes the values object to the mutation with no mapping layer.
 4. **Check the mutation** accepts every field key you seeded (`WRITABLE` list in the resolver) — a form field with no matching arg silently goes nowhere.
 5. **Do not run the app.** Finish by telling the user to run `./run reset` (seed change; wipes DB + MinIO).
