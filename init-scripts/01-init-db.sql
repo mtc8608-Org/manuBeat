@@ -281,36 +281,27 @@ CREATE INDEX idx_user_secrets_owner ON user_secrets(owner_id);
 
 -- User editor form (backoffice Users page, Detail column). Email is shown
 -- read-only by the page itself; the form covers the two PATCHable fields.
+-- The role select has no seeded option children: Users.tsx injects the live
+-- roles table via FormRenderer's injectedOptions.
 INSERT INTO components (id, name, type, data, options) VALUES
   ('c51c1e5f-5cc1-4b77-8832-2d10cc97d000', 'form_user_editor',     'form',   '{"text": "User"}',     '{"label": "form_user_editor"}'),
   ('c51c1e5f-5cc1-4b77-8832-2d10cc97d001', 'user_edit_role',       'select', '{"text": "Role"}',     '{"label": "role"}'),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d002', 'user_edit_role_user',  'option', '{"text": "user"}',     '{"label": "user"}'),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d003', 'user_edit_role_admin', 'option', '{"text": "admin"}',    '{"label": "admin"}'),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d005', 'user_edit_role_registered', 'option', '{"text": "registered"}', '{"label": "registered"}'),
   ('c51c1e5f-5cc1-4b77-8832-2d10cc97d004', 'user_edit_active',     'check',  '{"text": "Active"}',   '{"label": "is_active"}');
 INSERT INTO components_relationships (parent_id, child_id, position) VALUES
   ('c51c1e5f-5cc1-4b77-8832-2d10cc97d000', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d001', 1),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d000', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d004', 2),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d001', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d002', 1),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d001', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d003', 2),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d001', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d005', 3);
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d000', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d004', 2);
 
--- User create form (backoffice Users page, New modal).
+-- User create form (backoffice Users page, New modal). Role options are
+-- injected at runtime, same as the editor form above.
 INSERT INTO components (id, name, type, data, options) VALUES
   ('c51c1e5f-5cc1-4b77-8832-2d10cc97d010', 'form_user_create',    'form',   '{"text": "New User"}', '{"label": "form_user_create"}'),
   ('c51c1e5f-5cc1-4b77-8832-2d10cc97d011', 'user_new_email',      'input',  '{"text": "Email"}',    '{"label": "email"}'),
   ('c51c1e5f-5cc1-4b77-8832-2d10cc97d012', 'user_new_password',   'input',  '{"text": "Password"}', '{"label": "password"}'),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d013', 'user_new_role',       'select', '{"text": "Role"}',     '{"label": "role"}'),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d014', 'user_new_role_user',  'option', '{"text": "user"}',     '{"label": "user"}'),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d015', 'user_new_role_admin', 'option', '{"text": "admin"}',    '{"label": "admin"}'),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d016', 'user_new_role_registered', 'option', '{"text": "registered"}', '{"label": "registered"}');
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d013', 'user_new_role',       'select', '{"text": "Role"}',     '{"label": "role"}');
 INSERT INTO components_relationships (parent_id, child_id, position) VALUES
   ('c51c1e5f-5cc1-4b77-8832-2d10cc97d010', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d011', 1),
   ('c51c1e5f-5cc1-4b77-8832-2d10cc97d010', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d012', 2),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d010', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d013', 3),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d013', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d014', 1),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d013', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d015', 2),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d013', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d016', 3);
+  ('c51c1e5f-5cc1-4b77-8832-2d10cc97d010', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d013', 3);
 
 -- Role editor form (backoffice Roles page, Detail column). Name is shown
 -- read-only by the page; tier is disabled for system roles page-side (and
