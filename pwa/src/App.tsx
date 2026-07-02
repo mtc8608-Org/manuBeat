@@ -3,17 +3,22 @@ import { IonApp, IonRouterOutlet, IonSplitPane, setupIonicReact } from '@ionic/r
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { IonReactRouter } from '@ionic/react-router';
-import { Route } from 'react-router-dom';
+import { Route, Redirect } from 'react-router-dom';
 import Menu from './components/shell/Menu';
 import PrivateRoute from './components/routing/PrivateRoute';
 import AdminRoute from './components/routing/AdminRoute';
+import UserRoute from './components/routing/UserRoute';
 import Landing from './pages/public/Landing';
 import SignIn from './pages/public/SignIn';
-import Account from './pages/Account';
+import Profile from './pages/user/Profile';
+import UserAccount from './pages/user/Account';
+import Settings from './pages/user/Settings';
 import Surveys from './pages/surveys/Surveys';
 import Content from './pages/backoffice/Content';
 import Files from './pages/backoffice/Files';
 import Configuration from './pages/backoffice/Configuration';
+import Users from './pages/backoffice/Users';
+import Roles from './pages/backoffice/Roles';
 import { ROUTE } from './constants';
 
 /* Core CSS required for Ionic components to work properly */
@@ -51,13 +56,21 @@ const App: React.FC = () => {
                 <Route path={ROUTE.SIGNIN}  exact={true} component={SignIn} />
 
                 {/* Authenticated */}
-                <PrivateRoute path={ROUTE.ACCOUNT}  exact={true} component={Account} />
-                <PrivateRoute path={ROUTE.SURVEYS}  exact={true} component={Surveys} />
+                <PrivateRoute path={ROUTE.PROFILE}  exact={true} component={Profile} />
+                <PrivateRoute path={ROUTE.ACCOUNT}  exact={true} component={UserAccount} />
+                <PrivateRoute path={ROUTE.SETTINGS} exact={true} component={Settings} />
+                {/* legacy deep-link */}
+                <Route path="/account" exact={true} render={() => <Redirect to={ROUTE.PROFILE} />} />
+
+                {/* Full users only (role 'user' or 'admin') */}
+                <UserRoute path={ROUTE.SURVEYS}     exact={true} component={Surveys} />
 
                 {/* Admin only */}
                 <AdminRoute path={ROUTE.CONTENT}       exact={true} component={Content} />
                 <AdminRoute path={ROUTE.FILES}         exact={true} component={Files} />
                 <AdminRoute path={ROUTE.CONFIGURATION} exact={true} component={Configuration} />
+                <AdminRoute path={ROUTE.USERS}         exact={true} component={Users} />
+                <AdminRoute path={ROUTE.ROLES}         exact={true} component={Roles} />
 
               </IonRouterOutlet>
             </IonSplitPane>

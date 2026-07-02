@@ -141,6 +141,32 @@ export const SURVEY_EDITOR_ID: Record<string, string> = {
 
 
 ///////////////////////////////////////////////////////////////////////////////
+// #region User & Role Management Forms
+// The user_profile shape this app seeds (01-init-db.sql d050). Rendered on the
+// user Profile page; saved via upsertUserProfile. Apps replace the seeded
+// fields with their own profile form but keep the form name.
+export const USER_PROFILE_FORM = 'form_user_profile';
+
+// Framework user-management forms (backoffice Users page). Source: 01-init-db.sql d000/d010.
+export const USER_FORM = {
+  EDITOR: 'form_user_editor',   // role select + active check (Detail column)
+  CREATE: 'form_user_create',   // email / password / role (New modal)
+} as const;
+
+// Framework role-management forms (backoffice Roles page). Source: 01-init-db.sql d030/d040.
+export const ROLE_FORM = {
+  EDITOR: 'form_role_editor',   // tier select + description (Detail column)
+  CREATE: 'form_role_create',   // name / tier / description (New modal)
+} as const;
+
+// The fixed permissions ladder (nodejs/permissions.js). Roles alias onto one
+// of these tiers; the set is code, never edited at runtime.
+export const ROLE_TIERS = ['registered', 'user', 'admin'] as const;
+// #endregion
+///////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////
 // #region API Configuration
 // Node.js backend service address. Change here if the port or host moves.
 // The backend reads its own port from .env (NODE_PORT); keep these in sync.
@@ -203,6 +229,19 @@ export const PANEL_CONFIG = {
       type: { enabled: true, options: ['contentHtml', 'contentImage', 'contentHtmlImage', 'contentLatex'] },
     },
   },
+  USERS: {
+    title: 'Users', emptyMessage: 'No users found.',
+    add: { enabled: true, label: 'New user' },
+    filter: {
+      text: { enabled: true, placeholder: 'Search by email…' },
+      type: { enabled: true, options: ['user', 'admin', 'registered'] },
+    },
+  },
+  ROLES: {
+    title: 'Roles', emptyMessage: 'No roles found.',
+    add: { enabled: true, label: 'New role' },
+    filter: { text: { enabled: false }, type: { enabled: false } },
+  },
 } as const satisfies Record<string, PanelConfig>;
 // #endregion
 ///////////////////////////////////////////////////////////////////////////////
@@ -214,11 +253,15 @@ export const PANEL_CONFIG = {
 export const ROUTE = {
   LANDING:       '/',
   SIGNIN:        '/signin',
-  ACCOUNT:       '/account',
+  PROFILE:       '/folder/Profile',
+  ACCOUNT:       '/folder/Account',
+  SETTINGS:      '/folder/Settings',
   SURVEYS:       '/folder/Surveys',
   CONFIGURATION: '/folder/Configuration',
   FILES:         '/folder/Files',
   CONTENT:       '/folder/Content',
+  USERS:         '/folder/Users',
+  ROLES:         '/folder/Roles',
 } as const;
 
 // #endregion
@@ -236,13 +279,21 @@ export const AREA_NAV = {
     { label: 'Content',       route: '/folder/Content',       icon: 'document-text' },
     { label: 'Files',         route: '/folder/Files',         icon: 'folder'        },
     { label: 'Configuration', route: '/folder/Configuration', icon: 'construct'     },
+    { label: 'Users',         route: '/folder/Users',         icon: 'people'        },
+    { label: 'Roles',         route: '/folder/Roles',         icon: 'key'           },
+  ],
+  USER: [
+    { label: 'Profile',  route: '/folder/Profile',  icon: 'person'   },
+    { label: 'Account',  route: '/folder/Account',  icon: 'key'      },
+    { label: 'Settings', route: '/folder/Settings', icon: 'settings' },
   ],
 } as const;
 
-// Section groupings — used by AppHeader nav (authenticated users only)
+// Section groupings — used by AppHeader nav (authenticated users only).
+// The User area is deliberately absent: it is reached via the header person icon.
 export const NAV_SECTIONS = [
-  { label: 'Surveys',    routes: ['/folder/Surveys'],                                             link: '/folder/Surveys',       icon: 'clipboard'  },
-  { label: 'Backoffice', routes: ['/folder/Content', '/folder/Files', '/folder/Configuration'],   link: '/folder/Content',       icon: 'construct',  adminOnly: true },
+  { label: 'Surveys',    routes: ['/folder/Surveys'],                                             link: '/folder/Surveys',       icon: 'clipboard',  userOnly: true },
+  { label: 'Backoffice', routes: ['/folder/Content', '/folder/Files', '/folder/Configuration', '/folder/Users', '/folder/Roles'],   link: '/folder/Content',       icon: 'construct',  adminOnly: true },
 ] as const;
 // #endregion
 ///////////////////////////////////////////////////////////////////////////////

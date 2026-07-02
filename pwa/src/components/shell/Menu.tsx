@@ -1,8 +1,7 @@
 // Menu — the hamburger slide-out drawer.
 // - Links to every major section of the app
 // - Shows the logged-in user's name and email
-// - Dark / light mode toggle
-// - Logout button
+// - Logout button (dark mode toggle lives in Settings)
 import {
   IonContent,
   IonIcon,
@@ -13,7 +12,6 @@ import {
   IonMenu,
   IonMenuToggle,
   IonNote,
-  IonToggle,
 } from '@ionic/react';
 
 import { useLocation } from 'react-router-dom';
@@ -22,17 +20,16 @@ import {
   documentTextOutline,
   constructOutline, folderOutline,
   personOutline, logOutOutline,
-  moonOutline, homeOutline,
+  peopleOutline, keyOutline, settingsOutline,
+  homeOutline,
 } from 'ionicons/icons';
-import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { ROUTE } from '../../constants';
 import './Menu.css';
 
 const Menu: React.FC = () => {
   const location = useLocation();
-  const { theme, toggleTheme } = useTheme();
-  const { user, isAdmin, logout } = useAuth();
+  const { user, isAdmin, isUser, logout } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -63,10 +60,12 @@ const Menu: React.FC = () => {
           {navItem(ROUTE.LANDING, homeOutline, 'Home')}
         </IonList>
 
-        <IonList>
-          <IonListHeader>Surveys</IonListHeader>
-          {navItem(ROUTE.SURVEYS, clipboardOutline, 'Surveys')}
-        </IonList>
+        {isUser && (
+          <IonList>
+            <IonListHeader>Surveys</IonListHeader>
+            {navItem(ROUTE.SURVEYS, clipboardOutline, 'Surveys')}
+          </IonList>
+        )}
 
         {isAdmin && (
           <IonList>
@@ -74,26 +73,24 @@ const Menu: React.FC = () => {
             {navItem(ROUTE.CONTENT,       documentTextOutline, 'Content')}
             {navItem(ROUTE.FILES,         folderOutline,       'Files')}
             {navItem(ROUTE.CONFIGURATION, constructOutline,    'Configuration')}
+            {navItem(ROUTE.USERS,         peopleOutline,       'Users')}
+            {navItem(ROUTE.ROLES,         keyOutline,          'Roles')}
           </IonList>
         )}
 
-        <IonList id="labels-list">
-          <IonListHeader>Account</IonListHeader>
-          {navItem(ROUTE.ACCOUNT, personOutline, 'My Account')}
+        {user && (
+          <IonList id="labels-list">
+            <IonListHeader>Account</IonListHeader>
+            {navItem(ROUTE.PROFILE,  personOutline,   'Profile')}
+            {navItem(ROUTE.ACCOUNT,  keyOutline,      'Account')}
+            {navItem(ROUTE.SETTINGS, settingsOutline, 'Settings')}
 
-          {user && (
             <IonItem lines="none" button detail={false} onClick={handleLogout}>
               <IonIcon aria-hidden="true" slot="start" icon={logOutOutline} />
               <IonLabel>Logout</IonLabel>
             </IonItem>
-          )}
-
-          <IonItem lines="none">
-            <IonIcon aria-hidden="true" slot="start" icon={moonOutline} />
-            <IonLabel>Dark Mode</IonLabel>
-            <IonToggle slot="end" checked={theme === 'dark'} onIonChange={toggleTheme} />
-          </IonItem>
-        </IonList>
+          </IonList>
+        )}
 
       </IonContent>
     </IonMenu>

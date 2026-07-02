@@ -1,16 +1,15 @@
 // AppHeader — the strip that runs across the top of every page.
 // - Shows which section of the app you're currently in
-// - Dark / light mode toggle
+// - Link to the user area (person icon)
 // - Logged-in user name and logout button
 // - Optional page-level action buttons injected by the parent page
 import React from 'react';
 import {
   IonHeader, IonToolbar, IonButtons, IonButton, IonMenuButton,
-  IonIcon, IonToggle,
+  IonIcon,
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
 import { personCircleOutline, logOutOutline, homeOutline } from 'ionicons/icons';
-import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { ROUTE, NAV_SECTIONS } from '../../constants';
 import './AppHeader.css';
@@ -22,8 +21,7 @@ export interface AppHeaderProps {
 
 const AppHeader: React.FC<AppHeaderProps> = ({ pageActions }) => {
   const location = useLocation();
-  const { theme, toggleTheme } = useTheme();
-  const { user, isAdmin, logout } = useAuth();
+  const { user, isAdmin, isUser, logout } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -57,6 +55,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ pageActions }) => {
           <div className="app-header-nav">
             {NAV_SECTIONS
               .filter(s => !('adminOnly' in s && s.adminOnly) || isAdmin)
+              .filter(s => !('userOnly' in s && s.userOnly) || isUser)
               .map(s => (
                 <IonButton
                   key={s.label}
@@ -84,19 +83,13 @@ const AppHeader: React.FC<AppHeaderProps> = ({ pageActions }) => {
             <>
               <span className="app-header-email">{user.email}</span>
 
-              <IonButton fill="clear" routerLink={ROUTE.ACCOUNT} title="My Account">
+              <IonButton fill="clear" routerLink={ROUTE.PROFILE} title="My Account">
                 <IonIcon icon={personCircleOutline} />
               </IonButton>
 
               <IonButton fill="clear" onClick={handleLogout} title="Logout">
                 <IonIcon icon={logOutOutline} />
               </IonButton>
-
-              <IonToggle
-                checked={theme === 'dark'}
-                onIonChange={toggleTheme}
-                style={{ '--track-background': 'rgba(var(--ion-color-medium-rgb), 0.3)', marginLeft: 4 }}
-              />
             </>
           )}
         </IonButtons>
