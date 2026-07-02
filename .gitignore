@@ -55,5 +55,6 @@ htmlcov/
 !.claude/memory/
 !.claude/rules/
 !.claude/skills/
+!.claude/agents/
 # ...except personal notes about the user
 .claude/memory/user-manuel.md
