@@ -5,7 +5,7 @@ paths:
 
 # Component reuse rule (non-negotiable)
 
-Always reuse existing components. Only create a new component if you need genuinely new behaviour that cannot be expressed through a new prop. manuSpine ships the shared `pwa/src/components/` shell library that every fork inherits (patterns originate in the reference project — see CLAUDE.md "Reference project").
+Always reuse existing components. Only create a new component if you need genuinely new behaviour that cannot be expressed through a new prop. manuSpine ships the shared `pwa/src/components/` shell library that every fork inherits — it is the pattern authority (see CLAUDE.md "Source of truth").
 
 **Why:** duplicating patterns inline (hand-rolled modals, bespoke list panels, custom edit forms) creates maintenance debt and diverges from the standard every derived app is built on. This applies even for "quick" additions or one-off pages.
 

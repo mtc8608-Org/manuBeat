@@ -8,7 +8,7 @@ metadata:
 
 # ManuLab / ManuSpine context
 
-**manuSpine** (this repo, `git@github.com:mtc8608/manuSpine.git`) is the open-source full-stack template extracted from **ManuLab** (cabeleira.net), Manuel's personal platform built on his biomedical engineering background. manuSpine is the reusable scaffold (auth, component tree, surveys, CMS, shell components); each app forks it and adds a domain (see [[sibling-apps]]).
+**manuSpine** (this repo, `git@github.com:mtc8608/manuSpine.git`) is the open-source full-stack template extracted from **ManuLab** (cabeleira.net), Manuel's personal platform built on his biomedical engineering background. manuSpine is the reusable scaffold (auth, component tree, surveys, CMS, shell components); each app forks it and adds a domain (see [[sibling-apps]]). Since July 2026 manuSpine — not cabeleira.net — is the main source of truth for patterns, for itself and every fork; cabeleira.net is retired as an authority (historical background only).
 
 ## Body-analogy app family
 All ManuLab apps are named after organs and all run on manuSpine:

@@ -5,7 +5,7 @@ paths:
 
 # SplitPageLayout left-column template rules
 
-The left column of every page has five non-negotiable rules. In the reference project these were corrected multiple times across pages; apply them from the start on every new page — here and in every fork. See `code-reuse.md` and `page-structure.md`.
+The left column of every page has five non-negotiable rules. Historically these were corrected multiple times across pages; apply them from the start on every new page — here and in every fork. See `code-reuse.md` and `page-structure.md`.
 
 **Why:** the template is mandated. Deviating causes inconsistent UI and repeated correction work.
 

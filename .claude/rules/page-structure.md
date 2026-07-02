@@ -5,7 +5,7 @@ paths:
 
 # Page code conventions
 
-Every page file follows a fixed structure, inherited from the reference project (see CLAUDE.md "Reference project"). Apply from the start on new pages; do not deviate.
+Every page file follows a fixed structure, defined by manuSpine (see CLAUDE.md "Source of truth"). Apply from the start on new pages; do not deviate.
 
 ## Section order inside a page file
 ```

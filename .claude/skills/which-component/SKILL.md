@@ -16,6 +16,6 @@ Given a described UI need (a new page, panel, modal, form, list, table, preview�
    - **(a) Covered as-is** — name the component(s) and the props/config to use.
    - **(b) New prop on an existing component** — name the component and sketch the prop. This is a framework change: it is built here in manuSpine and reaches forks via merge.
    - **(c) Genuinely new component** — justify why no prop can express it, and say whether it is shell-generic (belongs here) or domain-specific (belongs in a fork, not in manuSpine).
-5. If the need overlaps something the reference project already solved, check `/home/cabsman/Documents/cabeleira.net/` first (CLAUDE.md "Reference project") and prefer its pattern.
+5. When run in a fork: if the need is not covered locally, check upstream manuSpine (`/home/cabsman/Documents/projects/manuSpine`) first (CLAUDE.md "Source of truth") and prefer its pattern.
 
 Answer in prose with the classification up front. Do not start implementing.

@@ -34,9 +34,9 @@ Service URLs: Frontend `http://localhost:8100` · GraphQL `http://localhost:3000
 
 manuSpine is the **upstream framework**: apps fork it (manuHunter at `/home/cabsman/Documents/projects/manuHunter`, manuBeat at `/home/cabsman/Documents/projects/manuBeat`) and pull framework updates with `git fetch upstream && git merge upstream/master` — **never cherry-pick**. Consequently: keep this repo domain-free (framework-generic code only; domain code belongs in forks), and make framework fixes here first so they flow down. Generic changes built in a fork first are tracked in `.claude/memory/framework-upstream-candidates.md` until recreated here.
 
-## Reference project
+## Source of truth
 
-Before implementing anything non-trivial, check the original mature project at `/home/cabsman/Documents/cabeleira.net/` and replicate its pattern exactly. Only design something new if it genuinely does not exist there.
+manuSpine is the main source of truth for patterns — here and in every fork. Before implementing anything non-trivial, find the closest existing implementation in this repo and replicate its pattern exactly. Only design something new if it genuinely does not exist here. The original project at `/home/cabsman/Documents/cabeleira.net/` is retired as an authority — historical background only.
 
 ## Architecture
 
