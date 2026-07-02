@@ -77,17 +77,52 @@ const compPreviewTree = (node: ComponentResults): ComponentResults =>
     ? node
     : ({ name: node.name, type: TYPE.FORM, data: { text: node.name }, children: [node] } as ComponentResults);
 
+// List items carry a computed `usage` sublabel: roots are looked up in
+// FORM_USAGE directly; nested nodes inherit the usage of their tree root(s).
+type AnnotatedComponent = ComponentResults & { id: string; usage?: string };
+
+const annotateUsage = (
+  items: (ComponentResults & { id: string })[],
+  rels: any[],
+): AnnotatedComponent[] => {
+  const parentsByChild = new Map<string, { id: string; name: string }[]>();
+  rels.forEach(r => {
+    if (!parentsByChild.has(r.child_id)) parentsByChild.set(r.child_id, []);
+    parentsByChild.get(r.child_id)!.push({ id: r.parent_id, name: r.parent_name });
+  });
+  const rootsOf = (id: string, name: string, seen: Set<string>): { id: string; name: string }[] => {
+    if (seen.has(id)) return [];
+    seen.add(id);
+    const parents = parentsByChild.get(id);
+    if (!parents?.length) return [{ id, name }];
+    return parents.flatMap(p => rootsOf(p.id, p.name, seen));
+  };
+  return items.map(item => {
+    const roots = rootsOf(item.id, item.name, new Set());
+    const usage = [...new Set(
+      roots.map(r => r.id === item.id ? FORM_USAGE[r.name] : (FORM_USAGE[r.name] ?? `in ${r.name}`))
+    )].filter(Boolean).join(' · ');
+    return { ...item, usage: usage || undefined };
+  });
+};
+
+const sortByUsage = (a: AnnotatedComponent, b: AnnotatedComponent) =>
+  (a.usage ? 0 : 1) - (b.usage ? 0 : 1) || a.name.localeCompare(b.name);
+
 // Default browse view: root components (never a child in any relation) — the
 // entry points the app fetches by name. Known-usage roots first, then alphabetical.
-const compRootsFetcher = async (): Promise<(ComponentResults & { id: string })[]> => {
+const compRootsFetcher = async (): Promise<AnnotatedComponent[]> => {
   const [all, rels] = await Promise.all([compLinkFetcher(), ApiService.getRelationsList()]);
   const childIds = new Set(rels.map((r: any) => r.child_id));
-  return (all as (ComponentResults & { id: string })[])
-    .filter(c => !childIds.has(c.id))
-    .sort((a, b) =>
-      (FORM_USAGE[a.name] ? 0 : 1) - (FORM_USAGE[b.name] ? 0 : 1)
-      || a.name.localeCompare(b.name)
-    );
+  const roots = (all as (ComponentResults & { id: string })[]).filter(c => !childIds.has(c.id));
+  return annotateUsage(roots, rels).sort(sortByUsage);
+};
+
+// Typed drill-down view: every node of that type, annotated the same way.
+const compTypeFetcher = async (type: string): Promise<AnnotatedComponent[]> => {
+  const [list, rels] = await Promise.all([ApiService.getList(type), ApiService.getRelationsList()]);
+  const withId = list.filter((item): item is ComponentResults & { id: string } => !!item.id);
+  return annotateUsage(withId, rels).sort(sortByUsage);
 };
 
 const Configuration: React.FC = () => {
@@ -116,6 +151,7 @@ const Configuration: React.FC = () => {
 
   const [hasFormData, setHasFormData] = useState(false);
   const [formData, setFormData] = useState({} as ComponentResults);
+  const [usageText, setUsageText] = useState<string | undefined>(undefined);
   const [listType, setListType] = useState('');   // '' = roots view (default browse mode)
   const [configVersion, setConfigVersion] = useState(0);
   const [relListVersion, setRelListVersion] = useState(0);
@@ -265,19 +301,14 @@ const Configuration: React.FC = () => {
           label: 'Components',
           content: (
             <ResourcePanel
-              fetcher={() => listType
-                ? ApiService.getList(listType).then(
-                    list => list.filter((item): item is ComponentResults & { id: string } => !!item.id)
-                  )
-                : compRootsFetcher()
-              }
+              fetcher={() => listType ? compTypeFetcher(listType) : compRootsFetcher()}
               refreshToken={`${listType}-${configVersion}-${relListVersion}`}
               config={PANEL_CONFIG.CONFIG_COMPONENTS}
               selectedId={formData?.id}
               getLabel={item => item.name}
-              getSubLabel={item => FORM_USAGE[item.name]}
+              getSubLabel={item => item.usage}
               getBadge={item => ({ label: item.type, color: compBadgeColor(item) })}
-              onSelect={item => useComponent(item.id)}
+              onSelect={item => { setUsageText(item.usage); useComponent(item.id); }}
               onDelete={isEditMode ? item => deleteDbComponent(item.id) : undefined}
               onAdd={isEditMode ? () => openNewComp(listType || APP_COMPONENT_TYPES[0]) : undefined}
               filter={{ types: APP_COMPONENT_TYPES, typeValue: listType, onTypeChange: setListType }}
@@ -315,9 +346,9 @@ const Configuration: React.FC = () => {
             <>
               {/* ═══════════════════════════════════════════════════════════
                    Preview                                                   */}
-              {FORM_USAGE[formData.name] && (
+              {(usageText ?? FORM_USAGE[formData.name]) && (
                 <IonItem lines="none">
-                  <IonText color="medium">Used by: {FORM_USAGE[formData.name]}</IonText>
+                  <IonText color="medium">Used by: {usageText ?? FORM_USAGE[formData.name]}</IonText>
                 </IonItem>
               )}
               <FormRenderer key={formData.id} component={compPreviewTree(formData)} />
