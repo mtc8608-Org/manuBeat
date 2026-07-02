@@ -1,6 +1,6 @@
 // Page: Configuration — browse and edit the component trees that power the app's forms.
 // Reads/writes: components + components_relationships tables (GraphQL).
-// Admin-only. Browse-first: roots listed with their app usage (FORM_USAGE) and a live
+// Admin-only. Browse-first: forms listed with their app usage (FORM_USAGE) and a live
 // FormRenderer preview. Edit mode must be explicitly enabled — changes affect live UI.
 
 import React, { useRef, useState } from 'react';
@@ -109,13 +109,17 @@ const annotateUsage = (
 const sortByUsage = (a: AnnotatedComponent, b: AnnotatedComponent) =>
   (a.usage ? 0 : 1) - (b.usage ? 0 : 1) || a.name.localeCompare(b.name);
 
-// Default browse view: root components (never a child in any relation) — the
-// entry points the app fetches by name. Known-usage roots first, then alphabetical.
-const compRootsFetcher = async (): Promise<AnnotatedComponent[]> => {
+// Default browse view ("Forms"): tree roots — the entry points the app fetches
+// by name, whatever their type, so orphans surface too — merged with nested
+// form-type sections. Roots first (known usage leading), then sections.
+const compFormsFetcher = async (): Promise<AnnotatedComponent[]> => {
   const [all, rels] = await Promise.all([compLinkFetcher(), ApiService.getRelationsList()]);
   const childIds = new Set(rels.map((r: any) => r.child_id));
-  const roots = (all as (ComponentResults & { id: string })[]).filter(c => !childIds.has(c.id));
-  return annotateUsage(roots, rels).sort(sortByUsage);
+  const items = (all as (ComponentResults & { id: string })[])
+    .filter(c => !childIds.has(c.id) || c.type === TYPE.FORM);
+  return annotateUsage(items, rels).sort((a, b) =>
+    (childIds.has(a.id) ? 1 : 0) - (childIds.has(b.id) ? 1 : 0) || sortByUsage(a, b)
+  );
 };
 
 // Typed drill-down view: every node of that type, annotated the same way.
@@ -301,7 +305,7 @@ const Configuration: React.FC = () => {
           label: 'Components',
           content: (
             <ResourcePanel
-              fetcher={() => listType ? compTypeFetcher(listType) : compRootsFetcher()}
+              fetcher={() => listType ? compTypeFetcher(listType) : compFormsFetcher()}
               refreshToken={`${listType}-${configVersion}-${relListVersion}`}
               config={PANEL_CONFIG.CONFIG_COMPONENTS}
               selectedId={formData?.id}

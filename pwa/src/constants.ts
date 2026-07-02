@@ -238,7 +238,7 @@ export const PANEL_CONFIG = {
   CONFIG_COMPONENTS: {
     title: 'Components', emptyMessage: 'No components yet.',
     add: { enabled: true, label: 'New Component' },
-    filter: { text: { enabled: false }, type: { enabled: true, allLabel: 'Tree roots', options: ['form', 'input', 'select', 'check', 'plot', 'plotGrid'] } },
+    filter: { text: { enabled: false }, type: { enabled: true, allLabel: 'Forms', options: ['input', 'select', 'check', 'plot', 'plotGrid'] } },
   },
   FILES_LIST: {
     title: 'Files', emptyMessage: 'No files found.',
