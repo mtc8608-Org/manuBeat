@@ -24,6 +24,7 @@ const SURVEY_QUESTIONS_CTE = `
 // Fetches questions + answers from Postgres, calls Python /compute/survey-stats/export,
 // and streams the resulting CSV back to the client.
 router.get('/surveys/:id/stats/export', async (req, res) => {
+  if (req.user?.tier !== 'admin') return res.status(403).json({ error: 'Admin access required' });
   try {
     const { id } = req.params;
 

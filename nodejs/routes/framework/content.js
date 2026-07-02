@@ -2,6 +2,7 @@ const express = require('express');
 const { randomUUID } = require('crypto');
 const Anthropic = require('@anthropic-ai/sdk');
 const { pool, minioClient, upload, BUCKET } = require('../../db');
+const { getUserSecret } = require('../../lib/secrets');
 
 const router = express.Router();
 
@@ -62,16 +63,24 @@ Refinement turns:
 const IMAGE_MIMES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
 
 router.post('/generate-content', upload.array('files', 50), async (req, res) => {
-  if (!req.user) return res.status(401).json({ error: 'Authentication required' });
+  // Backoffice Content-page feature — admin only.
+  if (req.user?.tier !== 'admin') return res.status(403).json({ error: 'Admin access required' });
 
   const files    = req.files ?? [];
   const history  = JSON.parse(req.body.history ?? '[]');
   const userText = (req.body.userText ?? '').trim();
-  const apiKey   = (req.body.apiKey ?? '').trim();
 
+  // The key never travels from the client — it is decrypted from the caller's keychain.
+  let apiKey;
+  try {
+    apiKey = await getUserSecret(req.user.id, 'anthropic_api_key');
+  } catch (e) {
+    console.error('-> Keychain error:', e.message);
+    return res.status(500).json({ error: e.message });
+  }
   if (!apiKey) {
     res.setHeader('Content-Type', 'application/json');
-    return res.status(400).json({ error: 'An Anthropic API key is required. Enter yours in the AI Import tab.' });
+    return res.status(400).json({ error: 'No Anthropic API key set. Add one in Account → Integrations.' });
   }
 
   // 30-minute timeout — generation can take 20+ min for large documents
