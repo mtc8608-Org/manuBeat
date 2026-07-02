@@ -276,7 +276,7 @@ const Configuration: React.FC = () => {
               selectedId={formData?.id}
               getLabel={item => item.name}
               getSubLabel={item => FORM_USAGE[item.name]}
-              getBadge={listType ? undefined : item => ({ label: item.type, color: compBadgeColor(item) })}
+              getBadge={item => ({ label: item.type, color: compBadgeColor(item) })}
               onSelect={item => useComponent(item.id)}
               onDelete={isEditMode ? item => deleteDbComponent(item.id) : undefined}
               onAdd={isEditMode ? () => openNewComp(listType || APP_COMPONENT_TYPES[0]) : undefined}
