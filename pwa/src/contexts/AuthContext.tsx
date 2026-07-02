@@ -5,16 +5,20 @@ interface AuthContextValue {
   user:     AuthUser | null;
   token:    string | null;
   isAdmin:  boolean;
+  isUser:   boolean;
   login:    (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string) => Promise<void>;
   logout:   () => void;
 }
 
 const AuthContext = createContext<AuthContextValue>({
-  user:    null,
-  token:   null,
-  isAdmin: false,
-  login:   async () => {},
-  logout:  () => {},
+  user:     null,
+  token:    null,
+  isAdmin:  false,
+  isUser:   false,
+  login:    async () => {},
+  register: async () => {},
+  logout:   () => {},
 });
 
 const TOKEN_KEY = 'auth_token';
@@ -29,7 +33,7 @@ const loadStoredToken = (): { token: string; user: AuthUser } | null => {
       localStorage.removeItem(TOKEN_KEY);
       return null;
     }
-    return { token: raw, user: { id: payload.id, email: payload.email, role: payload.role } };
+    return { token: raw, user: { id: payload.id, email: payload.email, role: payload.role, tier: payload.tier ?? payload.role } };
   } catch {
     return null;
   }
@@ -83,13 +87,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(data.user);
   };
 
+  const register = async (email: string, password: string) => {
+    const res = await fetch(`http://localhost:3000/api/register`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email, password }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error ?? 'Registration failed');
+    }
+    const data = await res.json();
+    setToken(data.token);
+    setUser(data.user);
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
   };
 
+  // Gate on the role's *tier* (roles-table ladder), so custom roles aliased
+  // onto a tier pass its rung. Pre-tier tokens carry only the role name —
+  // for the three system roles name === tier.
+  const tier = user ? (user.tier ?? user.role) : null;
+
   return (
-    <AuthContext.Provider value={{ user, token, isAdmin: user?.role === 'admin', login, logout }}>
+    <AuthContext.Provider value={{
+      user, token,
+      isAdmin: tier === 'admin',
+      isUser:  tier === 'user' || tier === 'admin',
+      login, register, logout,
+    }}>
       {children}
     </AuthContext.Provider>
   );

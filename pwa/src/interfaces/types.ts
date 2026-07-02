@@ -2,6 +2,7 @@ export interface AuthUser {
   id: string;
   email: string;
   role: string;
+  tier?: string;   // the role's permissions tier from the JWT; equals role on pre-tier tokens
 }
 
 // ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -46,6 +47,7 @@ export interface ComponentResults {
   data: any;
   options: any;
   children?: any;
+  owner_id?: string;   // set on owner-scoped domains; absent elsewhere
 }
 
 export interface Component {
