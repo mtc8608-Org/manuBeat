@@ -352,6 +352,105 @@ const patchUser = async (id: string, updates: { is_active?: boolean; role?: stri
   return res.json();
 };
 
+// ── roles (backoffice Roles page — admin only) ────────────────────────────────
+
+export interface Role {
+  id: string; name: string; tier: string;
+  description: string | null; is_system: boolean;
+  created_at: string; users: string;   // users = count of holders, stringified
+}
+
+const ROLE_FIELDS = 'id name tier description is_system created_at users';
+
+// Server-side guards (system roles, roles in use) produce user-facing
+// messages — surface GraphQL errors instead of swallowing them.
+const throwOnGqlErrors = (result: any) => {
+  if (result?.errors?.length) throw new Error(result.errors[0].message);
+  return result;
+};
+
+const getRoles = async (): Promise<Role[]> => {
+  try {
+    const result = await gql(`query { roleList { ${ROLE_FIELDS} } }`);
+    return result?.data?.roleList ?? [];
+  } catch (e) { console.error('Error fetching roles:', e); return []; }
+};
+
+const createRole = async (name: string, tier: string, description?: string): Promise<Role> => {
+  const result = throwOnGqlErrors(await gql(`
+    mutation CreateRole($name: String!, $tier: String!, $description: String) {
+      createRole(name: $name, tier: $tier, description: $description) { ${ROLE_FIELDS} }
+    }`, { name, tier, description }));
+  return result.data.createRole;
+};
+
+const updateRole = async (id: string, updates: { tier?: string; description?: string }): Promise<Role> => {
+  const result = throwOnGqlErrors(await gql(`
+    mutation UpdateRole($id: ID!, $tier: String, $description: String) {
+      updateRole(id: $id, tier: $tier, description: $description) { ${ROLE_FIELDS} }
+    }`, { id, ...updates }));
+  return result.data.updateRole;
+};
+
+const deleteRole = async (id: string): Promise<boolean> => {
+  const result = throwOnGqlErrors(await gql(`
+    mutation DeleteRole($id: ID!) { deleteRole(id: $id) }`, { id }));
+  return result.data.deleteRole;
+};
+
+// ── account self-service (profile + secrets keychain) ────────────────────────
+
+export interface UserProfile { owner_id: string | null; data: Record<string, any>; }
+
+// The caller's own profile (form-driven display data; shape = form_user_profile).
+const getUserProfile = async (): Promise<UserProfile | null> => {
+  try {
+    const result = await gql(`query { userProfile { owner_id data } }`);
+    return result?.data?.userProfile ?? null;
+  } catch (e) { console.error('Error fetching user profile:', e); return null; }
+};
+
+const upsertUserProfile = async (data: Record<string, any>): Promise<UserProfile | null> => {
+  try {
+    const result = await gql(`
+      mutation UpsertUserProfile($data: JSON) {
+        upsertUserProfile(data: $data) { owner_id data }
+      }`, { data });
+    return result?.data?.upsertUserProfile ?? null;
+  } catch (e) { console.error('Error saving user profile:', e); throw e; }
+};
+
+// User secrets keychain — metadata only, the raw value is write-only.
+export interface UserSecret {
+  name: string; label: string; isSet: boolean;
+  last4: string | null; updated_at: string | null;
+}
+
+const getUserSecrets = async (): Promise<UserSecret[]> => {
+  try {
+    const result = await gql(`query { userSecrets { name label isSet last4 updated_at } }`);
+    return result?.data?.userSecrets ?? [];
+  } catch (e) { console.error('Error fetching user secrets:', e); return []; }
+};
+
+const setUserSecret = async (name: string, value: string): Promise<UserSecret | null> => {
+  try {
+    const result = await gql(`
+      mutation SetUserSecret($name: String!, $value: String!) {
+        setUserSecret(name: $name, value: $value) { name label isSet last4 updated_at }
+      }`, { name, value });
+    return result?.data?.setUserSecret ?? null;
+  } catch (e) { console.error('Error saving user secret:', e); throw e; }
+};
+
+const clearUserSecret = async (name: string): Promise<boolean> => {
+  try {
+    const result = await gql(`
+      mutation ClearUserSecret($name: String!) { clearUserSecret(name: $name) }`, { name });
+    return result?.data?.clearUserSecret ?? false;
+  } catch (e) { console.error('Error clearing user secret:', e); throw e; }
+};
+
 // ── files ─────────────────────────────────────────────────────────────────────
 
 const getFiles = async (): Promise<FileRecord[]> => {
@@ -397,6 +496,13 @@ const deleteFile = async (id: string) => {
   return res.json();
 };
 
+// Fetch a stored file's bytes (auth header) for download or preview.
+const fetchFileBlob = async (id: string): Promise<Blob> => {
+  const res = await fetch(`${API_BASE}${ENDPOINT.FILES}/${id}/download`, { headers: getAuthHeader() });
+  if (!res.ok) throw new Error('Download failed');
+  return res.blob();
+};
+
 // ── AI content generation ─────────────────────────────────────────────────────
 
 export interface GenMessage { role: 'user' | 'assistant'; content: string; }
@@ -409,12 +515,10 @@ const generateContent = async (
   userText: string,
   onDelta: (text: string) => void,
   onNode:  (node: GenNode) => void,
-  apiKey:  string,
 ): Promise<GenResult> => {
   const form = new FormData();
   form.append('history', JSON.stringify(history));
   form.append('userText', userText);
-  form.append('apiKey', apiKey);
   for (const f of files) form.append('files', f);
   const res = await fetch(`${API_BASE}${ENDPOINT.GENERATE_CONTENT}`, {
     method: 'POST',
@@ -463,8 +567,12 @@ const ApiService = {
   getSurveys, getSurveyAnswers, getSurveyStats, submitAnswer, updateAnswer, deleteAnswer, createSurvey,
   // auth & user management
   changePassword, getUsers, createUser, patchUser,
+  // roles
+  getRoles, createRole, updateRole, deleteRole,
+  // account self-service (profile + secrets keychain)
+  getUserProfile, upsertUserProfile, getUserSecrets, setUserSecret, clearUserSecret,
   // files
-  getFiles, uploadFile, patchFile, deleteFile,
+  getFiles, uploadFile, patchFile, deleteFile, fetchFileBlob,
   // AI content generation
   generateContent,
 };
