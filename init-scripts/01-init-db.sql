@@ -16,7 +16,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; -- Enables UUID functions
 -- #endregion
 
 
--- #region App Component System · tables + default seed
+-- #region App Component System · tables
 CREATE TABLE components (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL UNIQUE,
@@ -33,26 +33,6 @@ CREATE TABLE components_relationships (
     CONSTRAINT fk_child  FOREIGN KEY (child_id)  REFERENCES components (id),
     PRIMARY KEY (parent_id, child_id)
 );
-
-WITH inserted_components AS (
-    INSERT INTO components (name, type, data, options)
-    VALUES
-        ('form1', 'form', '{"title": "Test Form"}', '{"label":"form1"}'),
-        ('inp1', 'input', '{"text": "What is your name?"}', '{"label":"inp1"}'),
-        ('sel1', 'select', '{"text": "Choose your sex:"}', '{"label":"sel1"}'),
-        ('opt1', 'option', '{"text": "male"}', '{"label":"opt1"}'),
-        ('opt2', 'option', '{"text": "female"}', '{"label":"opt2"}')
-    RETURNING id, name
-)
-
-INSERT INTO components_relationships (parent_id, child_id)
-SELECT parent.id, child.id
-FROM inserted_components parent
-JOIN inserted_components child ON parent.name = 'form1' AND child.name IN ('inp1', 'sel1')
-UNION ALL
-SELECT parent.id, child.id
-FROM inserted_components parent
-JOIN inserted_components child ON parent.name = 'sel1' AND child.name IN ('opt1', 'opt2');
 -- #endregion
 
 
