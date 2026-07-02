@@ -10,7 +10,8 @@ import {
   clipboardOutline,
   documentTextOutline, folderOutline, constructOutline,
   walletOutline, pulseOutline, gitNetworkOutline, statsChartOutline,
-  optionsOutline, layersOutline,
+  optionsOutline, layersOutline, briefcaseOutline, downloadOutline,
+  peopleOutline, keyOutline, personOutline, settingsOutline,
 } from 'ionicons/icons';
 import './AreaShell.css';
 
@@ -27,6 +28,12 @@ const ICON_MAP: Record<string, string> = {
   'stats-chart':   statsChartOutline,
   'options-outline': optionsOutline,
   'layers-outline':  layersOutline,
+  'briefcase':       briefcaseOutline,
+  'download':        downloadOutline,
+  'people':          peopleOutline,
+  'key':             keyOutline,
+  'person':          personOutline,
+  'settings':        settingsOutline,
 };
 
 export interface AreaNavItem {
