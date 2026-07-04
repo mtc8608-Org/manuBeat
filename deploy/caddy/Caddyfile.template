@@ -13,6 +13,7 @@
 	# no per-subdomain certs, no subdomain enumeration in CT logs.
 	tls {
 		dns hetzner {$HETZNER_API_TOKEN}
+		propagation_delay 30s
 	}
 
 	# One block per app. API traffic goes to the app's nodejs container over
