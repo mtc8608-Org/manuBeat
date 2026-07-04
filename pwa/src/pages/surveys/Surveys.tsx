@@ -1,5 +1,6 @@
 // Page: Surveys — survey builder, form filler, and answer viewer.
-// Reads/writes: surveys + survey_components tables (GraphQL). Answers stored per survey.
+// Reads/writes: surveys + survey_components tables (GraphQL). Answers are owner-stamped:
+// users see/edit their own submissions, admins see all (with submitter column + delete).
 // Authenticated. Build tab visible to all; admin controls gated via isAdmin where needed.
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -404,12 +405,15 @@ const Surveys: React.FC = () => {
                   title="Answers"
                   fetcher={filter => ApiService.getSurveyAnswers(selectedSurvey.id, filter)}
                   flattenRow={a => flattenObject(a.answers)}
-                  leadingCols={[{ label: 'Submitted', format: a => formatDate(a.submitted_at) }]}
+                  leadingCols={[
+                    { label: 'Submitted', format: a => formatDate(a.submitted_at) },
+                    ...(isAdmin ? [{ label: 'By', format: (a: SurveyAnswer) => a.owner_email ?? '—' }] : []),
+                  ]}
                   labelMap={labelMap}
                   exportFilename={`${selectedSurvey.title}_answers`}
                   refreshToken={answerRefreshToken}
                   onEdit={openAnswerEdit}
-                  onDelete={handleAnswerDelete}
+                  onDelete={isAdmin ? handleAnswerDelete : undefined}
                 />
               ),
             },

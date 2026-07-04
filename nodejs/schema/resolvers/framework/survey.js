@@ -104,21 +104,33 @@ const queries = {
       return data;
     },
   },
+  // Admin sees every answer; a regular user sees only their own submissions.
   surveyAnswers: {
     type: new GraphQLList(SurveyAnswerType),
     args: {
       survey_id: { type: GraphQLID },
       filter:    { type: GraphQLJSON },
     },
-    async resolve(_, { survey_id, filter }) {
+    async resolve(_, { survey_id, filter }, ctx) {
       console.log('-> Get survey answers for:', survey_id, 'filter:', filter);
-      const hasFilter = filter && Object.keys(filter).length > 0;
-      const cols = `id, survey_id, answers, to_char(submitted_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS submitted_at`;
-      const query = hasFilter
-        ? `SELECT ${cols} FROM survey_answers WHERE survey_id = $1::uuid AND answers @> $2::jsonb ORDER BY submitted_at DESC`
-        : `SELECT ${cols} FROM survey_answers WHERE survey_id = $1::uuid ORDER BY submitted_at DESC`;
-      const params = hasFilter ? [survey_id, JSON.stringify(filter)] : [survey_id];
-      const res = await pool.query(query, params);
+      const cols = `sa.id, sa.survey_id, sa.owner_id, u.email AS owner_email, sa.answers,
+        to_char(sa.submitted_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS submitted_at`;
+      const clauses = ['sa.survey_id = $1::uuid'];
+      const params  = [survey_id];
+      if (ctx?.user?.tier !== 'admin') {
+        params.push(ctx?.user?.id);
+        clauses.push(`sa.owner_id = $${params.length}::uuid`);
+      }
+      if (filter && Object.keys(filter).length > 0) {
+        params.push(JSON.stringify(filter));
+        clauses.push(`sa.answers @> $${params.length}::jsonb`);
+      }
+      const res = await pool.query(
+        `SELECT ${cols} FROM survey_answers sa
+         JOIN users u ON u.id = sa.owner_id
+         WHERE ${clauses.join(' AND ')} ORDER BY sa.submitted_at DESC`,
+        params
+      );
       return res.rows;
     },
   },
@@ -243,13 +255,13 @@ const mutations = {
       survey_id: { type: GraphQLID },
       answers:   { type: GraphQLJSON },
     },
-    async resolve(_, { survey_id, answers }) {
+    async resolve(_, { survey_id, answers }, ctx) {
       console.log('-> Submit answer for survey:', survey_id);
       const res = await pool.query(
-        `INSERT INTO survey_answers (survey_id, answers) VALUES ($1::uuid, $2::jsonb)
-         RETURNING id, survey_id, answers,
+        `INSERT INTO survey_answers (survey_id, owner_id, answers) VALUES ($1::uuid, $2::uuid, $3::jsonb)
+         RETURNING id, survey_id, owner_id, answers,
            to_char(submitted_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS submitted_at`,
-        [survey_id, JSON.stringify(answers)]
+        [survey_id, ctx?.user?.id, JSON.stringify(answers)]
       );
       return res.rows[0];
     },
@@ -260,14 +272,18 @@ const mutations = {
       id:      { type: GraphQLID },
       answers: { type: GraphQLJSON },
     },
-    async resolve(_, { id, answers }) {
+    async resolve(_, { id, answers }, ctx) {
       console.log('-> Update answer:', id);
+      const params = [JSON.stringify(answers), id];
+      const scope  = ctx?.user?.tier === 'admin' ? '' : ` AND owner_id = $${params.length + 1}::uuid`;
+      if (scope) params.push(ctx?.user?.id);
       const res = await pool.query(
-        `UPDATE survey_answers SET answers = $1::jsonb WHERE id = $2::uuid
-         RETURNING id, survey_id, answers,
+        `UPDATE survey_answers SET answers = $1::jsonb WHERE id = $2::uuid${scope}
+         RETURNING id, survey_id, owner_id, answers,
            to_char(submitted_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS submitted_at`,
-        [JSON.stringify(answers), id]
+        params
       );
+      if (!res.rows[0]) throw new Error('Answer not found or not authorised');
       return res.rows[0];
     },
   },

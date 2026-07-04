@@ -44,7 +44,8 @@ module.exports = {
     'userSecrets',
     'setUserSecret',
     'clearUserSecret',
-    // surveys — viewing and answering is open to every signed-in account
+    // surveys — viewing and answering is open to every signed-in account;
+    // answer reads/edits are owner-scoped in the resolver (admin sees all)
     'surveyList',
     'surveyComponent',
     'surveyComponentList',
@@ -64,9 +65,9 @@ module.exports = {
     'surveyStats',
     'roleList', 'createRole', 'updateRole', 'deleteRole',
     'createComponent', 'updateComponent', 'deleteComponent',
-    'createComponentRelation', 'deleteComponentRelation',
+    'createComponentRelation', 'deleteComponentRelation', 'swapComponentPositions',
     'createSurveyComponent', 'updateSurveyComponent', 'deleteSurveyComponent',
-    'createSurveyComponentRelation', 'deleteSurveyComponentRelation',
-    'createSurvey', 'updateSurvey', 'deleteSurvey', 'deleteAnswer',
+    'createSurveyComponentRelation', 'deleteSurveyComponentRelation', 'swapSurveyComponentPositions',
+    'createSurvey', 'deleteAnswer',
   ],
 };

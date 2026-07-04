@@ -20,6 +20,8 @@ export interface Survey {
 export interface SurveyAnswer {
   id: string;
   survey_id: string;
+  owner_id: string;
+  owner_email?: string;
   answers: Record<string, any>;
   submitted_at: string;
 }

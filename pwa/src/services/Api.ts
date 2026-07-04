@@ -243,7 +243,7 @@ const getSurveyAnswers = async (survey_id: string, filter?: Record<string, any>)
     const result = await gql(`
       query SurveyAnswers($survey_id: ID!, $filter: JSON) {
         surveyAnswers(survey_id: $survey_id, filter: $filter) {
-          id survey_id answers submitted_at
+          id survey_id owner_id owner_email answers submitted_at
         }
       }
     `, { survey_id, filter: filter ?? {} });
@@ -256,7 +256,7 @@ const submitAnswer = async (survey_id: string, answers: Record<string, any>) => 
     return await gql(`
       mutation SubmitAnswer($survey_id: ID!, $answers: JSON) {
         submitAnswer(survey_id: $survey_id, answers: $answers) {
-          id survey_id answers submitted_at
+          id survey_id owner_id answers submitted_at
         }
       }
     `, { survey_id, answers });
@@ -268,7 +268,7 @@ const updateAnswer = async (id: string, answers: Record<string, any>) => {
     return await gql(`
       mutation UpdateAnswer($id: ID!, $answers: JSON) {
         updateAnswer(id: $id, answers: $answers) {
-          id survey_id answers submitted_at
+          id survey_id owner_id answers submitted_at
         }
       }
     `, { id, answers });
