@@ -56,6 +56,7 @@ htmlcov/
 !.claude/rules/
 !.claude/skills/
 !.claude/agents/
-# ...except personal notes about the user
+# ...except personal notes, personal infra, and the brainstorm ledger
 .claude/memory/user-manuel.md
 .claude/memory/deployment-plan.md
+.claude/memory/idea-ledger.md
