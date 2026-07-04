@@ -8,10 +8,6 @@ description: Add a user role (runtime or seeded) and make it manageable in the b
 How the role system works and the procedure for adding roles. Read
 `.claude/rules/backend-api.md` (auth model) first if touching enforcement.
 
-> Port status: the roles/tier system ships with the manuHunter port — check
-> `.claude/memory/framework-upstream-candidates.md` that it has landed before
-> relying on the file references below.
-
 ## The model (do not redesign it)
 
 - **Roles are rows, tiers are code.** The `roles` table (01-init-db.sql) maps a
