@@ -301,6 +301,7 @@ export const ROUTE = {
   FILES:         '/folder/Files',
   CONTENT:       '/folder/Content',
   // [MEDICAL]
+  MODEL_LIBRARY:  '/folder/ModelLibrary',
   SIMULATOR:      '/folder/Simulator',
   MODEL_SANDBOX:  '/folder/ModelSandbox',
   PLOT_SANDBOX:   '/folder/PlotSandbox',
@@ -324,6 +325,7 @@ export const AREA_NAV = {
   ],
   // [MEDICAL]
   PHYSIOLOGY: [
+    { label: 'Model Library',       route: '/folder/ModelLibrary',       icon: 'library'        },
     { label: 'Simulator',           route: '/folder/Simulator',          icon: 'pulse'          },
     { label: 'Model Sandbox',       route: '/folder/ModelSandbox',       icon: 'git-network'    },
     { label: 'Plot Sandbox',        route: '/folder/PlotSandbox',        icon: 'stats-chart'    },
@@ -345,7 +347,7 @@ export const AREA_NAV = {
 // Section groupings — used by AppHeader nav (authenticated users only)
 export const NAV_SECTIONS = [
   { label: 'Surveys',              routes: ['/folder/Surveys'],                                                                                                              link: '/folder/Surveys',   icon: 'clipboard' },
-  { label: 'Physiology Simulator', routes: ['/folder/Simulator', '/folder/ModelSandbox', '/folder/PlotSandbox', '/folder/ProcessingSandbox', '/folder/HdfInspector'],       link: '/folder/Simulator', icon: 'pulse'     },
+  { label: 'Physiology Simulator', routes: ['/folder/ModelLibrary', '/folder/Simulator', '/folder/ModelSandbox', '/folder/PlotSandbox', '/folder/ProcessingSandbox', '/folder/HdfInspector'], link: '/folder/ModelLibrary', icon: 'pulse' },
   { label: 'Data Collection',      routes: ['/folder/Patients', '/folder/Devices'],                                                                                         link: '/folder/Patients',  icon: 'bed',       adminOnly: true },
   { label: 'Backoffice',           routes: ['/folder/Content', '/folder/Files', '/folder/Configuration'],                                                                   link: '/folder/Content',   icon: 'construct', adminOnly: true },
 ] as const;

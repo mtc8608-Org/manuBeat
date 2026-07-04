@@ -16,6 +16,7 @@ import {
   IonText,
 } from '@ionic/react';
 import ReactECharts from 'echarts-for-react';
+import { useLocation } from 'react-router-dom';
 import ApiService from '../../services/Api';
 import SplitPageLayout from '../../components/shell/SplitPageLayout';
 import TabPanel from '../../components/shell/TabPanel';
@@ -53,6 +54,7 @@ const Simulator: React.FC = () => {
 
 
   const { theme } = useTheme();
+  const location  = useLocation<{ autoRun?: ModelConfig }>();
 
   const [runVersion, setRunVersion] = useState(0);
   const [rightTab, setRightTab]     = useState(0); // 0=results 1=plots
@@ -103,6 +105,12 @@ const Simulator: React.FC = () => {
 
   // Stop polling when component unmounts
   useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
+
+  // Pre-select a model when navigated here from the Model Library
+  useEffect(() => {
+    const pre = location.state?.autoRun;
+    if (pre) { setPickerSelected(pre); setPickerOpen(true); }
+  }, [location.state]);
 
   // Fetch plot and proc configs once on mount
   useEffect(() => {

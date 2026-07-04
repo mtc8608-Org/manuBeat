@@ -14,6 +14,7 @@ import Surveys from './pages/surveys/Surveys';
 import Content from './pages/backoffice/Content';
 import Files from './pages/backoffice/Files';
 import Configuration from './pages/backoffice/Configuration';
+import ModelLibrary from './pages/models/ModelLibrary';
 import Simulator from './pages/models/Simulator';
 import ModelSandbox from './pages/models/ModelSandbox';
 import PlotSandbox from './pages/models/PlotSandbox';
@@ -62,6 +63,7 @@ const App: React.FC = () => {
                 <PrivateRoute path={ROUTE.SURVEYS}  exact={true} component={Surveys} />
 
                 {/* [MEDICAL] Physiology Simulator */}
+                <PrivateRoute path={ROUTE.MODEL_LIBRARY} exact={true} component={ModelLibrary} />
                 <PrivateRoute path={ROUTE.SIMULATOR}     exact={true} component={Simulator} />
                 <PrivateRoute path={ROUTE.MODEL_SANDBOX} exact={true} component={ModelSandbox} />
                 <PrivateRoute path={ROUTE.PLOT_SANDBOX}  exact={true} component={PlotSandbox} />
