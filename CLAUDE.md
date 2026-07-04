@@ -7,12 +7,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Always use `./run` from the repo root. Never raw `docker compose` commands.
 
 ```bash
-./run                        # start all services (builds pwa image if missing)
-./run rebuild <service>      # rebuild after Dockerfile/requirements changes
-./run reset                  # wipe DB + MinIO and restart (re-runs init-scripts)
-./run rebuild-reset <service># rebuild image AND wipe DB
+./run                        # start all services (builds all images only if the pwa image is missing)
 ./run down                   # stop everything
+./run rebuild [service]      # rebuild after Dockerfile/deps changes, then start — omit service to rebuild ALL
+./run reset                  # wipe DB + MinIO and restart (re-runs init-scripts; no build)
+./run rebuild-reset [service]# wipe DB + MinIO AND rebuild (all if omitted), then start
 ```
+
+Every form ends in a foreground `docker compose up` (Ctrl-C stops it) — never chain `./run` invocations with `&&`. Builds pass the host UID/GID as build args.
 
 Service URLs: Frontend `http://localhost:8100` · GraphQL `http://localhost:3000/graphql` · Python `http://localhost:5000`
 
