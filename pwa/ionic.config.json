@@ -1,7 +1,5 @@
 {
   "name": "sidemenu",
-  "integrations": {
-    "capacitor": {}
-  },
+  "integrations": {},
   "type": "react-vite"
 }
