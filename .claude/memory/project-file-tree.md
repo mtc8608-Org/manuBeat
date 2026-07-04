@@ -65,7 +65,7 @@ manuSpine/
     ├── requirements.txt     # intent (unpinned) · requirements.lock = enforced freeze
     └── api/
         ├── main.py          # app + router includes
-        ├── domains/compute/routes.py   # one dir per domain
+        ├── domains/         # one dir per domain, <domain>/routes.py (framework ships none)
         └── public/          # static index served by FastAPI
 ```
 
