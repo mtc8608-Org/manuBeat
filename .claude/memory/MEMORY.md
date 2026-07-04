@@ -13,3 +13,4 @@
 - [User account keychain plan](user-account-keychain-plan.md) — port spec: user_profile + encrypted user_secrets keychain (write-only API, secrets-registry.js) + Users backoffice page; shipped in manuHunter 2026-07-02
 - [Mobile app path](mobile-app-path.md) — Capacitor removed 2026-07-04 (unused, CVE-carrying); PWA install covers most needs; re-add procedure if a fork ever needs app-store/native APIs
 - [EChart owned wrapper](echart-owned-wrapper.md) — chart glue is ours (charts/EChart.tsx), engine stays echarts ^6; echarts-for-react removed; manuBeat must swap 3 imports on next pull-upstream
+- [Project file tree](project-file-tree.md) — annotated repo map; consult before asserting structure or placing files; update in the same commit as any directory add/move/remove
