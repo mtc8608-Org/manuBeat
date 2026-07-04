@@ -6,6 +6,11 @@ const { getUserSecret } = require('../../lib/secrets');
 
 const router = express.Router();
 
+// Runs BEFORE multer so non-admin clients are rejected before the server
+// buffers any multipart body into memory.
+const requireAdmin = (req, res, next) =>
+  req.user?.tier === 'admin' ? next() : res.status(403).json({ error: 'Admin access required' });
+
 const GENERATE_SYSTEM_PROMPT = `You are a CMS content formatter. You receive LaTeX documents and reformat them faithfully into structured content components for a website.
 
 Available component types:
@@ -62,7 +67,7 @@ Refinement turns:
 
 const IMAGE_MIMES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
 
-router.post('/generate-content', upload.array('files', 50), async (req, res) => {
+router.post('/generate-content', requireAdmin, upload.array('files', 50), async (req, res) => {
   // Backoffice Content-page feature — admin only.
   if (req.user?.tier !== 'admin') return res.status(403).json({ error: 'Admin access required' });
 

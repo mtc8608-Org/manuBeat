@@ -4,6 +4,11 @@ const { pool, minioClient, upload, BUCKET } = require('../../db');
 
 const router = express.Router();
 
+// Runs BEFORE multer so anonymous clients are rejected before the server
+// buffers any multipart body into memory.
+const requireAuth = (req, res, next) =>
+  req.user ? next() : res.status(401).json({ error: 'Authentication required' });
+
 // Owner-scoped: a user sees only the files they uploaded; admin sees all.
 router.get('/files', async (req, res) => {
   if (!req.user) return res.status(401).json({ error: 'Authentication required' });
@@ -17,7 +22,7 @@ router.get('/files', async (req, res) => {
   }
 });
 
-router.post('/files/upload', upload.single('file'), async (req, res) => {
+router.post('/files/upload', requireAuth, upload.single('file'), async (req, res) => {
   if (!req.user) return res.status(401).json({ error: 'Authentication required' });
   const file = req.file;
   if (!file) return res.status(400).json({ error: 'No file provided' });
