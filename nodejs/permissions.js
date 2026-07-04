@@ -62,7 +62,6 @@ module.exports = {
   // Everything else requires role === 'admin'.
   // (Informational — enforcement uses the fallback rule above. Only list real mutations.)
   admin: [
-    'surveyStats',
     'roleList', 'createRole', 'updateRole', 'deleteRole',
     'createComponent', 'updateComponent', 'deleteComponent',
     'createComponentRelation', 'deleteComponentRelation', 'swapComponentPositions',

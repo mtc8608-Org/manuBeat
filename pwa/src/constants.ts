@@ -210,7 +210,6 @@ export const ENDPOINT = {
   FILES:            '/files',
   FILES_UPLOAD:     '/files/upload',
   GENERATE_CONTENT: '/generate-content',
-  SURVEY_EXPORT:    '/surveys',   // + `/${id}/stats/export`
 } as const;
 // #endregion
 ///////////////////////////////////////////////////////////////////////////////

@@ -283,15 +283,6 @@ const deleteAnswer = async (id: string) => {
   } catch (e) { console.error('Error deleting answer:', e); }
 };
 
-const getSurveyStats = async (survey_id: string): Promise<any | null> => {
-  try {
-    const result = await gql(`
-      query SurveyStats($survey_id: ID!) { surveyStats(survey_id: $survey_id) }
-    `, { survey_id });
-    return result?.data?.surveyStats ?? null;
-  } catch (e) { console.error('Error fetching survey stats:', e); return null; }
-};
-
 const createSurvey = async (component_id: string, title: string) => {
   try {
     return await gql(`
@@ -564,7 +555,7 @@ const ApiService = {
   createSurveyComponent, updateSurveyComponent, deleteSurveyComponent,
   createSurveyComponentRelation, deleteSurveyComponentRelation, swapSurveyComponentPositions,
   // surveys
-  getSurveys, getSurveyAnswers, getSurveyStats, submitAnswer, updateAnswer, deleteAnswer, createSurvey,
+  getSurveys, getSurveyAnswers, submitAnswer, updateAnswer, deleteAnswer, createSurvey,
   // auth & user management
   changePassword, getUsers, createUser, patchUser,
   // roles

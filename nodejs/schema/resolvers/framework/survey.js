@@ -6,7 +6,6 @@ const {
   GraphQLFloat,
   GraphQLNonNull,
 } = require('graphql');
-const axios = require('axios');
 const { pool } = require('../../../db');
 const {
   SurveyComponentType,
@@ -59,49 +58,6 @@ const queries = {
       console.log('-> Get survey list');
       const res = await pool.query('SELECT * FROM surveys WHERE is_active = true ORDER BY created_at DESC');
       return res.rows;
-    },
-  },
-  surveyStats: {
-    type: GraphQLJSON,
-    args: { survey_id: { type: new GraphQLNonNull(GraphQLID) } },
-    async resolve(_, { survey_id }) {
-      console.log('-> Survey stats for:', survey_id);
-
-      // Fetch all leaf questions in the survey tree via recursive CTE
-      const qRes = await pool.query(
-        `WITH RECURSIVE tree AS (
-           SELECT sc.id, sc.type, sc.data, sc.options
-           FROM surveys s
-           JOIN survey_components sc ON sc.id = s.component_id
-           WHERE s.id = $1::uuid
-           UNION ALL
-           SELECT sc.id, sc.type, sc.data, sc.options
-           FROM survey_components sc
-           JOIN survey_components_relationships scr ON scr.child_id = sc.id
-           JOIN tree ON tree.id = scr.parent_id
-         )
-         SELECT id, type, data FROM tree
-         WHERE type NOT IN ('survey', 'option')
-         ORDER BY type`,
-        [survey_id]
-      );
-
-      const questions = qRes.rows.map(r => ({
-        id:   r.id,
-        type: r.type,
-        text: r.data?.text ?? r.type,
-      }));
-
-      // Fetch all submitted answers
-      const aRes = await pool.query(
-        'SELECT answers FROM survey_answers WHERE survey_id = $1::uuid',
-        [survey_id]
-      );
-      const answers = aRes.rows.map(r => r.answers);
-
-      const pythonUrl = `http://${process.env.PYTHON_HOST}:${process.env.PYTHON_PORT}/compute/survey-stats`;
-      const { data } = await axios.post(pythonUrl, { questions, answers });
-      return data;
     },
   },
   // Admin sees every answer; a regular user sees only their own submissions.

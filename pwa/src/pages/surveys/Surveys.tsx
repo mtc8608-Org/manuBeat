@@ -7,7 +7,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   IonButton,
   IonCard, IonCardContent,
-  IonChip,
   IonItem, IonLabel,
   IonSpinner, IonText,
 } from '@ionic/react';
@@ -21,7 +20,7 @@ import EmptyState from '../../components/shell/EmptyState';
 import DataTable, { flattenObject } from '../../components/shell/DataTable';
 import TreeEditor, { TreeEditorHandle } from '../../components/shell/TreeEditor';
 import { Survey, SurveyAnswer, ComponentResults } from '../../interfaces/types';
-import { SURVEY_QUESTION_TYPES, SURVEY_TYPE, AREA_NAV, FORM_ID, PANEL_CONFIG, SURVEY_EDITOR_ID, SURVEY_ADDABLE_TYPES, API_BASE, ENDPOINT } from '../../constants';
+import { SURVEY_QUESTION_TYPES, SURVEY_TYPE, AREA_NAV, FORM_ID, PANEL_CONFIG, SURVEY_EDITOR_ID, SURVEY_ADDABLE_TYPES } from '../../constants';
 import { useAuth } from '../../contexts/AuthContext';
 
 
@@ -139,9 +138,6 @@ const Surveys: React.FC = () => {
   const [qTypeFilter, setQTypeFilter]         = useState('');
   const [qTextFilter, setQTextFilter]         = useState('');
 
-  const [stats, setStats]             = useState<any | null>(null);
-  const [statsLoading, setStatsLoading] = useState(false);
-
 
 /*
  ██          ████      ████    ██████
@@ -155,18 +151,6 @@ const Surveys: React.FC = () => {
   useEffect(() => {
     ApiService.getComponentByName(FORM_ID.NEW_SURVEY).then(f => setNewSurveyForm(f ?? null));
   }, []);
-
-  const STATS_TAB = 3;
-  useEffect(() => {
-    if (!isAdmin || rightTab !== STATS_TAB || !selectedSurvey) return;
-    let cancelled = false;
-    setStats(null);
-    setStatsLoading(true);
-    ApiService.getSurveyStats(selectedSurvey.id).then(data => {
-      if (!cancelled) { setStats(data); setStatsLoading(false); }
-    });
-    return () => { cancelled = true; };
-  }, [selectedSurvey?.id, rightTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const reloadTree = async (componentId: string) => {
     const tree = await ApiService.getSurveyComponent(componentId);
@@ -457,104 +441,6 @@ const Surveys: React.FC = () => {
                 />
               ),
             },
-            ...(isAdmin ? [{
-              label: 'Stats',
-              actions: selectedSurvey && (
-                <IonButton
-                  size="small" fill="outline"
-                  href={`${API_BASE}${ENDPOINT.SURVEY_EXPORT}/${selectedSurvey.id}/stats/export`}
-                  target="_blank"
-                >
-                  Export CSV
-                </IonButton>
-              ),
-              content: !selectedSurvey ? (
-                <EmptyState message="Select a survey to begin" />
-              ) : statsLoading ? (
-                <IonItem lines="none">
-                  <IonSpinner slot="start" name="dots" />
-                  <IonLabel>&nbsp;Computing via Python…</IonLabel>
-                </IonItem>
-              ) : !stats ? (
-                <EmptyState message="No answers yet" />
-              ) : (
-                <div style={{ padding: '0 4px' }}>
-                  <IonText color="medium" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>
-                    {stats.total_responses} response{stats.total_responses !== 1 ? 's' : ''} · computed by {stats.engine}
-                  </IonText>
-
-                  {(stats.columns ?? []).map((col: any) => {
-                    const isAbnormal = col.abnormal_count > 0;
-                    return (
-                      <IonCard key={col.id} style={isAbnormal ? { borderLeft: '3px solid var(--ion-color-danger)' } : {}}>
-                        <IonCardContent>
-                          <div style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                            <strong style={{ fontSize: 14 }}>{col.question}</strong>
-                            <IonChip color="medium" style={{ height: 20, fontSize: 11 }}>
-                              <IonLabel>{col.type}</IonLabel>
-                            </IonChip>
-                            {isAbnormal && (
-                              <IonChip color="danger" style={{ height: 20, fontSize: 11 }}>
-                                <IonLabel>{col.abnormal_count} abnormal</IonLabel>
-                              </IonChip>
-                            )}
-                          </div>
-
-                          {/* Numeric: full pandas describe() output */}
-                          {col.type === 'number' && col.count > 0 && (
-                            <>
-                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px 12px', fontSize: 12, marginBottom: 6 }}>
-                                {[
-                                  ['n',      col.count],
-                                  ['mean',   col.mean],
-                                  ['std',    col.std],
-                                  ['min',    col.min],
-                                  ['25%',    col.p25],
-                                  ['median', col.p50],
-                                  ['75%',    col.p75],
-                                  ['max',    col.max],
-                                ].map(([label, val]) => (
-                                  <div key={label as string}>
-                                    <IonText color="medium" style={{ fontSize: 10 }}>{label}</IonText>
-                                    <div><strong>{val}</strong></div>
-                                  </div>
-                                ))}
-                              </div>
-                              {col.clinical_range && (
-                                <IonText color="medium" style={{ fontSize: 11 }}>
-                                  Normal range: {col.clinical_range.low}–{col.clinical_range.high}
-                                  {col.outlier_count > 0 && ` · ${col.outlier_count} IQR outlier${col.outlier_count !== 1 ? 's' : ''}: ${col.outliers.join(', ')}`}
-                                </IonText>
-                              )}
-                            </>
-                          )}
-
-                          {/* Check */}
-                          {col.type === 'check' && (
-                            <IonText style={{ fontSize: 13 }}>
-                              <span style={{ color: 'var(--ion-color-success)' }}>{col.true_pct}%</span> Yes ({col.true_count}/{col.count})
-                              &nbsp;·&nbsp;{(100 - col.true_pct).toFixed(1)}% No
-                            </IonText>
-                          )}
-
-                          {/* Categorical / text */}
-                          {col.counts && col.count > 0 && (
-                            <div style={{ fontSize: 13 }}>
-                              {Object.entries(col.counts as Record<string, number>).map(([val, count]) => (
-                                <div key={val} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                                  <span>{val || '(empty)'}</span>
-                                  <IonText color="medium">{count}</IonText>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </IonCardContent>
-                      </IonCard>
-                    );
-                  })}
-                </div>
-              ),
-            }] : []),
           ]}
         />
       }

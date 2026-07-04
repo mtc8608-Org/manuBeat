@@ -59,7 +59,6 @@ server.all('/graphql', graphqlHandler);
 server.use('/api', require('./routes/framework/auth'));
 server.use('/api', require('./routes/framework/files'));
 server.use('/api', require('./routes/framework/content'));
-server.use('/api', require('./routes/framework/compute'));
 
 // ── Startup ───────────────────────────────────────────────────────────────────
 // Start listening immediately so the container is healthy, then seed the admin
