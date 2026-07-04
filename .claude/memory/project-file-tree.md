@@ -24,6 +24,13 @@ manuSpine/
 │   ├── memory/              # one fact per file, indexed by MEMORY.md
 │   ├── rules/               # path-scoped conventions (backend-api, code-reuse, …)
 │   └── skills/              # procedures: new-api, new-form, new-page, pull-upstream, …
+├── deploy/                  # server provisioning + Caddy platform layer (templates only —
+│   │                        #   real Caddyfile/hostname map + .env live on-box, never here)
+│   ├── provision.sh         # stage 1, ON box: docker, log caps, sshd, upgrades, swap,
+│   │                        #   edge network, /srv/caddy skeleton (idempotent)
+│   ├── ship-caddy.sh        # stage 2, laptop: build xcaddy image → save|ssh load → up
+│   └── caddy/               # Dockerfile (caddy-dns/hetzner), compose, Caddyfile.template,
+│                            #   .env.example
 ├── init-scripts/            # DB schema+seeds, run alphabetically on fresh volume
 │   ├── 01-init-db.sql       # framework schema + editor-form seeds + User Feedback survey
 │   └── seed-landing.sql     # content tree: welcome, App Guide, Developer Guide
