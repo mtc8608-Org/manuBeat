@@ -57,7 +57,7 @@ const Simulator: React.FC = () => {
   const location  = useLocation<{ autoRun?: ModelConfig }>();
 
   const [runVersion, setRunVersion] = useState(0);
-  const [rightTab, setRightTab]     = useState(0); // 0=results 1=plots
+  const [rightTab, setRightTab]     = useState(0); // 0=process 1=results 2=plots
 
   const [selectedRun, setSelectedRun] = useState<ModelRun | null>(null);
 
@@ -70,7 +70,8 @@ const Simulator: React.FC = () => {
 
   // Polling
   const [pollingJobId, setPollingJobId] = useState<string | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollRef         = useRef<ReturnType<typeof setInterval> | null>(null);
+  const selectedRunRef  = useRef<ModelRun | null>(null);
 
   // Results
   const [result, setResult]                 = useState<CardioResult | null>(null);
@@ -118,6 +119,27 @@ const Simulator: React.FC = () => {
       .then(([plots, procs]) => { setPlotConfigs(plots); setProcConfigs(procs); });
   }, []);
 
+  // Keep ref in sync so the auto-processing effect always sees the current run
+  useEffect(() => { selectedRunRef.current = selectedRun; }, [selectedRun]);
+
+  // Auto-run processing as soon as a proc config is selected (no button needed)
+  useEffect(() => {
+    const run = selectedRunRef.current;
+    if (!selectedProcForRun || !run || run.status !== 'done') return;
+    const autoName = `${selectedProcForRun.name}-${Date.now().toString(36)}`;
+    setProcessingState('running');
+    setProcessingError(null);
+    ApiService.processRun(run.id, selectedProcForRun.id, autoName)
+      .then(() => {
+        setProcessingState('done');
+        setProcGroupNames(prev => prev.includes(autoName) ? prev : [...prev, autoName]);
+      })
+      .catch((err: any) => {
+        setProcessingState('error');
+        setProcessingError(err.response?.data?.detail ?? err.message ?? 'Processing failed');
+      });
+  }, [selectedProcForRun]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const fetchRuns = useCallback(() => ApiService.getModelRuns(), []);
 
 
@@ -147,7 +169,7 @@ const Simulator: React.FC = () => {
           setPollingJobId(null);
           setRunVersion(v => v + 1);
           if (status.status === 'done') {
-            setRightTab(0);
+            setRightTab(1);
           }
         }
       } catch { /* network hiccup — keep polling */ }
@@ -176,7 +198,7 @@ const Simulator: React.FC = () => {
       startPolling(job_id);
     } catch (err: any) {
       setResultError(err.response?.data?.error ?? err.message ?? 'Run failed');
-      setRightTab(0);
+      setRightTab(1);
     } finally {
       setRunning(false);
     }
@@ -214,9 +236,10 @@ const Simulator: React.FC = () => {
 
   const handleSelectRun = async (run: ModelRun) => {
     setSelectedRun(run);
+    selectedRunRef.current = run;
     resetProcState();
     if (run.status === 'done') {
-      setRightTab(0);
+      setRightTab(1);
       await Promise.all([loadResult(run), loadProcGroups(run)]);
     } else {
       setResult(null);
@@ -387,6 +410,59 @@ const Simulator: React.FC = () => {
           onTabChange={setRightTab}
           tabs={[
             {
+              label: 'Process',
+              content: !result ? (
+                <EmptyState message="Select a completed run first" />
+              ) : (
+                <>
+                  <IonItem lines="full">
+                    <IonSelect
+                      label="Processing config"
+                      labelPlacement="stacked"
+                      value={selectedProcForRun?.id ?? ''}
+                      placeholder={procConfigs.length ? 'Select a config to run automatically…' : 'No proc configs — create one in Processing Sandbox'}
+                      disabled={procConfigs.length === 0 || processingState === 'running'}
+                      onIonChange={e => setSelectedProcForRun(procConfigs.find(c => c.id === e.detail.value) ?? null)}
+                    >
+                      {procConfigs.map(c => (
+                        <IonSelectOption key={c.id} value={c.id}>{c.name}</IonSelectOption>
+                      ))}
+                    </IonSelect>
+                  </IonItem>
+
+                  {processingState === 'running' && (
+                    <IonItem lines="none">
+                      <IonSpinner name="dots" slot="start" style={{ width: 16, height: 16 }} />
+                      <IonNote style={{ fontSize: '0.8rem', marginLeft: 8 }}>Processing…</IonNote>
+                    </IonItem>
+                  )}
+                  {processingError && (
+                    <IonItem lines="none">
+                      <IonText color="danger" style={{ fontSize: '0.8rem' }}>{processingError}</IonText>
+                    </IonItem>
+                  )}
+                  {processingState === 'done' && (
+                    <IonItem lines="none">
+                      <IonText color="success" style={{ fontSize: '0.8rem' }}>Processing complete</IonText>
+                    </IonItem>
+                  )}
+
+                  {procGroupNames.length > 0 && (
+                    <>
+                      <IonItem lines="full">
+                        <IonLabel><strong>Processed results</strong></IonLabel>
+                      </IonItem>
+                      {procGroupNames.map(name => (
+                        <IonItem key={name} lines="inset">
+                          <IonLabel>{name}</IonLabel>
+                        </IonItem>
+                      ))}
+                    </>
+                  )}
+                </>
+              ),
+            },
+            {
               label: 'Results',
               content: !result ? (
                 resultError ? (
@@ -544,74 +620,6 @@ const Simulator: React.FC = () => {
                       </div>
                     );
                   })()}
-                </>
-              ),
-            },
-            {
-              label: 'Process',
-              content: !result ? (
-                <EmptyState message="Select a completed run first" />
-              ) : (
-                <>
-                  <IonItem lines="full">
-                    <IonSelect
-                      label="Processing config"
-                      labelPlacement="stacked"
-                      value={selectedProcForRun?.id ?? ''}
-                      placeholder={procConfigs.length ? 'Select a proc config…' : 'No proc configs — create one in Processing Sandbox'}
-                      disabled={procConfigs.length === 0}
-                      onIonChange={e => setSelectedProcForRun(procConfigs.find(c => c.id === e.detail.value) ?? null)}
-                    >
-                      {procConfigs.map(c => (
-                        <IonSelectOption key={c.id} value={c.id}>{c.name}</IonSelectOption>
-                      ))}
-                    </IonSelect>
-                  </IonItem>
-
-                  <IonItem lines="full">
-                    <IonInput
-                      label="Run name"
-                      labelPlacement="stacked"
-                      placeholder="e.g. baseline, sepsis-day1"
-                      value={procRunName}
-                      onIonInput={e => setProcRunName(e.detail.value ?? '')}
-                      clearInput
-                    />
-                  </IonItem>
-
-                  <div style={{ padding: '8px 16px' }}>
-                    <IonButton
-                      expand="block"
-                      disabled={!selectedProcForRun || !procRunName.trim() || processingState === 'running'}
-                      onClick={handleRunProcessing}
-                    >
-                      {processingState === 'running' ? <IonSpinner name="dots" /> : 'Run Processing'}
-                    </IonButton>
-                  </div>
-
-                  {processingError && (
-                    <IonItem lines="none">
-                      <IonText color="danger" style={{ fontSize: '0.8rem' }}>{processingError}</IonText>
-                    </IonItem>
-                  )}
-                  {processingState === 'done' && (
-                    <IonItem lines="none">
-                      <IonText color="success" style={{ fontSize: '0.8rem' }}>Processing complete</IonText>
-                    </IonItem>
-                  )}
-
-                  {procGroupNames.length > 0 && (
-                    <>
-                      <IonItem lines="full">
-                        <IonLabel><strong>Processed results</strong></IonLabel>
-                      </IonItem>
-                      {procGroupNames.map(name => (
-                        <IonItem key={name} lines="inset">
-                          <IonLabel>{name}</IonLabel>
-                        </IonItem>
-                      ))}
-                    </>
-                  )}
                 </>
               ),
             },
