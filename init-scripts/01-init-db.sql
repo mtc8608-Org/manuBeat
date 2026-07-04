@@ -76,150 +76,6 @@ INSERT INTO components_relationships (parent_id, child_id) VALUES
 -- #endregion
 
 
--- #region Survey System · tables + Patient Registration seed
--- ╔══════════════════════════════════════════════════════════════════════════════╗
--- ║                          SURVEY SYSTEM                                      ║
--- ╚══════════════════════════════════════════════════════════════════════════════╝
---
--- Mirrors the app component system but is fully separate.
--- Same tree logic (nodes + relationships), same JSONB shape.
---
--- Survey component types:
---   survey   — container / section  (like app 'form')
---   text     — free-text input      (like app 'input')
---   number   — numeric input
---   date     — date picker
---   select   — dropdown             (like app 'select')
---   check    — boolean checkbox     (like app 'check')
---   textarea — multi-line text
---   scale    — numeric rating scale (options.min / options.max)
---   option   — child of select      (like app 'option')
---
--- Answers are keyed by survey_component UUID, enabling cross-survey queries:
---   SELECT answers->>'<uuid>' FROM survey_answers WHERE answers ? '<uuid>'
-
--- ── Tables ────────────────────────────────────────────────────────────────────
-
-CREATE TABLE survey_components (
-    id      UUID        PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name    VARCHAR(255) NOT NULL UNIQUE,
-    type    VARCHAR(50),
-    data    JSONB,
-    options JSONB
-);
-
--- position orders questions within a survey/section
-CREATE TABLE survey_components_relationships (
-    parent_id UUID        NOT NULL REFERENCES survey_components(id) ON DELETE CASCADE,
-    child_id  UUID        NOT NULL REFERENCES survey_components(id) ON DELETE CASCADE,
-    position  INT         NOT NULL DEFAULT 0,
-    PRIMARY KEY (parent_id, child_id)
-);
-
-CREATE TABLE surveys (
-    id           UUID        PRIMARY KEY DEFAULT uuid_generate_v4(),
-    component_id UUID        NOT NULL REFERENCES survey_components(id),
-    title        TEXT        NOT NULL,
-    is_active    BOOLEAN     NOT NULL DEFAULT true,
-    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE survey_answers (
-    id           UUID        PRIMARY KEY DEFAULT uuid_generate_v4(),
-    survey_id    UUID        NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
-    answers      JSONB       NOT NULL DEFAULT '{}',
-    submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- GIN index enables fast UUID-keyed containment queries across all surveys
-CREATE INDEX idx_survey_answers_gin ON survey_answers USING GIN (answers);
-
-
--- ── Seed: Patient Registration survey ─────────────────────────────────────────
--- UUID range: e000–e012  (prefix c51c1e5f-5cc1-4b77-8832-2d10cc97e0XX)
--- Address is a sub-survey (type=survey), demonstrating nested sections.
--- Each leaf question UUID becomes the key in survey_answers.answers.
-
-WITH reg AS (
-    INSERT INTO survey_components (id, name, type, data, options) VALUES
-        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e000', 'surv_registration',       'survey',   '{"text": "Patient Registration"}', '{}'),
-        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e001', 'surv_reg_first_name',     'text',     '{"text": "First name"}',           '{"required": true}'),
-        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e002', 'surv_reg_last_name',      'text',     '{"text": "Last name"}',            '{"required": true}'),
-        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e003', 'surv_reg_email',          'text',     '{"text": "Email"}',                '{"required": true}'),
-        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e004', 'surv_reg_phone',          'text',     '{"text": "Phone"}',                '{}'),
-        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e005', 'surv_reg_dob',            'date',     '{"text": "Date of birth"}',        '{"required": true}'),
-        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e006', 'surv_reg_sex',            'select',   '{"text": "Sex"}',                  '{}'),
-        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e007', 'surv_reg_sex_male',       'option',   '{"text": "Male"}',                 '{}'),
-        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e008', 'surv_reg_sex_female',     'option',   '{"text": "Female"}',               '{}'),
-        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e009', 'surv_reg_sex_other',      'option',   '{"text": "Other"}',                '{}'),
-        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e00a', 'surv_reg_sex_pnts',       'option',   '{"text": "Prefer not to say"}',    '{}'),
-        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e00b', 'surv_reg_nationality',    'text',     '{"text": "Nationality"}',          '{}'),
-        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e00c', 'surv_reg_address',        'survey',   '{"text": "Address"}',              '{}'),
-        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e00d', 'surv_reg_street',         'text',     '{"text": "Street"}',               '{}'),
-        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e00e', 'surv_reg_city',           'text',     '{"text": "City"}',                 '{}'),
-        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e00f', 'surv_reg_postal_code',    'text',     '{"text": "Postal code"}',          '{}'),
-        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e010', 'surv_reg_country',        'text',     '{"text": "Country"}',              '{}'),
-        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e011', 'surv_reg_emergency',      'text',     '{"text": "Emergency contact"}',    '{}'),
-        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e012', 'surv_reg_notes',          'textarea', '{"text": "Medical notes"}',        '{}')
-    RETURNING id, name
-)
-INSERT INTO survey_components_relationships (parent_id, child_id, position)
-SELECT p.id, c.id, pos.ord FROM reg p JOIN reg c ON true
-    JOIN (VALUES
-        ('surv_registration', 'surv_reg_first_name',  1),
-        ('surv_registration', 'surv_reg_last_name',   2),
-        ('surv_registration', 'surv_reg_email',       3),
-        ('surv_registration', 'surv_reg_phone',       4),
-        ('surv_registration', 'surv_reg_dob',         5),
-        ('surv_registration', 'surv_reg_sex',         6),
-        ('surv_registration', 'surv_reg_nationality', 7),
-        ('surv_registration', 'surv_reg_address',     8),
-        ('surv_registration', 'surv_reg_emergency',   9),
-        ('surv_registration', 'surv_reg_notes',      10),
-        ('surv_reg_sex',      'surv_reg_sex_male',    1),
-        ('surv_reg_sex',      'surv_reg_sex_female',  2),
-        ('surv_reg_sex',      'surv_reg_sex_other',   3),
-        ('surv_reg_sex',      'surv_reg_sex_pnts',    4),
-        ('surv_reg_address',  'surv_reg_street',      1),
-        ('surv_reg_address',  'surv_reg_city',        2),
-        ('surv_reg_address',  'surv_reg_postal_code', 3),
-        ('surv_reg_address',  'surv_reg_country',     4)
-    ) AS pos(parent_name, child_name, ord)
-    ON p.name = pos.parent_name AND c.name = pos.child_name;
-
--- ── Vital Signs section — appended to Patient Registration ───────────────────
--- UUID range: e013–e019  (prefix c51c1e5f-5cc1-4b77-8832-2d10cc97e0XX)
--- Added as a nested sub-survey ("Vital Signs") at position 11, mirroring the
--- Address section pattern. These numeric fields are processed by the Python
--- compute engine (pandas) on the Vitals analytics page.
-
-INSERT INTO survey_components (id, name, type, data, options) VALUES
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e013', 'surv_reg_vitals', 'survey', '{"text": "Vital Signs"}',                        '{}'),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e014', 'surv_reg_spo2',   'number', '{"text": "SpO2 (%)"}',                           '{"placeholder": "95–100"}'),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e015', 'surv_reg_hr',     'number', '{"text": "Heart Rate (bpm)"}',                   '{"placeholder": "60–100"}'),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e016', 'surv_reg_sbp',    'number', '{"text": "Systolic BP (mmHg)"}',                 '{"placeholder": "90–140"}'),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e017', 'surv_reg_dbp',    'number', '{"text": "Diastolic BP (mmHg)"}',                '{"placeholder": "60–90"}'),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e018', 'surv_reg_temp',   'number', '{"text": "Temperature (°C)"}',                   '{"placeholder": "36.1–37.5"}'),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e019', 'surv_reg_rr',     'number', '{"text": "Respiratory Rate (breaths/min)"}',     '{"placeholder": "12–20"}')
-ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO survey_components_relationships (parent_id, child_id, position) VALUES
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e000', 'c51c1e5f-5cc1-4b77-8832-2d10cc97e013', 11),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e013', 'c51c1e5f-5cc1-4b77-8832-2d10cc97e014',  1),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e013', 'c51c1e5f-5cc1-4b77-8832-2d10cc97e015',  2),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e013', 'c51c1e5f-5cc1-4b77-8832-2d10cc97e016',  3),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e013', 'c51c1e5f-5cc1-4b77-8832-2d10cc97e017',  4),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e013', 'c51c1e5f-5cc1-4b77-8832-2d10cc97e018',  5),
-  ('c51c1e5f-5cc1-4b77-8832-2d10cc97e013', 'c51c1e5f-5cc1-4b77-8832-2d10cc97e019',  6)
-ON CONFLICT DO NOTHING;
-
--- Hardcoded UUID so seed-sample-surveys.sql can reference the survey by ID.
-INSERT INTO surveys (id, component_id, title)
-VALUES ('c51c1e5f-5cc1-4b77-8832-2d10cc97f000', 'c51c1e5f-5cc1-4b77-8832-2d10cc97e000', 'Patient Registration')
-ON CONFLICT (id) DO NOTHING;
--- #endregion
-
-
 -- #region Users & Auth · roles + user_profile + user_secrets · editor forms d000/d010/d030/d040/d050
 -- Role catalogue. A role maps a name to a permissions *tier* — the fixed
 -- three-rung ladder enforced by nodejs/permissions.js + schema/index.js
@@ -349,6 +205,118 @@ INSERT INTO components_relationships (parent_id, child_id, position) VALUES
   ('c51c1e5f-5cc1-4b77-8832-2d10cc97d050', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d051', 1),
   ('c51c1e5f-5cc1-4b77-8832-2d10cc97d050', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d052', 2),
   ('c51c1e5f-5cc1-4b77-8832-2d10cc97d050', 'c51c1e5f-5cc1-4b77-8832-2d10cc97d053', 3);
+-- #endregion
+
+
+-- #region Survey System · tables + User Feedback seed
+-- ╔══════════════════════════════════════════════════════════════════════════════╗
+-- ║                          SURVEY SYSTEM                                      ║
+-- ╚══════════════════════════════════════════════════════════════════════════════╝
+--
+-- Mirrors the app component system but is fully separate.
+-- Placed after Users & Auth: survey_answers.owner_id references users(id).
+-- Same tree logic (nodes + relationships), same JSONB shape.
+--
+-- Survey component types:
+--   survey   — container / section  (like app 'form')
+--   text     — free-text input      (like app 'input')
+--   number   — numeric input
+--   date     — date picker
+--   select   — dropdown             (like app 'select')
+--   check    — boolean checkbox     (like app 'check')
+--   textarea — multi-line text
+--   scale    — numeric rating scale (options.min / options.max)
+--   option   — child of select      (like app 'option')
+--
+-- Answers are keyed by survey_component UUID, enabling cross-survey queries:
+--   SELECT answers->>'<uuid>' FROM survey_answers WHERE answers ? '<uuid>'
+
+-- ── Tables ────────────────────────────────────────────────────────────────────
+
+CREATE TABLE survey_components (
+    id      UUID        PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name    VARCHAR(255) NOT NULL UNIQUE,
+    type    VARCHAR(50),
+    data    JSONB,
+    options JSONB
+);
+
+-- position orders questions within a survey/section
+CREATE TABLE survey_components_relationships (
+    parent_id UUID        NOT NULL REFERENCES survey_components(id) ON DELETE CASCADE,
+    child_id  UUID        NOT NULL REFERENCES survey_components(id) ON DELETE CASCADE,
+    position  INT         NOT NULL DEFAULT 0,
+    PRIMARY KEY (parent_id, child_id)
+);
+
+CREATE TABLE surveys (
+    id           UUID        PRIMARY KEY DEFAULT uuid_generate_v4(),
+    component_id UUID        NOT NULL REFERENCES survey_components(id),
+    title        TEXT        NOT NULL,
+    is_active    BOOLEAN     NOT NULL DEFAULT true,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE survey_answers (
+    id           UUID        PRIMARY KEY DEFAULT uuid_generate_v4(),
+    survey_id    UUID        NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
+    owner_id     UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    answers      JSONB       NOT NULL DEFAULT '{}',
+    submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_survey_answers_owner_id ON survey_answers (owner_id);
+
+-- GIN index enables fast UUID-keyed containment queries across all surveys
+CREATE INDEX idx_survey_answers_gin ON survey_answers USING GIN (answers);
+
+
+-- ── Seed: User Feedback survey ────────────────────────────────────────────────
+-- UUID range: e000–e00d  (prefix c51c1e5f-5cc1-4b77-8832-2d10cc97e0XX)
+-- "About your usage" is a sub-survey (type=survey), demonstrating nested sections.
+-- Each leaf question UUID becomes the key in survey_answers.answers.
+
+WITH fb AS (
+    INSERT INTO survey_components (id, name, type, data, options) VALUES
+        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e000', 'surv_feedback',        'survey',   '{"text": "User Feedback"}',                     '{}'),
+        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e001', 'surv_fb_satisfaction', 'scale',    '{"text": "Overall satisfaction"}',              '{"min": 1, "max": 10}'),
+        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e002', 'surv_fb_area',         'select',   '{"text": "Which area do you use most?"}',       '{}'),
+        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e003', 'surv_fb_area_surveys', 'option',   '{"text": "Surveys"}',                           '{}'),
+        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e004', 'surv_fb_area_content', 'option',   '{"text": "Content"}',                           '{}'),
+        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e005', 'surv_fb_area_files',   'option',   '{"text": "Files"}',                             '{}'),
+        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e006', 'surv_fb_area_account', 'option',   '{"text": "Account"}',                           '{}'),
+        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e007', 'surv_fb_area_other',   'option',   '{"text": "Other"}',                             '{}'),
+        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e008', 'surv_fb_recommend',    'check',    '{"text": "Would you recommend this app?"}',     '{}'),
+        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e009', 'surv_fb_since',        'date',     '{"text": "When did you start using the app?"}', '{}'),
+        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e00a', 'surv_fb_usage',        'survey',   '{"text": "About your usage"}',                  '{}'),
+        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e00b', 'surv_fb_hours',        'number',   '{"text": "Hours per week using the app"}',      '{"placeholder": "e.g. 5"}'),
+        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e00c', 'surv_fb_device',       'text',     '{"text": "Primary device or browser"}',         '{"placeholder": "e.g. Firefox on Linux"}'),
+        ('c51c1e5f-5cc1-4b77-8832-2d10cc97e00d', 'surv_fb_improve',      'textarea', '{"text": "What could we improve?"}',            '{}')
+    RETURNING id, name
+)
+INSERT INTO survey_components_relationships (parent_id, child_id, position)
+SELECT p.id, c.id, pos.ord FROM fb p JOIN fb c ON true
+    JOIN (VALUES
+        ('surv_feedback', 'surv_fb_satisfaction', 1),
+        ('surv_feedback', 'surv_fb_area',         2),
+        ('surv_feedback', 'surv_fb_recommend',    3),
+        ('surv_feedback', 'surv_fb_since',        4),
+        ('surv_feedback', 'surv_fb_usage',        5),
+        ('surv_feedback', 'surv_fb_improve',      6),
+        ('surv_fb_area',  'surv_fb_area_surveys', 1),
+        ('surv_fb_area',  'surv_fb_area_content', 2),
+        ('surv_fb_area',  'surv_fb_area_files',   3),
+        ('surv_fb_area',  'surv_fb_area_account', 4),
+        ('surv_fb_area',  'surv_fb_area_other',   5),
+        ('surv_fb_usage', 'surv_fb_hours',        1),
+        ('surv_fb_usage', 'surv_fb_device',       2)
+    ) AS pos(parent_name, child_name, ord)
+    ON p.name = pos.parent_name AND c.name = pos.child_name;
+
+-- Hardcoded UUID kept stable for the seeded demo survey.
+INSERT INTO surveys (id, component_id, title)
+VALUES ('c51c1e5f-5cc1-4b77-8832-2d10cc97f000', 'c51c1e5f-5cc1-4b77-8832-2d10cc97e000', 'User Feedback')
+ON CONFLICT (id) DO NOTHING;
 -- #endregion
 
 
