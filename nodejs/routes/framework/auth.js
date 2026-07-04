@@ -1,13 +1,28 @@
-const express = require('express');
-const jwt     = require('jsonwebtoken');
-const bcrypt  = require('bcryptjs');
+const express   = require('express');
+const jwt       = require('jsonwebtoken');
+const bcrypt    = require('bcryptjs');
+const rateLimit = require('express-rate-limit');
 const { pool } = require('../../db');
 
 const router = express.Router();
 
+// Brute-force protection for the credential check. Must live express-side:
+// the reverse proxy can rate-limit connections but cannot tell a failed
+// password attempt from any other POST. Successful logins don't count
+// against the window, so legitimate users are never locked out by their
+// own activity. Keyed on req.ip — see 'trust proxy' in backend.js.
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,                    // failed attempts per IP per window
+  skipSuccessfulRequests: true,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many login attempts — try again later' },
+});
+
 // The JWT carries both the role name and its tier (roles.tier) — every auth
 // check compares the tier, so role/tier edits apply on the user's next login.
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   const { email, password } = req.body ?? {};
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
   try {

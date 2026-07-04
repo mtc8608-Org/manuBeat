@@ -14,6 +14,12 @@ const server = express();
 server.use(express.json());
 server.use(cors());
 
+// Exactly one reverse-proxy hop (Caddy) in front of node in production, so
+// req.ip must come from its X-Forwarded-For — the login rate limiter keys on
+// it, and without this every client would share the proxy's IP (one attacker
+// could lock everyone out). Harmless in dev, where there is no proxy.
+server.set('trust proxy', 1);
+
 // ── JWT decode middleware ──────────────────────────────────────────────────────
 // Runs on every request. Attaches req.user if token is present and valid.
 // Always calls next() — public routes continue even without a token.
