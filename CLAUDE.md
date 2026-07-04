@@ -61,7 +61,7 @@ pwa (React + Ionic + Vite)
 - **Routing** — React Router v5 via `IonReactRouter`. Public routes, `PrivateRoute` (requires JWT), `AdminRoute` (requires admin role). Registered in `App.tsx`. No catch-all redirect — unmatched paths render blank.
 - **Auth** — `AuthContext` stores the JWT in `localStorage`, decodes the payload on load, and verifies against `/api/me` on startup. `useAuth()` exposes `token`, `user`, `isAdmin`, `login`, `logout`.
 - **API** — all calls go through `services/Api.ts`. GraphQL via `graphql-http`, REST via `axios`. Auth header injected automatically.
-- **Shell components** — `SplitPageLayout`, `AreaShell`, `ResourcePanel`, `DataTable`, `ModalShell`, `TabPanel`, `EmptyState`, `TreeEditor` — these are the building blocks for every page.
+- **Shell components** — `SplitPageLayout`, `AreaShell`, `ResourcePanel`, `DataTable`, `ModalShell`, `TabPanel`, `EmptyState`, `TreeEditor`, `EChart` — these are the building blocks for every page.
 
 ### Component tree system
 UI structure (forms, inputs, selects, plots) is stored as nodes in the `components` table with JSONB `data` and `options`. Parent-child ordering uses `components_relationships.position`. `FormRenderer` turns a fetched tree into a live form. `TreeEditor` lets admins build/edit trees in the Configuration page. `ComponentForm` is the edit modal.
