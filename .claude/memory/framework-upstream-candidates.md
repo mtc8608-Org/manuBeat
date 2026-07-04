@@ -18,9 +18,12 @@ here in manuSpine (never cherry-picked), and moved to **Landed**. Forks then run
   conflict map. Keep the per-item deviations and merge notes accurate — they are
   read by the next fork session before it merges.
 
-## Fork status (as of 2026-07-02)
+## Fork status (as of 2026-07-04)
 
-Neither fork has merged the 2026-07-02 framework batch yet:
+Neither fork has merged the 2026-07-02 framework batch yet. Both also receive
+the 2026-07-04 hardening items below in their next merge — the GraphQL gate fix
+is security-critical: every fork's copy of `schema/index.js` carries the
+first-selection-only bypass until it merges.
 
 - **manuHunter** (`cv-builder` branch) — the port source; its merge is mostly
   echo-back of its own work. The real conflicts are exactly the recorded
@@ -104,6 +107,28 @@ these in the same `merge upstream/master`:
 - ✅ **Five development-loop agents** (d37a8b5) — pattern-scout,
   convention-reviewer, slice-mapper, seed-author, ui-composer under
   `.claude/agents/`. Take upstream.
+- ✅ **GraphQL gate hardening** (475730f, 2026-07-04) — the permission gate now
+  resolves the executed operation (`getOperationAST`) and enforces **every**
+  top-level field (fragment spreads expanded, fail closed); previously only
+  `definitions[0].selections[0]` was checked, so batching a privileged field
+  behind an allowed one — or leading with a fragment definition — bypassed
+  enforcement entirely (resolvers never check auth themselves). Rule line added
+  to `backend-api.md`. On merge: `schema/index.js` conflict is expected
+  (app-tuned) — the fork **must take upstream's gate mechanism**
+  (`topLevelFieldNames` + the per-field loop) and keep only its own tier-list
+  stance (e.g. manuHunter's no-public tier). Do not keep the fork's old
+  single-name gate.
+- ✅ **Seeded dev-guide auth docs updated to tier model** (8fccead, 2026-07-04) —
+  `seed-landing.sql`: permissions card rewritten (tier lists + every-top-level-
+  field gate), role→tier checks fixed in the JWT-middleware, writing-routes,
+  file-upload, pages-routing, and auth-architecture cards. On merge: take
+  upstream where the fork kept the framework dev-guide seeds; applies only
+  after `./run reset`.
+- ✅ **Login rate limiting** (2de9b96, 2026-07-04) — `express-rate-limit` on
+  `POST /login` (10 failed attempts per IP per 15 min; successful logins don't
+  count) in `routes/framework/auth.js`, plus `trust proxy: 1` in `backend.js`
+  for the single Caddy hop. On merge: take upstream (`auth.js`, `backend.js`,
+  `package.json`/lockfile); rebuild the node image for the new dependency.
 
 ## Pending
 
