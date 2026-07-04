@@ -31,7 +31,7 @@ Before writing any new JSX:
 - Display/preview a PDF (compiled or fetched) → `PdfViewer` (feed it a `Blob` or a `src` URL; it owns the object-URL lifecycle and falls back to `EmptyState`). Never hand-roll an `<iframe>`/`<embed>` + `URL.createObjectURL`.
 - Configurable DB-driven form → `FormRenderer` (`mode='app'` dot-path keys, `mode='survey'` UUID keys). Add/edit modals use seeded form trees fetched by UUID, never bespoke field-state + conditional JSX.
 - Tree add/edit/delete/reorder → `TreeEditor`. Never hand-roll add/edit/delete modal logic in a page.
-- Any chart/plot → `EChart` (owned glue over the Apache ECharts engine; the echarts options object passes straight through). Never import `echarts` directly in a page and never re-add a third-party React wrapper (`echarts-for-react` was removed for peer-locking the engine to v5).
+- Any chart/plot → `EChart` in `components/charts/` (owned glue over the Apache ECharts engine; the echarts options object passes straight through). Never import `echarts` directly in a page and never re-add a third-party React wrapper (`echarts-for-react` was removed for peer-locking the engine to v5).
 - Guard a route → `PrivateRoute` or `AdminRoute`.
 
 See `page-structure.md` and `page-template.md` for how these are laid out inside a page file.

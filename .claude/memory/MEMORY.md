@@ -12,4 +12,4 @@
 - [Framework sync ledger](framework-upstream-candidates.md) — the 2026-07-02 manuHunter port is fully landed; the Landed section is now the fork-side merge map (per-item deviations + conflict notes) read by pull-upstream; Pending holds future flag-upstream entries; neither fork has merged the batch yet
 - [User account keychain plan](user-account-keychain-plan.md) — port spec: user_profile + encrypted user_secrets keychain (write-only API, secrets-registry.js) + Users backoffice page; shipped in manuHunter 2026-07-02
 - [Mobile app path](mobile-app-path.md) — Capacitor removed 2026-07-04 (unused, CVE-carrying); PWA install covers most needs; re-add procedure if a fork ever needs app-store/native APIs
-- [EChart owned wrapper](echart-owned-wrapper.md) — chart glue is ours (shell EChart.tsx), engine stays echarts ^6; echarts-for-react removed; manuBeat must swap 3 imports on next pull-upstream
+- [EChart owned wrapper](echart-owned-wrapper.md) — chart glue is ours (charts/EChart.tsx), engine stays echarts ^6; echarts-for-react removed; manuBeat must swap 3 imports on next pull-upstream
