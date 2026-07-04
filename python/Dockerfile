@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM python
+FROM python:3.13
 
 ARG UID=1000
 ARG GID=1000
@@ -15,7 +15,9 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update && apt-get install -y --no-install-recommends \
     hdf5-tools
 
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+# requirements.lock is the enforced pip freeze (requirements.txt states intent,
+# unpinned). Regeneration procedure: .claude/rules/python-compute.md.
+COPY requirements.lock .
+RUN pip install -r requirements.lock
 
 WORKDIR /src

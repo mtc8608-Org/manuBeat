@@ -25,4 +25,9 @@ Python is also **unauthenticated** — it is only reachable inside the docker ne
 
 ## Dependencies
 
-New Python packages go in `python/requirements.txt` and require `./run rebuild python` (state it; never run it yourself).
+`python/requirements.txt` is the intent file (top-level packages, unpinned); `python/requirements.lock` is the enforced `pip freeze` the image actually installs. New packages go in `requirements.txt`, then the lock is regenerated and the image rebuilt — both user-run (state them; never run them yourself):
+
+```bash
+docker compose run --rm --no-deps python sh -c 'pip install -q -r /src/requirements.txt >/dev/null && pip freeze' > python/requirements.lock
+./run rebuild python
+```
