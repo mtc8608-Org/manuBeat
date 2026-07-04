@@ -36,7 +36,7 @@ manuSpine is the **upstream framework**: apps fork it (manuHunter at `/home/cabs
 
 ## Source of truth
 
-manuSpine is the main source of truth for patterns — here and in every fork. Before implementing anything non-trivial, find the closest existing implementation in this repo and replicate its pattern exactly. Only design something new if it genuinely does not exist here. The original project at `/home/cabsman/Documents/cabeleira.net/` is retired as an authority — historical background only.
+manuSpine is the main source of truth for patterns — here and in every fork. Before implementing anything non-trivial, find the closest existing implementation in this repo and replicate its pattern exactly. Only design something new if it genuinely does not exist here. The original project (archived at `/home/cabsman/Documents/archive/cabeleira-legacy/`) is retired as an authority — historical background only. `cabeleira.net` now refers to the live domain, not that codebase.
 
 ## Architecture
 
