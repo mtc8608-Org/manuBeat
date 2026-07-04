@@ -31,3 +31,13 @@ Python is also **unauthenticated** — it is only reachable inside the docker ne
 docker compose run --rm --no-deps python sh -c 'pip install -q -r /src/requirements.txt >/dev/null && pip freeze' > python/requirements.lock
 ./run rebuild python
 ```
+
+**This only works for additions.** The freeze runs inside the existing app image, where the old packages are already installed — `pip install` never uninstalls, so a package removed from `requirements.txt` silently stays pinned in the lock (learned 2026-07-04 removing pandas). Removing a package needs one of these instead (still user-run):
+
+```bash
+# clean-room regen in the BASE image (not the app image), then rebuild
+docker run --rm -v "$PWD/python:/src" python:3.13 sh -c 'pip install -q -r /src/requirements.txt >/dev/null && pip freeze' > python/requirements.lock
+./run rebuild python
+```
+
+or hand-delete the package's line (plus its now-orphaned transitive deps) from the lock — equally correct when the dependency tree is obvious. Stale extra pins are harmless bloat, not breakage, so a removal may also deliberately be left in place (pandas/numpy currently are).
