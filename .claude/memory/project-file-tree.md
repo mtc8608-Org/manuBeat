@@ -25,16 +25,15 @@ manuSpine/
 │   ├── rules/               # path-scoped conventions (backend-api, code-reuse, …)
 │   └── skills/              # procedures: new-api, new-form, new-page, pull-upstream, …
 ├── init-scripts/            # DB schema+seeds, run alphabetically on fresh volume
-│   ├── 01-init-db.sql       # framework schema + editor-form seeds
-│   ├── seed-landing.sql     # content tree: welcome, App Guide, Developer Guide
-│   └── seed-sample-surveys.sql
+│   ├── 01-init-db.sql       # framework schema + editor-form seeds + User Feedback survey
+│   └── seed-landing.sql     # content tree: welcome, App Guide, Developer Guide
 ├── nodejs/                  # Express + GraphQL backend
 │   ├── backend.js           # entry: middleware, route registration, startup seeds
 │   ├── db.js                # pg pool
 │   ├── permissions.js       # GraphQL tier lists (public/registered/user; admin default)
 │   ├── secrets-registry.js  # user-secrets keychain registry
 │   ├── lib/secrets.js
-│   ├── routes/framework/    # REST: auth, files, compute, content
+│   ├── routes/framework/    # REST: auth, files, content
 │   └── schema/              # index.js (gate+merge), types.js
 │       ├── helpers/         # components.js, survey.js
 │       └── resolvers/framework/  # components, roles, survey, users

@@ -36,7 +36,9 @@ first-selection-only bypass until it merges.
   guards, so manuBeat's domain surface (bedside telemetry ingest, device-token
   routes, WebSocket monitor, medical content) must be explicitly placed in tiers
   during the merge or it breaks silently. Review device-token auth paths against
-  the new REST guards; `SECRETS_MASTER_KEY` must be added to its env.
+  the new REST guards; `SECRETS_MASTER_KEY` must be added to its env. The
+  2026-07-04 survey reframe hits it hardest: its `bedside` domain models a
+  patient as a survey answer on `f000` — see that item's merge note below.
 
 ## Landed in manuSpine (all ported 2026-07-02) — merge notes per item
 
@@ -129,6 +131,32 @@ these in the same `merge upstream/master`:
   count) in `routes/framework/auth.js`, plus `trust proxy: 1` in `backend.js`
   for the single Caddy hop. On merge: take upstream (`auth.js`, `backend.js`,
   `package.json`/lockfile); rebuild the node image for the new dependency.
+- ✅ **Survey reframe: owner-scoped answers + User Feedback demo + stats/compute
+  removal** (c0c68f0 / 1af9aaf / 9a4bfc3 / aae96c5 / 2ee6d3b, 2026-07-04) —
+  fixes the two owner-scoping majors from the exposure audit. Four parts:
+  (1) `survey_answers.owner_id UUID NOT NULL REFERENCES users(id)` + owner-scoped
+  resolvers (`surveyAnswers`/`updateAnswer` filter non-admins; `submitAnswer`
+  stamps `ctx.user.id`; `deleteAnswer` admin-only; `SurveyAnswerType` gains
+  `owner_id`/`owner_email`; Answers tab: admin-only By column + Delete). The
+  Survey System region moved **after** Users & Auth in `01-init-db.sql` (the FK
+  needs `users`). (2) Seeded `f000` survey reframed Patient Registration → User
+  Feedback (`surv_fb_*`, e000–e00d); `seed-sample-surveys.sql` deleted.
+  (3) Stats layer removed: `surveyStats` resolver, `routes/framework/compute.js`,
+  the Stats tab, `getSurveyStats`, `ENDPOINT.SURVEY_EXPORT`,
+  `python/api/domains/compute/` + pandas — the Python service is an empty
+  `/health` scaffold (framework ships no domains). (4) Survey/stats screenshots
+  deleted; App Guide survey cards + Dev Guide rewritten; docs/rules/skills point
+  at manuHunter's `cv/compile.js` + `latex/routes.py` as the compute exemplars.
+  On merge: **schema is reset-only, so `owner_id NOT NULL` lands via
+  `./run reset`** — any fork with domain code writing/reading `survey_answers`
+  must adapt to the owner column and scoped resolvers. **manuBeat's `bedside`
+  domain is a head-on collision** (a patient IS a survey answer on `f000`):
+  keep its own Patient Registration seed content if it wants it (app-tuned
+  seed wins), but it must take upstream's `survey_answers` DDL + resolver
+  scoping and decide who owns bedside-created answers. Forks keep their own
+  `python/api/domains/<domain>/` and Node compute callers (only the framework
+  `compute` domain and its `compute.js` route were deleted); regenerate
+  `requirements.lock` if the fork inherits the pandas removal.
 
 ## Pending
 

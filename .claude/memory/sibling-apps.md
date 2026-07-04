@@ -19,7 +19,7 @@ manuSpine is the upstream framework (see [[manulab-context]]); these apps fork i
 - Repo: `/home/cabsman/Documents/projects/manuBeat`. Same fork/merge workflow.
 - Memory: `manuBeat/.claude/memory/`. Rich, mostly domain-specific, but useful as a worked example of extending the framework. Key files there:
   - `project_cardio_port` : porting `CardioRespiratoryModelV2` (branch `V2.3`) into manuBeat as the cardio domain (Python compute).
-  - `project_bedside_domain` : the `bedside` admin domain, where a patient IS a survey answer (survey `f000`), augmented via `bedside_nodes`/`beds`/`bed_assignments`/`patient_files`. Good example of adding a domain on top of the survey + component-tree framework and reusing the shell components.
+  - `project_bedside_domain` : the `bedside` admin domain, where a patient IS a survey answer (survey `f000`), augmented via `bedside_nodes`/`beds`/`bed_assignments`/`patient_files`. Good example of adding a domain on top of the survey + component-tree framework and reusing the shell components. **Merge hazard (2026-07-04):** upstream reseeded `f000` as a User Feedback survey and made `survey_answers.owner_id NOT NULL` (owner-scoped resolvers) — manuBeat's bedside domain collides head-on; see the survey-reframe merge note in [[framework-upstream-candidates]] before its next pull-upstream.
   - `project_bedside_server` / `project_bedside_pi` / `project_bedside_hardware` : edge-telemetry system (Raspberry Pi agents streaming device data to the manuBeat server). The Pi agent lives in a separate repo, **manuEdge** (`git@github.com:mtc8608/manuEdge.git`, `/home/cabsman/Documents/projects/manuEdge`, native systemd Python agent). Hardware BOMs and Pi flashing details are there too.
 
 ## Framework takeaways
