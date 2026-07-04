@@ -18,6 +18,12 @@ Service URLs: Frontend `http://localhost:8100` · GraphQL `http://localhost:3000
 
 **Never execute `./run` (or docker) yourself** — the user controls the runtime/DB lifecycle (`reset` wipes DB + MinIO). Finish a task by stating which command the user must run: `./run reset` for init-script/seed changes, `./run rebuild <service>` for Dockerfile/deps changes, plain `./run` otherwise.
 
+## Dependency policy
+
+- Node manifests use caret ranges — never exact pins. The committed `package-lock.json` is the enforcement: every install is `npm ci` (Dockerfiles and entrypoints), and containers never write lockfiles.
+- Updating deps is a deliberate laptop-side act: `npm install --package-lock-only` / `npm audit fix --package-lock-only` in the service dir, review the lockfile diff, then plain `./run` (entrypoints reinstall) — `./run rebuild <service>` only if the Dockerfile changed.
+- Python: `requirements.txt` states intent (unpinned); `python/requirements.lock` is the enforced freeze the image installs. Regeneration procedure: `.claude/rules/python-compute.md`.
+
 ## Git style
 
 - Commit subject ≤50 characters, one or two lines max — enough to understand the change without opening the diff. No bullet lists, no "net result" summaries.
