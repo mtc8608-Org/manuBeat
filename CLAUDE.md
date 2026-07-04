@@ -93,7 +93,6 @@ Content pages are `contentPage` nodes in the shared `components` table. The root
 Files run alphabetically on a fresh postgres volume:
 - `01-init-db.sql` — framework schema and seeds (component editor forms, survey forms, content editor forms, files table).
 - `seed-landing.sql` — full content tree: base nodes, welcome card, App Guide, Developer Guide.
-- `seed-sample-surveys.sql` — sample Patient Registration answers for the Stats tab demo.
 - `02-init-<domain>.sql` — domain tables, added per project.
 
 **UUID convention**: framework seeds use the prefix `c51c1e5f-5cc1-4b77-8832-2d10cc97XXXX`. Content seeds use `00000000-0000-0000-0000-XXXXXXXXXXXX`. Always hardcode UUIDs for seeds referenced from code (e.g. `constants.ts` `FORM_ID`, `EDITOR_ID`, `CONTENT_EDITOR_ID`).

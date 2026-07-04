@@ -7,7 +7,7 @@
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-A full-stack SaaS framework for building data-driven web apps. Provides auth, a component-tree CMS, surveys, file storage, and a Python computation layer — all in one Docker stack.
+A full-stack SaaS framework for building data-driven web apps. Provides auth, a component-tree CMS, surveys, file storage, and a Python compute scaffold — all in one Docker stack.
 
 Use it as a **GitHub Template** to bootstrap new apps.
 
@@ -15,13 +15,13 @@ Use it as a **GitHub Template** to bootstrap new apps.
 
 ## Screenshots
 
-| Sign In | Surveys | Content |
-|---------|---------|---------|
-| ![Sign In](pwa/public/screenshots/app-signin.png) | ![Surveys](pwa/public/screenshots/app-surveys-questions.png) | ![Content](pwa/public/screenshots/app-content-build.png) |
+| Sign In | Content | Files |
+|---------|---------|-------|
+| ![Sign In](pwa/public/screenshots/app-signin.png) | ![Content](pwa/public/screenshots/app-content-build.png) | ![Files](pwa/public/screenshots/app-files.png) |
 
-| Stats | Files | Config |
-|-------|-------|--------|
-| ![Stats](pwa/public/screenshots/app-surveys-stats.png) | ![Files](pwa/public/screenshots/app-files.png) | ![Config](pwa/public/screenshots/app-config.png) |
+| Account | AI Import | Config |
+|---------|-----------|--------|
+| ![Account](pwa/public/screenshots/app-account.png) | ![AI Import](pwa/public/screenshots/app-content-ai.png) | ![Config](pwa/public/screenshots/app-config.png) |
 
 ---
 
@@ -38,7 +38,7 @@ Use it as a **GitHub Template** to bootstrap new apps.
 ### Framework features
 
 - **Component tree system** — UI structure (forms, inputs, charts) stored as JSONB nodes. Rendered dynamically by `FormRenderer` / `TreeEditor`.
-- **Survey system** — parallel component tree for building and running surveys with answer storage.
+- **Survey system** — parallel component tree for building and running surveys with owner-scoped answer storage (users see their own submissions; admins see all).
 - **Content / CMS** — hierarchical content pages with HTML, Image, HTML+Image, and LaTeX card types. Editable from the Backoffice.
 - **Files** — MinIO-backed file upload, listing, and description management.
 - **Auth** — JWT-based login, roles (`admin` / `user`), change-password.

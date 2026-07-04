@@ -11,7 +11,7 @@ How the Node backend is organised and secured. Applies to every edit under `node
 
 - **GraphQL resolvers** — `schema/resolvers/<domain>/<things>.js` exporting `{ queries, mutations }`. Merged into `schema/index.js`'s `Query`/`Mutation` field spreads under a `// [DOMAIN]` banner comment. GraphQL output types live in `schema/types.js`.
 - **REST routes** — `routes/<domain>/<things>.js` exporting an express router, registered in `backend.js` with `server.use('/api', require('./routes/<domain>/<things>'))` under the same `// [DOMAIN]` banner.
-- GraphQL for entity CRUD; REST only for what GraphQL handles badly: file upload/download, binary/PDF streaming, orchestration endpoints that call Python (`routes/framework/files.js`, `routes/framework/compute.js`; fork example: manuHunter's `routes/cv/compile.js`).
+- GraphQL for entity CRUD; REST only for what GraphQL handles badly: file upload/download, binary/PDF streaming, orchestration endpoints that call Python (`routes/framework/files.js`; fork example: manuHunter's `routes/cv/compile.js`).
 
 ## Auth model (how it actually works)
 
