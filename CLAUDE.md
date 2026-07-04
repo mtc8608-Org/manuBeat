@@ -14,7 +14,7 @@ Always use `./run` from the repo root. Never raw `docker compose` commands.
 ./run rebuild-reset [service]# wipe DB + MinIO AND rebuild (all if omitted), then start
 ```
 
-Every form ends in a foreground `docker compose up` (Ctrl-C stops it) — never chain `./run` invocations with `&&`. Builds pass the host UID/GID as build args.
+Every form ends in a foreground `docker compose up` (Ctrl-C stops it) — never chain `./run` invocations with `&&`. Builds pass the host UID/GID as build args. A background poller prints a `STACK READY` banner (and a desktop notification) once all three services answer — the pwa dev server lags the rest by minutes after a rebuild.
 
 Service URLs: Frontend `http://localhost:8100` · GraphQL `http://localhost:3000/graphql` · Python `http://localhost:5000`
 
