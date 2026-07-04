@@ -15,7 +15,10 @@ so decisions are not re-litigated.
 
 ## Adopted
 
-(none yet)
+- **Deploy the ecosystem on Hetzner (2026-07-04)** —
+  Context: brainstorm on hosting manuSpine + forks (GPU deferred); infrastructure provisioned same day.
+  Verdict: one small Hetzner cloud box (sized from measured ~650 MiB total prod-relevant footprint of two stacks), custom domain delegated to Hetzner DNS for wildcard TLS via DNS-01. Infrastructure provisioned and verified 2026-07-04. Machine, domain, IP, and the provisioning walkthrough live in the **local-only (gitignored)** `deployment-plan.md` — instance details stay out of this public framework repo.
+  Next: brainstorm the plan's "Design still open" section (prod compose, Caddy, consolidation), then implement.
 
 ## Parked
 

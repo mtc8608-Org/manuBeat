@@ -58,3 +58,4 @@ htmlcov/
 !.claude/agents/
 # ...except personal notes about the user
 .claude/memory/user-manuel.md
+.claude/memory/deployment-plan.md
