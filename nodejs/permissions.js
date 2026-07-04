@@ -60,7 +60,9 @@ module.exports = {
   user: [],
 
   // Everything else requires role === 'admin'.
-  // (Informational — enforcement uses the fallback rule above. Only list real mutations.)
+  // (Informational — enforcement uses the fallback rule above. List admin ops,
+  // mutations and queries alike, whose admin-only status is a deliberate
+  // decision worth documenting.)
   admin: [
     'roleList', 'createRole', 'updateRole', 'deleteRole',
     'createComponent', 'updateComponent', 'deleteComponent',
