@@ -35,7 +35,7 @@ services:
       - default
       - db
     command: backend
-  # Ionic Client container
+  # PWA client container
   pwa:
     build: ./pwa
     tty: true

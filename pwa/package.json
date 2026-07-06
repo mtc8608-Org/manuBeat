@@ -1,5 +1,5 @@
 {
-  "name": "sidemenu",
+  "name": "manuspine",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -45,5 +45,5 @@
     "vite": "^6.0.0",
     "vitest": "^4.1.9"
   },
-  "description": "An Ionic project"
+  "description": "manuSpine framework frontend"
 }
