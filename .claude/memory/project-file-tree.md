@@ -16,8 +16,12 @@ that adds/moves/removes a directory.**
 ```
 manuSpine/
 ├── run                      # ONLY entry point for the stack (see CLAUDE.md)
-├── docker-compose.yml       # 5 services: pwa, nodejs, python, postgres, minio
+├── docker-compose.yml       # DEV: 5 services: pwa, nodejs, python, postgres, minio
+├── docker-compose.prod.yml  # PROD: 4 services (no pwa), prebuilt :prod images, no ports,
+│                            #   edge/internal/db networks, named volumes; shipped to
+│                            #   /srv/apps/<app>/docker-compose.yml by ship-app.sh
 ├── .env / .env.example      # compose project name + secrets (template committed)
+├── .env.prod.example        # prod env template; real file on-box only (chmod 600)
 ├── CLAUDE.md                # always-on rules + architecture
 ├── .claude/
 │   ├── agents/              # convention-reviewer, exposure-auditor, pattern-scout, …
@@ -29,12 +33,15 @@ manuSpine/
 │   ├── provision.sh         # stage 1, ON box: docker, log caps, sshd, upgrades, swap,
 │   │                        #   edge network, /srv/caddy skeleton (idempotent)
 │   ├── ship-caddy.sh        # stage 2, laptop: build xcaddy image → save|ssh load → up
+│   ├── ship-app.sh          # stage 3, laptop: prod images + PWA build → skeleton in
+│   │                        #   /srv/apps/<app> → save|ssh load → rsync www → up -d
 │   └── caddy/               # Dockerfile (caddy-dns/hetzner), compose, Caddyfile.template,
 │                            #   .env.example
 ├── init-scripts/            # DB schema+seeds, run alphabetically on fresh volume
 │   ├── 01-init-db.sql       # framework schema + editor-form seeds + User Feedback survey
 │   └── seed-landing.sql     # content tree: welcome, App Guide, Developer Guide
 ├── nodejs/                  # Express + GraphQL backend
+│   ├── Dockerfile / Dockerfile.prod  # dev (deps at start, nodemon) / prod (slim, baked)
 │   ├── backend.js           # entry: middleware, route registration, startup seeds
 │   ├── db.js                # pg pool
 │   ├── permissions.js       # GraphQL tier lists (public/registered/user; admin default)
@@ -67,7 +74,7 @@ manuSpine/
 │       ├── services/Api.ts  # ALL API calls (gql helper + axios instance)
 │       └── theme/
 └── python/                  # FastAPI compute service (no DB/MinIO access)
-    ├── Dockerfile           # python:3.13, installs requirements.lock
+    ├── Dockerfile / Dockerfile.prod  # dev (full base, hdf5-tools, --reload) / prod (slim)
     ├── requirements.txt     # intent (unpinned) · requirements.lock = enforced freeze
     └── api/
         ├── main.py          # app + router includes
