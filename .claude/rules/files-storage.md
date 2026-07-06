@@ -29,4 +29,4 @@ Domain tables never store keys/paths — they join to `files(id)` through a link
 
 ## Seeded assets
 
-Seed images as PNGs under `pwa/public/` (mounted read-only at `/public` in the nodejs container); the `backend.js` startup scan seeds each as MinIO key `seed-<basename>` with a `files` row (`ON CONFLICT DO NOTHING`), so they survive `./run reset`. Seed SQL references them **only** as `http://localhost:3000/api/files/seed-<filename>/download-by-key` — never as static paths like `/screenshots/foo.png`.
+Seed images as PNGs under `pwa/public/` (mounted read-only at `/public` in the nodejs container); the `backend.js` startup scan seeds each as MinIO key `seed-<basename>` with a `files` row (`ON CONFLICT DO NOTHING`), so they survive `./run reset`. Seed SQL references them **only** as the origin-relative `/api/files/seed-<filename>/download-by-key` — never as static paths like `/screenshots/foo.png`, and never with an absolute host (the same seed must work in dev behind the vite proxy and in prod behind Caddy).

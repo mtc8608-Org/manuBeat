@@ -20,7 +20,7 @@ The prompt gives a spec: form fields / survey questions / content cards, plus wh
 - **UUIDs are hardcoded, never generated.** Framework seeds: `c51c1e5f-5cc1-4b77-8832-2d10cc97XXXX`; content seeds: `00000000-0000-0000-0000-XXXXXXXXXXXX`. Grep existing seeds for the highest used suffix in the relevant range and allocate the next contiguous block; list the allocation explicitly.
 - Parent–child links via the relationships table with explicit `position` (0-based, display order).
 - Any UUID referenced from code (`constants.ts` `FORM_ID`-style) must be called out so the caller adds the constant.
-- Images never use static paths: `data.src` is `http://localhost:3000/api/files/seed-<filename>/download-by-key`, and the PNG must exist under `pwa/public/` — flag missing ones.
+- Images never use static paths or absolute hosts: `data.src` is the origin-relative `/api/files/seed-<filename>/download-by-key`, and the PNG must exist under `pwa/public/` — flag missing ones.
 - Seeds must be idempotent in the same way the existing file's inserts are (match its `ON CONFLICT` style exactly).
 
 ## Report format

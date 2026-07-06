@@ -197,10 +197,12 @@ export const FORM_USAGE: Record<string, string> = {
 
 ///////////////////////////////////////////////////////////////////////////////
 // #region API Configuration
-// Node.js backend service address. Change here if the port or host moves.
-// The backend reads its own port from .env (NODE_PORT); keep these in sync.
-export const API_BASE    = 'http://localhost:3000/api';
-export const GQL_URL     = 'http://localhost:3000/graphql';
+// Backend URLs are origin-relative: the app always talks to the origin that
+// served it. In dev the vite proxy (vite.config.ts) forwards /api and
+// /graphql to the nodejs container; in prod Caddy does the same. One build
+// artifact works on any host — never reintroduce an absolute host here.
+export const API_BASE    = '/api';
+export const GQL_URL     = '/graphql';
 
 // REST endpoint paths (relative to API_BASE)
 export const ENDPOINT = {

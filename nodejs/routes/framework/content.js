@@ -113,8 +113,9 @@ router.post('/generate-content', requireAdmin, upload.array('files', 50), async 
         } catch (dbErr) {
           console.error('Generate content: failed to record image in DB:', dbErr.message);
         }
-        const base = process.env.PUBLIC_API_URL ?? `http://localhost:${process.env.NODE_PORT}`;
-        const downloadUrl = `${base}/api/files/${encodeURIComponent(key)}/download-by-key`;
+        // Origin-relative: the URL is persisted into content rows and rendered
+        // by the same-origin PWA, so it must survive any host/domain change.
+        const downloadUrl = `/api/files/${encodeURIComponent(key)}/download-by-key`;
         urlMap[img.originalname] = downloadUrl;
       }
 

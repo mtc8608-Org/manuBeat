@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AuthUser } from '../interfaces/types';
+import { API_BASE } from '../constants';
 
 interface AuthContextValue {
   user:     AuthUser | null;
@@ -48,7 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Verify stored token against the server on startup
   useEffect(() => {
     if (!stored) return;
-    fetch('http://localhost:3000/api/me', {
+    fetch(`${API_BASE}/me`, {
       headers: { Authorization: `Bearer ${stored.token}` },
     }).then(res => {
       if (!res.ok) {
@@ -73,7 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   if (!ready) return null;
 
   const login = async (email: string, password: string) => {
-    const res = await fetch(`http://localhost:3000/api/login`, {
+    const res = await fetch(`${API_BASE}/login`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ email, password }),
@@ -88,7 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (email: string, password: string) => {
-    const res = await fetch(`http://localhost:3000/api/register`, {
+    const res = await fetch(`${API_BASE}/register`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ email, password }),

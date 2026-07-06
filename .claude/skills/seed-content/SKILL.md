@@ -20,6 +20,6 @@ Add content pages and cards to the seed SQL so they survive `./run reset`. Read 
    - `contentImage` → `data.src` + `data.alt`
    - `contentHtmlImage` → `data.html` + `data.src`
    - `contentLatex` → `data.html` (HTML with KaTeX math)
-4. **Images** — PNG under `pwa/public/` (e.g. `pwa/public/screenshots/`); reference it **only** as `"src": "http://localhost:3000/api/files/seed-<basename>/download-by-key"`. Never a static path. The `backend.js` startup block (search `seed-`) seeds each PNG into MinIO + a `files` row on boot.
+4. **Images** — PNG under `pwa/public/` (e.g. `pwa/public/screenshots/`); reference it **only** as the origin-relative `"src": "/api/files/seed-<basename>/download-by-key"`. Never a static path, never an absolute host. The `backend.js` startup block (search `seed-`) seeds each PNG into MinIO + a `files` row on boot.
 5. **Verify HTML strings** are valid inside SQL single quotes (escape `'` as `''`) and that every card's parent link and position are present — an unlinked card silently never renders.
 6. **Do not run the app.** Finish by telling the user to run `./run reset` (wipes DB + MinIO) to re-run the seeds.

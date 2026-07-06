@@ -121,6 +121,6 @@ Content images always go through MinIO + the `files` table:
 
 1. Place PNGs under `pwa/public/` (e.g. `pwa/public/screenshots/`); `pwa/public` is mounted read-only at `/public` in the nodejs container.
 2. On startup `backend.js` scans `/public/**/*.png` (skipping `favicon.png`), seeds each into MinIO with key `seed-<basename>`, and inserts a `files` row (`ON CONFLICT DO NOTHING`).
-3. Seed SQL references images as `"src": "http://localhost:3000/api/files/seed-<filename>/download-by-key"`.
+3. Seed SQL references images as `"src": "/api/files/seed-<filename>/download-by-key"` (origin-relative — the same seed works in dev behind the vite proxy and in prod behind Caddy).
 
-**Never** use static paths like `"/screenshots/app-foo.png"` as `data.src` — images must have `files` rows and survive DB resets via stable keys.
+**Never** use static paths like `"/screenshots/app-foo.png"` as `data.src` — images must have `files` rows and survive DB resets via stable keys. Never bake an absolute host into `data.src`.
