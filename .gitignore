@@ -59,4 +59,5 @@ htmlcov/
 # ...except personal notes, personal infra, and the brainstorm ledger
 .claude/memory/user-manuel.md
 .claude/memory/deployment-plan.md
+.claude/memory/production-walkthrough.md
 .claude/memory/idea-ledger.md
