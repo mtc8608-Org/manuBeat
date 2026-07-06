@@ -49,6 +49,7 @@ const App: React.FC = () => {
           <IonReactRouter>
             <IonSplitPane when="(min-width: 3000px)" contentId="main">
               <Menu />
+              {/* @ts-expect-error -- @ionic/react 7 typings predate @types/react 18.3 removing the deprecated onPointerEnterCapture props; obsolete once Ionic is upgraded (tsc then flags this directive as unused). Runtime unaffected. */}
               <IonRouterOutlet id="main">
                 {/* Public */}
                 <Route path={ROUTE.LANDING} exact={true} component={Landing} />
