@@ -1,0 +1,21 @@
+# Production image — slim base, source baked in, no dev tooling.
+# Built on the laptop by deploy/ship-app.sh (never on the box) and shipped
+# via docker save | ssh docker load. Dev uses ./Dockerfile instead:
+# bind-mounted source + npm ci at container start; this image is fully
+# self-contained and needs no entrypoint.
+FROM node:20-slim
+
+ENV NODE_ENV=production
+
+WORKDIR /app
+
+# Dependency layer first so source edits don't invalidate the npm cache.
+# npm ci installs exactly the committed lockfile; --omit=dev drops nodemon.
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+COPY . .
+
+USER node
+EXPOSE 3000
+CMD ["node", "backend.js"]
