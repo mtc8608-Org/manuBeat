@@ -19,7 +19,13 @@ const minioClient = new Minio.Client({
   secretKey: process.env.MINIO_PASSWORD,
 });
 
-const upload = multer({ storage: multer.memoryStorage() });
+// memoryStorage buffers each upload fully into RAM, so cap what one request
+// can hold: 15 MB covers any content image or LaTeX doc, 10 files bounds the
+// worst case at 150 MB.
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 15 * 1024 * 1024, files: 10 },
+});
 const BUCKET = process.env.MINIO_BUCKET;
 
 module.exports = { pool, minioClient, upload, BUCKET };
