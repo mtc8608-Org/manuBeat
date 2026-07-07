@@ -18,18 +18,32 @@ here in manuSpine (never cherry-picked), and moved to **Landed**. Forks then run
   conflict map. Keep the per-item deviations and merge notes accurate — they are
   read by the next fork session before it merges.
 
-## Fork status (as of 2026-07-04)
+## Fork status (as of 2026-07-07)
 
-Neither fork has merged the 2026-07-02 framework batch yet. Both also receive
-the 2026-07-04 hardening items below in their next merge — the GraphQL gate fix
-is security-critical: every fork's copy of `schema/index.js` carries the
-first-selection-only bypass until it merges.
-
-- **manuHunter** (`cv-builder` branch) — the port source; its merge is mostly
-  echo-back of its own work. The real conflicts are exactly the recorded
-  deviations below: public permissions tier, CodeEditor `language` prop, generic
-  `form_user_profile` seed, Dockerfile apt package list. It also receives the
-  post-port items (surveys→registered tier, sync skills, dev-loop agents).
+- **manuHunter** (`master`) — **merged the full batch 2026-07-07** (merge commit
+  `ccc9d8c`), including the 2026-07-02 port echo-back and the 2026-07-04
+  hardening/survey-reframe items. Resolution followed the deviations below;
+  fork-side outcomes worth knowing: no public tier kept (gate adapted — no
+  `permissions.public` lookup in its `schema/index.js`); upstream's generic
+  `form_user_profile` d050 seed block **deleted** from its `01-init-db.sql`
+  (its richer same-name form in `03-init-cv.sql` wins — `components.name` is
+  UNIQUE); CV template seeds set `options.language: "latex"` explicitly;
+  Dockerfile keeps TeX Live but dropped `hdf5-tools` (only served the removed
+  compute engine); surveys placed on `PrivateRoute`/registered tier; four
+  role-inverting lines in shared rules/skills re-worded fork-side
+  (backend-api public-tier paragraph, db-schema framework-repo line,
+  new-api step 6, new-role ownership line).
+- **manuBeat** (`master`) — has NOT merged; last merged upstream **pre-port**
+  (at 67c3a10), so its next pull brings the entire batch at once — and the
+  security-critical GraphQL gate fix: its `schema/index.js` carries the
+  first-selection-only bypass until it merges. Heaviest follow-up is auth: the
+  tier-based lockdown defaults every GraphQL op to admin-only and adds REST
+  guards, so manuBeat's domain surface (bedside telemetry ingest, device-token
+  routes, WebSocket monitor, medical content) must be explicitly placed in tiers
+  during the merge or it breaks silently. Review device-token auth paths against
+  the new REST guards; `SECRETS_MASTER_KEY` must be added to its env. The
+  2026-07-04 survey reframe hits it hardest: its `bedside` domain models a
+  patient as a survey answer on `f000` — see that item's merge note below.
 - **manuBeat** (`master`) — last merged upstream **pre-port** (at 67c3a10), so its
   next pull brings the entire batch at once. Heaviest follow-up is auth: the
   tier-based lockdown defaults every GraphQL op to admin-only and adds REST
