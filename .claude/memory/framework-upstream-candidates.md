@@ -174,6 +174,34 @@ these in the same `merge upstream/master`:
 
 ## Pending
 
+- **Stale seeded `user`-role description (2026-07-07)** —
+  Where: `init-scripts/01-init-db.sql:98` (same line in manuSpine and manuHunter — text identical in both).
+  What: the seeded `user` role's description still reads "plus the user-tier operations (surveys)", stale since the 2026-07-04 survey reframe moved every survey op to the `registered` tier (`permissions.js` `user: []`). The Roles backoffice page displays a claim that contradicts enforcement. Fix: reword the description to match the tier model (e.g. "full app features; the middle tier between registered and admin"). Reset-only (seed), lands in forks via `./run reset` after merge.
+  Strip: none.
+  Decisions: exact wording open; keep it framework-neutral (no domain references).
+  Depends: none.
+
+- **Regenerate `python/requirements.lock` after pandas removal (2026-07-07)** —
+  Where: `python/requirements.lock` (byte-identical in manuSpine and manuHunter).
+  What: the survey-reframe batch removed the `compute` domain and dropped pandas from `requirements.txt`, but the lock still pins `pandas==3.0.3`, `numpy==2.5.0` and their transitives `python-dateutil`, `six` — orphaned installs in every image build. Regenerate the lock in manuSpine per `.claude/rules/python-compute.md` (never hand-edit, never regenerate in a fork); forks inherit via merge.
+  Strip: none.
+  Decisions: none — mechanical regeneration.
+  Depends: none.
+
+- **Retire `UserRoute` + `AuthContext.isUser` + AppHeader `userOnly` (2026-07-07)** —
+  Where: `pwa/src/components/routing/UserRoute.tsx`, `pwa/src/contexts/AuthContext.tsx` (`isUser` in the context type, value, and JWT decode), `pwa/src/components/shell/AppHeader.tsx` (`userOnly` NAV_SECTIONS filter).
+  What: post-reframe, no App.tsx renders `<UserRoute>` and no `NAV_SECTIONS` entry sets `userOnly` in manuSpine, manuHunter, or manuBeat; `isUser`'s only consumer is that dead filter. `code-reuse.md` names only PrivateRoute/AdminRoute as guards. Delete all three together; manuHunter already dropped its dead `import UserRoute` line (2026-07-07).
+  Strip: none.
+  Decisions: confirm manuBeat still doesn't use them at port time (it merges the whole batch late); if a middle-tier route guard is ever wanted again it can be recreated from PrivateRoute in minutes.
+  Depends: none.
+
+- **Retire `ComponentForm.tsx` and `ListModal.tsx` (2026-07-07)** —
+  Where: `pwa/src/components/forms/ComponentForm.tsx` (+ its `ShowComponentModal` export and the `ComponentModal` interface in `pwa/src/interfaces/types.ts`), `pwa/src/components/forms/ListModal.tsx`.
+  What: unimported in manuSpine, manuHunter, and manuBeat (only comment references). Configuration.tsx carries its own live copy of the editor-ID map ComponentForm duplicated. Delete both files and the orphaned interface.
+  Strip: none.
+  Decisions: none.
+  Depends: none.
+
 - **(Maybe) LaTeX compile service** — the `python/api/domains/latex/` compile
   endpoint (pdflatex, shell-escape disabled, temp dir, timeout) + the Node bridge
   pattern is largely generic ("compile a .tex string to PDF"). Borderline: it
