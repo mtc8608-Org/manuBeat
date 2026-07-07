@@ -18,15 +18,19 @@ Runs in a **fork**. Brings upstream (manuSpine) changes down with a real merge �
 
 3. **Resolve conflicts by file class:**
    - **App-tuned files** — `nodejs/permissions.js`, `nodejs/schema/index.js`, `pwa/src/constants.ts`, seed SQL, `secrets-registry.js`, nav (`Menu.tsx`/`AppHeader.tsx`): these legitimately differ per app. Keep the fork's domain entries/tier placements, take upstream's structural/mechanism changes. Where a Landed entry records a deliberate deviation (e.g. whether a `public` tier exists), the **fork's** stance wins here unless the entry says otherwise.
-   - **Framework files** (shell components, `lib/`, framework resolvers/routes, rules/skills): take upstream. If the fork had local edits to a framework file, that's a missed `flag-upstream` — flag it now, then still take upstream and re-apply the fork edit on top.
+   - **Framework files** (shell components, `lib/`, framework resolvers/routes, rules/skills): take upstream. If the fork had local edits to a framework file, that's a missed `flag-upstream` — flag it now, then still take upstream and re-apply the fork edit on top. After taking upstream for shared rules/skills, scan them for **role-inverting wording** — statements true only in manuSpine ("this repo is the framework", "keep it domain-free", "lives here") that would misdirect a session running in the fork — and re-word those lines fork-side (this is a recorded exception to take-upstream, not drift).
+   - **`.claude/memory/`** — split by ownership: the fork keeps `--ours` for its perspective memories (context/sibling/plan files that upstream imported and rewrote from its own viewpoint — these AA-conflict every merge; the fork's viewpoint wins); take upstream for the sync ledger and for genuinely new upstream memory files. `MEMORY.md` is always a hand-merge: keep the fork's index as base, add lines for new upstream arrivals, skip upstream-gitignored ones (they never arrive).
    - **`framework-upstream-candidates.md`**: take upstream's version (it is the source of truth); re-append any Pending entries that exist only locally.
    - Never resolve by cherry-picking or `--ours`/`--theirs` wholesale across the merge.
 
 4. **Post-merge check, without running the stack** (never execute `./run`/docker):
    - `node --check` on merged `nodejs/**/*.js` files that had conflicts.
-   - `npx tsc --noEmit` in `pwa/` — compare against pre-merge if unsure whether an error is new.
+   - `npx tsc --noEmit` in `pwa/` — compare against pre-merge if unsure whether an error is new. Expect duplicated declarations/blocks where upstream ported the fork's own code to a different file position — resolve by keeping one copy, not by re-placing code.
    - Grep for leftover conflict markers: `git grep -nE '^(<<<<<<<|=======$|>>>>>>>)'`.
+   - Run the **`exposure-auditor`** agent (full auth-surface gate: tiers, owner scoping, REST guards, gate mechanism) and the **`dead-code-auditor`** agent (code orphaned or superseded by the merge). Fix confirmed findings before committing.
 
-5. **Domain follow-ups.** Upstream changes can demand fork-side work beyond the merge (e.g. new permission tiers need domain ops placed in a tier; new seeded forms may need a domain-shaped replacement). List these; do them only with the user's go-ahead.
+5. **Domain follow-ups.** Upstream changes can demand fork-side work beyond the merge (e.g. new permission tiers need domain ops placed in a tier; new seeded forms may need a domain-shaped replacement). List these; do them only with the user's go-ahead. If directories were added/moved/removed, update the fork's `project-file-tree.md` in the same commit.
 
 6. **Hand off.** Commit the merge, then state the command the user must run: `./run reset` if init-scripts changed upstream (data loss — say so), `./run rebuild <svc>` for Dockerfile/deps changes, plain `./run` otherwise.
+
+7. **Close the loop upstream.** In the upstream clone, update the **Fork status** section of `.claude/memory/framework-upstream-candidates.md` (this fork has now merged; note the date and any new deviations recorded during resolution) and commit there. This step lives here because the fork session is the one that knows the merge happened.

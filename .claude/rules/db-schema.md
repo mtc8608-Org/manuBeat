@@ -11,7 +11,7 @@ The schema exists only as `init-scripts/*.sql`, run alphabetically on a **fresh*
 
 ## File layout
 
-- `01-init-db.sql` — framework schema + seeds. This is the framework repo: changes here flow down to every fork via merge (CLAUDE.md "Framework downstream"), so keep it domain-free.
+- `01-init-db.sql` — framework schema + seeds. In manuSpine, keep it domain-free — changes flow down to every fork via merge (CLAUDE.md "Framework downstream"); in a fork, framework-generic changes belong upstream first.
 - `02-init-<domain>.sql` — one file per domain (added by forks); runs after `01`, so framework tables (`users`, `files`, `components`, …) already exist and can be referenced.
 - `seed-*.sql` — content seeds; run last alphabetically.
 
@@ -31,6 +31,8 @@ Hardcode every seed UUID that code references (never `uuid_generate_v4()` for th
 - Domain seeds (in forks): pick one stable prefix per form/group and stick to it (manuHunter's jobs domain uses `aaaaf001-…`/`aaaaf002-…`)
 
 Seed names/UUIDs used by the frontend are mirrored in `pwa/src/constants.ts` with a comment naming the init script as source of truth.
+
+**App-overridable seed names collide.** `components.name` (and other seeded name columns) are UNIQUE, and `ON CONFLICT (id) DO NOTHING` does not cover a name clash — two seeds with the same name abort DB init. So a framework seed that apps are expected to replace under the same name (e.g. `form_user_profile`) can only exist on ONE side: the fork that seeds its own version must delete the framework block during `pull-upstream`, and the ledger entry must say so.
 
 ## Owned seed rows
 
