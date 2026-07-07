@@ -25,6 +25,14 @@ How the Node backend is organised and secured. Applies to every edit under `node
 
 Every operation in the `user` tier must scope rows by owner inside the resolver: non-admin gets `WHERE user_id = ctx.user.id` (or `owner_id`); admin sees all. Reads scope the SELECT or check the fetched row; writes append the scope to the UPDATE/DELETE `WHERE` and error with "not found or not authorised" when zero rows match. Reference implementation: manuHunter's `schema/resolvers/jobs/applications.js`.
 
+## User secrets (keychain)
+
+Per-user API keys live encrypted in `user_secrets` (design record: `.claude/memory/user-secrets-keychain.md`). Three invariants:
+
+- **Write-only over the API.** No GraphQL/REST response ever contains a raw secret value — not to its owner, not to an admin. Responses carry metadata only (`name`, `label`, `isSet`, `last4`, `updated_at`). Never add a query/field that returns plaintext.
+- **`lib/secrets.js` is the only code that decrypts.** A route or resolver needing a key calls `getUserSecret(req.user.id, name)`; nothing else touches `ciphertext` or the master key. Never inline crypto elsewhere, and never accept a client-supplied key as an alternative path.
+- **Adding a key is one registry entry.** New secret = one `{name, label}` line in `secrets-registry.js` (with a `// [DOMAIN]` comment for app keys) — no migration, no new UI: the Integrations card renders from the `userSecrets` query. `setUserSecret` rejects unregistered names; keep it that way.
+
 ## Resolver/route style
 
 - Parameterised `pool.query` only, with explicit casts (`$1::uuid`, `$n::date`). Never interpolate values into SQL.

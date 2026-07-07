@@ -65,7 +65,7 @@ Entry template (absolute dates, no relative ones):
 
 Grow an **Adopted** entry into a per-topic plan file
 `.claude/memory/<topic>-plan.md`, following the existing plan files
-(`served-multi-user-plan.md`, `user-account-keychain-plan.md`): memory
+(`served-multi-user-plan.md`, `user-secrets-keychain.md`): memory
 frontmatter (`type: project`), then goal, decisions already made (link the
 ledger entry), the design at implement-from-this detail, open decisions, and
 implementation order. Use `slice-mapper` or the `Plan` agent to ground the

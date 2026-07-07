@@ -1,6 +1,6 @@
 ---
-name: user-account-keychain-plan
-description: Design of the framework-level user_profile + user_secrets keychain (encrypted, write-only API keys) and the Users backoffice page — shipped in manuHunter 2026-07-02, port spec for manuSpine
+name: user-secrets-keychain
+description: Design record (shipped in manuHunter and ported here 2026-07-02) — framework-level user_profile + user_secrets keychain (encrypted, write-only API keys) and the Users backoffice page
 metadata:
   node_type: memory
   type: project
@@ -8,7 +8,7 @@ metadata:
 
 # User account: framework-level user_profile + user_secrets keychain
 
-Designed and **implemented in manuHunter 2026-07-02** (all six steps; the deferred admin-keychain-status column remains deferred). This file is the design spec for porting it into manuSpine — it is on the port list ([[framework-upstream-candidates]]). Driven by [[served-multi-user-plan]]: no single-user shortcuts. manuHunter file references below (cv_profile, `03-init-cv.sql`, content.js AI import) describe where it was built; in manuSpine everything lands in framework files, and the profile *form shape* stays app-level.
+Designed and **implemented in manuHunter 2026-07-02** (all six steps; the deferred admin-keychain-status column remains deferred), **ported into manuSpine the same day** (`12bff1f` and follow-ups — Landed section of [[framework-upstream-candidates]]). This file is the design record; the enforced invariants (write-only API, single decrypt point, registry-only additions) live in `.claude/rules/backend-api.md`. Driven by [[served-multi-user-plan]]: no single-user shortcuts. manuHunter file references below (cv_profile, `03-init-cv.sql`, content.js AI import) describe where it was built; in manuSpine everything lands in framework files, and the profile *form shape* stays app-level.
 
 ## Design decisions (settled)
 

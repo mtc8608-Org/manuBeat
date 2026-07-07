@@ -12,7 +12,7 @@ manuSpine is the upstream framework (see [[manulab-context]]); these apps fork i
 
 ## manuHunter (job-search app — most active fork)
 - Repo: `/home/cabsman/Documents/projects/manuHunter`, domain: jobs, applications, LaTeX CV builder.
-- Memory: `manuHunter/.claude/memory/`. Key files: `framework-upstream-candidates.md` (mirrored here as [[framework-upstream-candidates]] — the port list), `user-account-keychain-plan.md` (mirrored here), `cv-builder-plan.md` + phases (domain, stays there).
+- Memory: `manuHunter/.claude/memory/`. Key files: `framework-upstream-candidates.md` (mirrored here as [[framework-upstream-candidates]] — the port list), `user-secrets-keychain.md` (mirrored here), `cv-builder-plan.md` + phases (domain, stays there).
 - Source of the tier/roles auth model, user_profile/user_secrets keychain, SinglePanelLayout, PdfViewer, and the `.claude/` rules/skills layout this repo imported (2026-07-02).
 
 ## manuBeat (cardio / bedside telemetry app)
