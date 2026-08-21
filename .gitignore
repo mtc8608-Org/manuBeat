@@ -53,8 +53,5 @@ htmlcov/
 *.hdf5
 *.he5
 
-# ── Claude Code ──────────────────────────────────────────────
-.claude/
-
 # ── Clinical cases — keep private, never commit ──────────────
 cases/
