@@ -118,9 +118,11 @@ server.listen(PORT, () => console.log('Server running on PORT http://localhost:'
           if (!exists) {
             const buf = fs.readFileSync(filePath);
             await minioClient.putObject(BUCKET, key, buf, buf.length, { 'Content-Type': PNG_MIME });
+            // is_public: these are Landing/CMS images and must render for
+            // anonymous visitors (see the files table comment in 01-init-db.sql).
             await pool.query(
-              `INSERT INTO files (bucket, key, filename, mime_type, size, description)
-               VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (bucket, key) DO NOTHING`,
+              `INSERT INTO files (bucket, key, filename, mime_type, size, description, is_public)
+               VALUES ($1,$2,$3,$4,$5,$6,true) ON CONFLICT (bucket, key) DO NOTHING`,
               [BUCKET, key, filename, PNG_MIME, buf.length, 'Seeded content image']
             );
             console.log(`-> Seeded content image: ${key}`);

@@ -43,6 +43,20 @@ const ImagePicker: React.FC<ImagePickerProps> = ({ value, onChange }) => {
 
   const imageFiles = files.filter(f => f.mime_type?.startsWith('image/'));
 
+  // Choosing an image here means "use it as content" — content cards and form
+  // fields render for anonymous visitors, and an <img> cannot send the auth
+  // header, so the file must be published. This is the third and last path that
+  // sets is_public (the others are the /public seed scan and generated content
+  // images); a plain upload on the Files page stays private.
+  const select = (file: FileRecord, url: string) => {
+    onChange(url);
+    if (!file.is_public) {
+      ApiService.patchFile(file.id, { is_public: true })
+        .then(() => setFiles(prev => prev.map(f => (f.id === file.id ? { ...f, is_public: true } : f))))
+        .catch(err => console.error('Failed to publish content image', err));
+    }
+  };
+
   return (
     <div style={{ border: '1px solid var(--ion-border-color, #ccc)', borderRadius: 6, overflow: 'hidden' }}>
       {/* Upload strip */}
@@ -90,7 +104,7 @@ const ImagePicker: React.FC<ImagePickerProps> = ({ value, onChange }) => {
             return (
               <div
                 key={f.id}
-                onClick={() => onChange(url)}
+                onClick={() => select(f, url)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 10,
                   padding: '8px 12px', cursor: 'pointer',

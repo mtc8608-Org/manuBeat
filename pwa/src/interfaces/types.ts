@@ -38,6 +38,7 @@ export interface FileRecord {
   mime_type: string | null;
   size: number | null;
   description: string | null;
+  is_public: boolean;   // content asset — streams to anonymous visitors
   uploaded_by: string | null;
   created_at: string;
 }

@@ -163,7 +163,7 @@ const Files: React.FC = () => {
 
   const handleDescSave = async (values: any) => {
     if (!selected) return;
-    await ApiService.patchFile(selected.id, values.description ?? '');
+    await ApiService.patchFile(selected.id, { description: values.description ?? '' });
     const updated = { ...selected, description: values.description ?? '' };
     setSelected(updated);
   };

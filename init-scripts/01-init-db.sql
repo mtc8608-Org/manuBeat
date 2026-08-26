@@ -375,6 +375,13 @@ SELECT p.id, c.id FROM html_image_editor p JOIN html_image_editor c
 
 -- ── Files ─────────────────────────────────────────────────────────────────────
 
+-- is_public marks a file as a CONTENT asset: readable by anonymous visitors
+-- through the two download routes, because <img> tags cannot carry the auth
+-- header and seeded/CMS images must render on the public Landing page.
+-- Everything else is owner-or-admin only. Only three code paths ever set it
+-- true (the /public seed scan in backend.js, generated content images in
+-- routes/framework/content.js, and ImagePicker selection) — a plain upload is
+-- private. Never default this to true.
 CREATE TABLE files (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   bucket      TEXT NOT NULL DEFAULT 'uploads',
@@ -383,6 +390,7 @@ CREATE TABLE files (
   mime_type   TEXT,
   size        BIGINT,
   description TEXT,
+  is_public   BOOLEAN NOT NULL DEFAULT false,
   uploaded_by UUID REFERENCES users(id) ON DELETE SET NULL,
   created_at  TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(bucket, key)

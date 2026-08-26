@@ -471,11 +471,13 @@ const uploadFile = async (file: File, description?: string) => {
   return res.json();
 };
 
-const patchFile = async (id: string, description: string) => {
+// Partial update. Only the fields passed are written, so publishing a file as a
+// content asset does not clobber its description (and vice versa).
+const patchFile = async (id: string, patch: { description?: string; is_public?: boolean }) => {
   const res = await fetch(`${API_BASE}${ENDPOINT.FILES}/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-    body: JSON.stringify({ description }),
+    body: JSON.stringify(patch),
   });
   if (!res.ok) throw new Error('Failed to update file');
   return res.json();

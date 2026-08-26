@@ -105,9 +105,11 @@ router.post('/generate-content', requireAdmin, upload.array('files', 50), async 
         const key = `${randomUUID()}-${safeFilename}`;
         await minioClient.putObject(BUCKET, key, img.buffer, img.size, { 'Content-Type': img.mimetype });
         try {
+          // is_public: the URL below is embedded in content cards, which render
+          // for anonymous visitors on the Landing page.
           await pool.query(
-            `INSERT INTO files (bucket, key, filename, mime_type, size, description, uploaded_by)
-             VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+            `INSERT INTO files (bucket, key, filename, mime_type, size, description, uploaded_by, is_public)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,true)`,
             [BUCKET, key, img.originalname, img.mimetype, img.size, 'Generated content image', req.user.id]
           );
         } catch (dbErr) {
