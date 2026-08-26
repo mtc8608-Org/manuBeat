@@ -20,16 +20,26 @@ here in manuSpine (never cherry-picked), and moved to **Landed**. Forks then run
 
 ## Fork status (as of 2026-08-26)
 
-- **manuHunter** (`master`) — **merged everything through `161e57e` on
-  2026-08-26** (merge commits `2e23707` then `f0f29f0`): the tier-generic nav/route
-  work, the 2026-08-26 security batch, and the compute-service hardening above.
-  Verified after: `tsc --noEmit` and a full `vite build` clean, all 24 backend
-  files parse, no conflict markers, and the `pwa/src` verbatim surface
-  ([[fork-verbatim-surface]]) reduced to its two legitimate `pages/cv` +
-  `pages/jobs` folders — every other file byte-identical. In `nodejs/` only the
-  four genuinely app-tuned files differ (`backend.js`, `permissions.js`,
-  `schema/index.js`, `schema/types.js`); the one framework-file drift it carried
-  (a specialised comment in `routes/framework/files.js`) was reverted.
+- **manuHunter** (`master`) — **fully merged and verbatim-clean, through
+  `4416c02` on 2026-08-26** (merge commits `2e23707`, `f0f29f0`, then `876d546`):
+  the tier-generic nav/route work, the 2026-08-26 security batch, and the
+  compute-service hardening above. Verified after: `tsc --noEmit` and a full
+  `vite build` clean, all backend files parse, no conflict markers, and the
+  `pwa/src` verbatim surface ([[fork-verbatim-surface]]) reduced to its two
+  legitimate `pages/cv` + `pages/jobs` folders — every other file byte-identical.
+  In `nodejs/` only the four genuinely app-tuned files differ (`backend.js`,
+  `permissions.js`, `schema/index.js`, `schema/types.js`); the one framework-file
+  drift it carried (a specialised comment in `routes/framework/files.js`) was
+  reverted.
+
+  A compliance re-audit on 2026-08-26 cleared the last two residual spots, both
+  *inside* app-tuned files where the allowance is append-only: `types.ts` had
+  moved `ComponentResults.owner_id` above `children` and specialised its comment
+  to `cv_components`, and `constants.ts` had a stray blank line in the
+  `ROLE_TIERS` block. Neither changed behaviour; both were free merge conflicts.
+  Its ledger had also pruned the two pre-2026-08-26 **Landed** sections — the
+  fork does not get to trim the shared ledger, so the merge took upstream's copy
+  whole.
 
   **Deviations now in force** — the fork's `user` rung is **empty by design**:
   jobs, CV *and surveys* all sit in `registered`, owner-scoped in the resolvers.
