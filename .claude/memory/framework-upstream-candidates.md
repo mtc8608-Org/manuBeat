@@ -41,7 +41,11 @@ here in manuSpine (never cherry-picked), and moved to **Landed**. Forks then run
   adapted, no `permissions.public` lookup); upstream's generic `form_user_profile`
   d050 block deleted in favour of its richer same-name form in `03-init-cv.sql`;
   CV template seeds set `options.language: "latex"`; Dockerfile keeps TeX Live,
-  no `hdf5-tools`; role-inverting lines in shared rules/skills re-worded fork-side.
+  no `hdf5-tools`; role-inverting lines re-worded fork-side in exactly four shared
+  files — `rules/backend-api.md`, `skills/new-api`, `skills/new-role`,
+  `skills/predeploy-audit` (`rules/db-schema.md` was on this list and no longer
+  diverges). Those four are the whole `.claude/` divergence; anything else
+  differing there is drift.
 
   **Merge-artifact lesson:** `schema/types.js` came out with `UserProfileType` and
   `UserSecretType` exported twice — the fork's list plus upstream's appended. Grep
