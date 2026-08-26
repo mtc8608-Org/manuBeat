@@ -43,16 +43,12 @@ here in manuSpine (never cherry-picked), and moved to **Landed**. Forks then run
   during the merge or it breaks silently. Review device-token auth paths against
   the new REST guards; `SECRETS_MASTER_KEY` must be added to its env. The
   2026-07-04 survey reframe hits it hardest: its `bedside` domain models a
-  patient as a survey answer on `f000` — see that item's merge note below.
-- **manuBeat** (`master`) — last merged upstream **pre-port** (at 67c3a10), so its
-  next pull brings the entire batch at once. Heaviest follow-up is auth: the
-  tier-based lockdown defaults every GraphQL op to admin-only and adds REST
-  guards, so manuBeat's domain surface (bedside telemetry ingest, device-token
-  routes, WebSocket monitor, medical content) must be explicitly placed in tiers
-  during the merge or it breaks silently. Review device-token auth paths against
-  the new REST guards; `SECRETS_MASTER_KEY` must be added to its env. The
-  2026-07-04 survey reframe hits it hardest: its `bedside` domain models a
-  patient as a survey answer on `f000` — see that item's merge note below.
+  patient as a survey answer on `f000` — see that item's merge note below. It
+  additionally receives the whole 2026-08-26 security batch below, of which the
+  **deactivation check** and **device-token routes** need real thought: the JWT
+  middleware now requires a live `users.is_active` row, so any device or agent
+  authenticating with something that is not a real user row will start getting
+  `req.user = null`.
 
 ## Landed in manuSpine (all ported 2026-07-02) — merge notes per item
 
@@ -172,6 +168,61 @@ these in the same `merge upstream/master`:
   `compute` domain and its `compute.js` route were deleted); regenerate
   `requirements.lock` if the fork inherits the pandas removal.
 
+## Landed 2026-08-26 — the manuHunter audit batch (upstream-native)
+
+Not ported from a fork: manuHunter's pre-deployment audit swept **shared
+framework code**, so its findings were manuSpine bugs. Fixed here; both forks
+receive them on their next `merge upstream/master`. Details and open follow-ups:
+[[pre-deployment-todo]].
+
+- ✅ **Owner-scoping primitives** (`schema/helpers/ownership.js`) — `userId`,
+  `isAdmin`, `assertOwner`, `assertReadable`, `ownerScope`, extracted from
+  manuHunter's `resolvers/cv/documents.js`. `users.js` and `survey.js`
+  refactored onto them. On merge: **take upstream and delete the fork's local
+  copies** — manuHunter's `assertWritable`/`assertReadable`/`readScope` in
+  `cv/documents.js` and `assertApplicationOwner` in `jobs/applications.js` are
+  the same functions; keep its `applications` table's `user_id` column name by
+  passing `{ column: 'user_id' }`. **manuBeat: `survey.js` changed** — its
+  `bedside` domain leans on survey answers, so re-check its resolvers.
+- ✅ **`downloadBlob`** (`pwa/src/utils/download.ts`, new dir) — fixes a leaked
+  object URL in `DataTable`'s CSV export. On merge: manuHunter should collapse
+  its three hand-rolled copies (GeneratedCvs, Applications, Artifacts) onto it.
+- ✅ **Navigation single-sourced** — `NAV_AREAS` (constants.ts) now drives the
+  drawer, the top-bar sections (`NAV_SECTIONS`, derived) and the in-page rail;
+  `ICON_MAP` lifted to `components/shell/icons.ts`; `Menu.tsx` no longer
+  hardcodes areas. **`AREA_NAV`'s shape is unchanged**, so pages keep working.
+  On merge: conflict in `constants.ts` and `Menu.tsx` is expected — take
+  upstream's mechanism, then re-add fork areas as `NAV_AREAS` entries
+  (manuHunter: APPLICATIONS and CV_BUILDER) instead of Menu JSX blocks.
+- ✅ **`UserRoute` / `isUser` / `userOnly` deleted** — dead in all three repos.
+  On merge: drop any remaining import.
+- ✅ **File download lockdown** — `files.is_public` + owner-or-admin on both
+  routes, `download-by-key` resolved through the `files` table, inline mime
+  allowlist, `nosniff`, single not-found-or-not-authorised error.
+  **Reset-only**: a fork picks the column up on its own `./run reset`, and until
+  then its content images 403. **manuHunter especially**: its generated CV PDFs
+  and application artifacts are served through these routes — they are private
+  uploads and stay private, which is the intended fix for its own
+  download-scoping blocker, but re-check every `data.src` it seeds.
+- ✅ **`/register` throttled + password floor** — separate `registerLimiter`;
+  `MIN_PASSWORD_LENGTH` on register, change-password and admin user create.
+- ✅ **Deactivation revokes** — JWT middleware re-checks `users.is_active`,
+  fails closed. See the manuBeat device-token warning in Fork status above.
+- ✅ **CORS removed, body cap set** (`express.json({ limit: '2mb' })`), `cors`
+  dependency dropped. On merge: a fork serving its frontend from a different
+  host must re-add CORS scoped to an explicit origin list — never bare `cors()`.
+- ✅ **Deploy hardening** — Caddy `header` block (HSTS/nosniff/frame-ancestors),
+  dev compose ports on `127.0.0.1`, `ship-app.sh` secret-length preflight,
+  `provision.sh` ufw default-deny. The Caddy block does **not** reach an
+  already-provisioned box; hand-copy it.
+- ✅ **Rules updated** — `backend-api.md` (ownership primitives, no existence
+  oracle, both-ends link auth, deactivation), `db-schema.md` (shared NULL-owned
+  rows), `files-storage.md` (`is_public`), `python-compute.md` (subprocess
+  sandboxing), `code-reuse.md` (adding an area). Take upstream.
+- ⚠️ **Lockfile not regenerated** — `nodejs/package.json` moved to
+  `multer ^2.0.2` and dropped `cors`, but `package-lock.json` is untouched.
+  Run `npm install --package-lock-only` in `nodejs/` before this is real.
+
 ## Pending
 
 - **Stale seeded `user`-role description (2026-07-07)** —
@@ -186,13 +237,6 @@ these in the same `merge upstream/master`:
   What: the survey-reframe batch removed the `compute` domain and dropped pandas from `requirements.txt`, but the lock still pins `pandas==3.0.3`, `numpy==2.5.0` and their transitives `python-dateutil`, `six` — orphaned installs in every image build. Regenerate the lock in manuSpine per `.claude/rules/python-compute.md` (never hand-edit, never regenerate in a fork); forks inherit via merge.
   Strip: none.
   Decisions: none — mechanical regeneration.
-  Depends: none.
-
-- **Retire `UserRoute` + `AuthContext.isUser` + AppHeader `userOnly` (2026-07-07)** —
-  Where: `pwa/src/components/routing/UserRoute.tsx`, `pwa/src/contexts/AuthContext.tsx` (`isUser` in the context type, value, and JWT decode), `pwa/src/components/shell/AppHeader.tsx` (`userOnly` NAV_SECTIONS filter).
-  What: post-reframe, no App.tsx renders `<UserRoute>` and no `NAV_SECTIONS` entry sets `userOnly` in manuSpine, manuHunter, or manuBeat; `isUser`'s only consumer is that dead filter. `code-reuse.md` names only PrivateRoute/AdminRoute as guards. Delete all three together; manuHunter already dropped its dead `import UserRoute` line (2026-07-07).
-  Strip: none.
-  Decisions: confirm manuBeat still doesn't use them at port time (it merges the whole batch late); if a middle-tier route guard is ever wanted again it can be recreated from PrivateRoute in minutes.
   Depends: none.
 
 - **Retire `ComponentForm.tsx` and `ListModal.tsx` (2026-07-07)** —
