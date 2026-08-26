@@ -18,6 +18,16 @@ Python is also **unauthenticated** — it is only reachable inside the docker ne
 - Each `routes.py` opens with a module docstring that states, numbered and explicitly, what the module computes and ends by restating the Node/Python split (fork example: manuHunter's `python/api/domains/latex/routes.py`).
 - Binary/file responses use `StreamingResponse` with an explicit `media_type` and `Content-Disposition`.
 
+## Shelling out (non-negotiable)
+
+Python is unauthenticated and reachable by anything inside the docker network, so an endpoint that runs a subprocess is the softest target in the stack. Any endpoint invoking an external binary must, without exception:
+
+- **Disable shell escape** in the tool itself where it exists (`-no-shell-escape` for TeX), and never build the command as a shell string — pass an argv list to `subprocess.run` so caller input can never become a shell token.
+- **Work only inside a `tempfile.TemporaryDirectory()`**, never the repo or a shared path, so concurrent calls cannot see or clobber each other and nothing survives the request.
+- **Pass a hard `timeout=` and handle `subprocess.TimeoutExpired`** — an unbounded compile is a CPU DoS reachable by any account that can hit the Node caller.
+
+The Node caller owns auth, owner-scoping and rate limiting *before* the call; none of that protects the subprocess itself, which is why these three are Python-side requirements rather than advice. Worked example: manuHunter's `python/api/domains/latex/routes.py`.
+
 ## Node caller conventions
 
 - URL built from env: `http://${process.env.PYTHON_HOST}:${process.env.PYTHON_PORT}/<domain>/<endpoint>`.

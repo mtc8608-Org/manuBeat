@@ -37,3 +37,13 @@ Seed names/UUIDs used by the frontend are mirrored in `pwa/src/constants.ts` wit
 ## Owned seed rows
 
 Rows with a user FK are seeded with the owner NULL (the admin user is created by Node at startup, after init scripts run). If a seed must belong to the admin, add an idempotent claim in `backend.js`'s startup block (`UPDATE ... SET owner_id = $admin WHERE owner_id IS NULL ...` — worked example: manuHunter's CV seed ownership block).
+
+### Shared NULL-owned rows
+
+A NULL owner is not only a pre-claim placeholder — it is also the framework's **shared row** marker: a seed every user may read but nobody owns (a default template, a read-only sample). Three things must line up, or the pattern silently breaks:
+
+1. **Read scope admits NULL** — `owner_id = $1::uuid OR owner_id IS NULL` for non-admins (`assertReadable`/`ownerScope` in `schema/helpers/ownership.js`). Writes do **not**: a NULL-owned row is admin-writable only, so `assertOwner` rejects it for everyone else.
+2. **The admin-claim block must skip them**, or startup will stamp the shared rows to admin and make them invisible to everyone else. Exclude by a stable name prefix or type, never by "all NULLs".
+3. **Anything rendered from the row's owner needs a fallback** — a shared row has no owner profile, so pass the *caller's* id where owner-derived data is assembled.
+
+Because the claim block and the read scope live in different files, changing one without the other is the usual bug. Both are reset-only: forks pick the behaviour up on their next `./run reset`.

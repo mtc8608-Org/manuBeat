@@ -23,7 +23,14 @@ How the Node backend is organised and secured. Applies to every edit under `node
 
 ## The owner-scoping invariant (non-negotiable)
 
-Every operation in the `user` tier must scope rows by owner inside the resolver: non-admin gets `WHERE user_id = ctx.user.id` (or `owner_id`); admin sees all. Reads scope the SELECT or check the fetched row; writes append the scope to the UPDATE/DELETE `WHERE` and error with "not found or not authorised" when zero rows match. Reference implementation: manuHunter's `schema/resolvers/jobs/applications.js`.
+Every operation in the `user` tier must scope rows by owner inside the resolver: non-admin gets `WHERE user_id = ctx.user.id` (or `owner_id`); admin sees all. Reads scope the SELECT or check the fetched row; writes append the scope to the UPDATE/DELETE `WHERE` and error with "not found or not authorised" when zero rows match.
+
+**Use the shared primitives — do not re-hand-roll them.** `schema/helpers/ownership.js` is the reference implementation: `userId(ctx)`, `isAdmin(ctx)`, `assertOwner(table, id, ctx)`, `assertReadable(table, id, ctx)`, `ownerScope(ctx, params, column)`. Table/column arguments are SQL identifiers and can never be parameterised, so callers pass string literals only — never a value that came from a GraphQL argument or request body.
+
+Two failure modes the primitives exist to prevent:
+
+- **No existence oracle.** Use ONE error message for "row does not exist" and "row belongs to someone else" (`assertOwner`'s `'<Thing> not found or not authorised'`). Splitting them into 404-vs-403 lets an attacker walk ids and learn which are real.
+- **Link mutations must authorise BOTH ends.** Asserting write access on the parent is not enough: tree assembly walks `*_relationships` without an owner filter, so linking a child you cannot read exfiltrates its content through the parent. Pair `assertOwner(parent)` with `assertReadable(child)`. The same applies to any mutation that attaches an existing row (a file, an artifact) to something the caller owns — check the attached row's owner too.
 
 ## User secrets (keychain)
 
