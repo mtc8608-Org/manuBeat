@@ -17,7 +17,7 @@ The stack has a fixed set of registration points; forgetting one is the classic 
 5. **Python** (computation only) — `python/api/domains/<domain>/routes.py`, router included in `python/api/main.py`, Node bridge route that persists results.
 6. **API client** — wrapper in `pwa/src/services/Api.ts`.
 7. **Constants** — seeded UUIDs / form names in `pwa/src/constants.ts`.
-8. **Pages** — `pwa/src/pages/<area>/`, route in `pwa/src/App.tsx` (public / `UserRoute` / `PrivateRoute` / `AdminRoute` — pick and justify), nav in `pwa/src/components/shell/Menu.tsx` and/or `AREA_NAV`.
+8. **Pages** — `pwa/src/pages/<area>/`, route in `pwa/src/App.tsx` (public `Route` / `PrivateRoute` / `TierRoute minTier="user"` / `AdminRoute` — pick and justify against the tier `permissions.js` grants the page's ops), nav as one `NAV_AREAS` entry in `pwa/src/constants.ts` plus its `AREA_NAV` items — never an edit to `Menu.tsx`/`AppHeader.tsx`, which render from that data.
 
 ## Method
 

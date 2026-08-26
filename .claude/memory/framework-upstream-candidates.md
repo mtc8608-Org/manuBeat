@@ -278,6 +278,16 @@ pull-upstream. All three are **framework** bugs, so both forks inherit the fix.
   primitive. On merge: take upstream, then audit any fork subprocess endpoint
   against the new items — manuHunter's `latex/routes.py` needed both.
 
+- ✅ **Stale symbol references purged from shared agents/skills** — found by the
+  post-merge `dead-code-auditor` run. `convention-reviewer.md` and
+  `slice-mapper.md` still offered `UserRoute` in their route-guard menus (deleted
+  2026-08-26), `new-role/SKILL.md` still pointed at `isUser` (replaced by
+  `hasTier`), and `new-page/SKILL.md` told sessions to add nav to
+  `pwa/src/Menu.tsx` — a path that never existed and a step the nav
+  single-sourcing removed. All four now name `TierRoute`/`hasTier`/`NAV_AREAS`.
+  Historical mentions in this ledger's own Landed entries are records, not
+  instructions, and stay. On merge: take upstream.
+
 ## Pending
 
 - **Retire `ComponentForm.tsx` and `ListModal.tsx` (2026-07-07)** —

@@ -15,7 +15,7 @@ The prompt names the scope (a diff range, branch, or list of files). If given a 
 **Frontend**
 - Pages compose the shell vocabulary (`SplitPageLayout`/`SinglePanelLayout`, `AreaShell`, `ResourcePanel`, `DataTable`, `ModalShell`, `TabPanel`, `EmptyState`) — flag hand-rolled equivalents of anything in `pwa/src/components/shell/`.
 - Data entry: should it be a seeded `FormRenderer` tree instead of bespoke JSX per field?
-- API calls go through `services/Api.ts` only; routes registered in `App.tsx` with the right guard (public / `UserRoute` / `PrivateRoute` / `AdminRoute`); nav entries where users expect them.
+- API calls go through `services/Api.ts` only; routes registered in `App.tsx` with the right guard (public `Route` / `PrivateRoute` / `TierRoute minTier="user"` / `AdminRoute`) matching the tier `permissions.js` grants the page's operations; nav areas declared as `NAV_AREAS` entries, never hand-edited into a nav component.
 
 **Backend**
 - Every new query/mutation has an explicit tier in `permissions.js`; nothing added to the `public` tier (frozen: `componentByName` only). REST routes carry the equivalent guard.

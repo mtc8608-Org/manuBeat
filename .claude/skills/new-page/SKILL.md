@@ -23,6 +23,8 @@ Scaffold a new frontend page that follows the repo conventions from the start. T
    Prefer copying the exact banner blocks from an existing page when the section name matches.
 5. **Register the page:**
    - Route in `pwa/src/App.tsx` (`PrivateRoute` or `AdminRoute` per the page's auth requirement).
-   - Nav entry in `pwa/src/Menu.tsx`.
+   - Nav entry as a `NAV_AREAS` entry in `pwa/src/constants.ts` (with its
+     `AREA_NAV` items) — the drawer, top bar and in-page rail all render from
+     that data; never hand-edit `Menu.tsx`/`AppHeader.tsx`/`AreaShell.tsx`.
    - Constants (`AREA_NAV`, panel configs, form names) in `pwa/src/constants.ts` (forks mark domain entries `// [MY DOMAIN]`).
 6. **Do not run the app.** Finish by stating which `./run` command the user must run (per CLAUDE.md "Running the project").

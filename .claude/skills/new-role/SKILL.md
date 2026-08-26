@@ -19,7 +19,7 @@ How the role system works and the procedure for adding roles. Read
   login (`routes/framework/auth.js` JOINs `roles`) and embedded in the JWT;
   `backend.js` middleware guarantees `req.user.tier` on every request. All
   checks — GraphQL ladder in `schema/index.js`, REST `req.user?.tier !== 'admin'`,
-  resolver `ctx?.user?.tier`, frontend `isAdmin`/`isUser` in `AuthContext` — use
+  resolver `ctx?.user?.tier`, frontend `hasTier(min)`/`isAdmin` in `AuthContext` — use
   the tier. Never write a new check against `user.role`; role names are for
   app logic/labels only.
 - **Three system roles** (`admin`, `user`, `registered`, `is_system = true`) are
