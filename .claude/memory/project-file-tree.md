@@ -49,7 +49,8 @@ manuSpine/
 │   ├── lib/secrets.js
 │   ├── routes/framework/    # REST: auth, files, content
 │   └── schema/              # index.js (gate+merge), types.js
-│       ├── helpers/         # components.js, survey.js
+│       ├── helpers/         # components.js, survey.js, ownership.js (owner-scoping
+│       │                    #   primitives: userId/isAdmin/assertOwner/ownerScope)
 │       └── resolvers/framework/  # components, roles, survey, users
 ├── pwa/                     # React + Ionic + Vite frontend
 │   ├── public/              # static assets; PNGs auto-seeded to MinIO (screenshots/)
@@ -72,6 +73,7 @@ manuSpine/
 │       ├── pages/           # public/ (Landing, SignIn) · backoffice/ (Configuration,
 │       │                    #   Content, Files, Roles, Users) · surveys/ · user/
 │       ├── services/Api.ts  # ALL API calls (gql helper + axios instance)
+│       ├── utils/           # shared non-React helpers — download.ts (downloadBlob)
 │       └── theme/
 └── python/                  # FastAPI compute service (no DB/MinIO access)
     ├── Dockerfile / Dockerfile.prod  # dev (full base, hdf5-tools, --reload) / prod (slim)

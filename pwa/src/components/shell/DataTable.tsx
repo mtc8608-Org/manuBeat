@@ -10,6 +10,7 @@ import {
   IonSelect, IonSelectOption,
 } from '@ionic/react';
 import { addOutline, trashOutline, createOutline, downloadOutline } from 'ionicons/icons';
+import { downloadBlob } from '../../utils/download';
 
 export const flattenObject = (obj: Record<string, any>, prefix = ''): Record<string, string> => {
   const result: Record<string, string> = {};
@@ -182,10 +183,7 @@ function DataTable<R extends { id: string }>({
       ].join(',')
     );
     const blob = new Blob([[header, ...lines].join('\n')], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${exportFilename}.csv`;
-    link.click();
+    downloadBlob(blob, `${exportFilename}.csv`);
   };
 
   const hasActions = !!(onEdit || onDelete);
