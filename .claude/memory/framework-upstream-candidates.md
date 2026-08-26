@@ -18,12 +18,32 @@ here in manuSpine (never cherry-picked), and moved to **Landed**. Forks then run
   conflict map. Keep the per-item deviations and merge notes accurate — they are
   read by the next fork session before it merges.
 
-## Fork status (as of 2026-07-07)
+## Fork status (as of 2026-08-26)
 
-- **manuHunter** (`master`) — **merged the full batch 2026-07-07** (merge commit
-  `ccc9d8c`), including the 2026-07-02 port echo-back and the 2026-07-04
-  hardening/survey-reframe items. Resolution followed the deviations below;
-  fork-side outcomes worth knowing: no public tier kept (gate adapted — no
+- **manuHunter** (`master`, at `9089e85`) — merged the 2026-07-02/07-04 batch on
+  2026-07-07 (merge commit `ccc9d8c`), but has **NOT merged the 14 commits since**
+  (`bb976c0..2ebbf71`): the whole 2026-08-26 security batch below, plus the
+  tier-generic nav/route work. Its next pull brings all of it at once. Every one
+  of the 16 `pwa/src` files that range touched currently differs, and **all of it
+  is fork-behind debt — not one unflagged fork edit** (verified by blob-history
+  match against manuSpine; see [[fork-verbatim-surface]]).
+
+  Fork-side follow-ups the merge will **not** do on its own: re-add APPLICATIONS
+  and CV_BUILDER as `NAV_AREAS` entries (its `Menu.tsx` still carries them as
+  hand-written JSX blocks) and delete its hand-maintained `NAV_SECTIONS` literal,
+  which upstream now derives; delete the orphaned `UserRoute.tsx` (already
+  importer-less); collapse three hand-rolled `createObjectURL` copies
+  (GeneratedCvs, Artifacts, Applications) onto `downloadBlob`; drop its local
+  ownership helpers for `schema/helpers/ownership.js`.
+
+  **Tier note — its `user` rung is empty by design.** Jobs, CV *and surveys* all
+  sit in `registered`, so its `NAV_AREAS` entries take `tier: 'registered'`
+  (SURVEYS included, where upstream uses `'user'`) and its domain routes stay on
+  `PrivateRoute`. Do **not** let the merge pull its survey area onto
+  `TierRoute minTier="user"` — that would hide a page its own permissions.js
+  grants. Nav mirrors the fork's permissions.js, never upstream's.
+
+  Resolution outcomes from the 2026-07-07 merge, still in force: no public tier kept (gate adapted — no
   `permissions.public` lookup in its `schema/index.js`); upstream's generic
   `form_user_profile` d050 seed block **deleted** from its `01-init-db.sql`
   (its richer same-name form in `03-init-cv.sql` wins — `components.name` is
@@ -219,18 +239,20 @@ receive them on their next `merge upstream/master`. Details and open follow-ups:
   oracle, both-ends link auth, deactivation), `db-schema.md` (shared NULL-owned
   rows), `files-storage.md` (`is_public`), `python-compute.md` (subprocess
   sandboxing), `code-reuse.md` (adding an area). Take upstream.
-- ⚠️ **Lockfile not regenerated** — `nodejs/package.json` moved to
-  `multer ^2.0.2` and dropped `cors`, but `package-lock.json` is untouched.
-  Run `npm install --package-lock-only` in `nodejs/` before this is real.
+- ✅ **Lockfile regenerated** (60f12b9) — `nodejs/package-lock.json` now matches
+  `multer ^2.0.2` with `cors` dropped. Take upstream; rebuild the node image.
+- ✅ **`python/requirements.lock` orphans dropped** — `pandas`, `numpy` and their
+  transitives `python-dateutil`, `six` removed; the lock now matches
+  `requirements.txt` (fastapi, uvicorn[standard], psycopg2-binary, requests,
+  minio) at 30 pins. Done by the **hand-delete route** in
+  `.claude/rules/python-compute.md`, not a container freeze — deliberate, because
+  it isolates the change to the four orphans instead of churning every other pin
+  to today's versions. (The old Pending entry said "never hand-edit"; the rule it
+  deferred to sanctions hand-deletion when the dependency tree is obvious, and it
+  is. The rule wins — that parenthetical is gone with the entry.) On merge: take
+  upstream, then `./run rebuild python`.
 
 ## Pending
-
-- **Regenerate `python/requirements.lock` after pandas removal (2026-07-07)** —
-  Where: `python/requirements.lock` (byte-identical in manuSpine and manuHunter).
-  What: the survey-reframe batch removed the `compute` domain and dropped pandas from `requirements.txt`, but the lock still pins `pandas==3.0.3`, `numpy==2.5.0` and their transitives `python-dateutil`, `six` — orphaned installs in every image build. Regenerate the lock in manuSpine per `.claude/rules/python-compute.md` (never hand-edit, never regenerate in a fork); forks inherit via merge.
-  Strip: none.
-  Decisions: none — mechanical regeneration.
-  Depends: none.
 
 - **Retire `ComponentForm.tsx` and `ListModal.tsx` (2026-07-07)** —
   Where: `pwa/src/components/forms/ComponentForm.tsx` (+ its `ShowComponentModal` export and the `ComponentModal` interface in `pwa/src/interfaces/types.ts`), `pwa/src/components/forms/ListModal.tsx`.

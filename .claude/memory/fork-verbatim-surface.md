@@ -51,7 +51,7 @@ Take upstream's structural/mechanism changes, keep the fork's entries:
 
 ```bash
 diff -rq /home/cabsman/Documents/projects/manuSpine/pwa/src <fork>/pwa/src \
-  | grep -vE '(App\.tsx|constants\.ts|types\.ts|Api\.ts)'
+  | grep -vE 'src/(App\.tsx|constants\.ts|interfaces/types\.ts|services/Api\.ts)'
 ```
 
 Every surviving line is a finding. Read them as:
@@ -69,9 +69,27 @@ Every surviving line is a finding. Read them as:
 ## Evidence (2026-08-26)
 
 Checked against both forks ([[sibling-apps]]). **Not one** shell or context diff
-was legitimate divergence — manuHunter's were all fork-behind (`ICON_MAP` inlined
-before upstream extracted `icons.ts`, hand-rolled CSV link before `downloadBlob`,
-`isAdmin`/`isUser` equality before `hasTier`, old `patchFile` signature,
-`ImagePicker` before the publish-on-select fix); manuBeat's `Surveys.tsx` stats
-tab was an unflagged fork edit. That is the whole case for this rule: when a
-framework file differs, it is almost always debt, not design.
+was legitimate divergence. manuBeat's `Surveys.tsx` stats tab was an unflagged
+fork edit; manuHunter's entire delta was fork-behind.
+
+manuHunter's case is the sharp one, because it was measured rather than eyeballed.
+Its `pwa/src` showed **16 findings** — 8 differing framework files (`ImagePicker`,
+`AdminRoute`, `AppHeader`, `AreaShell`, `DataTable`, `Menu`, `AuthContext`,
+`backoffice/Files`), 3 missing upstream additions (`TierRoute.tsx`, `icons.ts`,
+`utils/`), 1 stale fork-only file (`UserRoute.tsx`), and the 4 app-tuned files.
+Hashing each differing file against every historical manuSpine blob for its path
+placed **all 8 at a specific older upstream commit** — none carried fork content.
+And the 16 findings were exactly the 16 `pwa/src` files touched by the 14 upstream
+commits it had not merged: a perfect 1:1 — the entire delta is what one
+`git merge upstream/master` resolves.
+
+`Menu.tsx` was the only subtle one, and it is worth naming as its own category:
+it was upstream-at-`060bbfe` **plus two hand-written nav `<IonList>` blocks**.
+Not drift — those blocks were the correct way to add an area *before* `NAV_AREAS`
+existed. Legitimate-then, debt-now. When a file moves from app-tuned to verbatim,
+the fork's old edits to it do not become violations retroactively; they become
+migration work, and the merge is where they turn into data.
+
+That is the whole case for this rule: when a framework file differs, it is
+almost always debt, not design — and the way to tell is to check the fork's blob
+against upstream's history, not to read the diff and judge it.
