@@ -162,6 +162,13 @@ export const ROLE_FORM = {
 // The fixed permissions ladder (nodejs/permissions.js). Roles alias onto one
 // of these tiers; the set is code, never edited at runtime.
 export const ROLE_TIERS = ['registered', 'user', 'admin'] as const;
+export type RoleTier = typeof ROLE_TIERS[number];
+
+// Rung index on the ladder above; -1 for anything unrecognised. Comparisons are
+// `>=` against a required rung, so an unknown tier ranks below every rung and
+// fails closed (nothing shown) rather than open.
+export const tierRank = (tier: string | null | undefined): number =>
+  ROLE_TIERS.indexOf(tier as RoleTier);
 // #endregion
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -326,14 +333,18 @@ export const AREA_NAV = {
 // plus its route in App.tsx — never hand-edit Menu.tsx or NAV_SECTIONS again.
 //
 //   title  — heading in the drawer and label in the top bar
-//   tier   — minimum tier that may see the area ('user' = any signed-in account)
+//   tier   — MINIMUM rung on the ROLE_TIERS ladder that may see the area. Every
+//            nav surface compares the caller's rung with `hasTier(area.tier)`,
+//            so all three rungs are expressible: 'registered' (any account),
+//            'user', 'admin'. Mirror what permissions.js grants the area's
+//            operations — nav is presentation, permissions.js is the gate.
 //   header — whether it gets a top-bar section button. The User area is false:
 //            it is reached via the header person icon instead.
 // Forks append their own areas here with a // [MY DOMAIN] comment.
 export const NAV_AREAS = [
-  { key: 'SURVEYS',    title: 'Surveys',    tier: 'user',  header: true,  items: AREA_NAV.SURVEYS    },
-  { key: 'BACKOFFICE', title: 'Backoffice', tier: 'admin', header: true,  items: AREA_NAV.BACKOFFICE },
-  { key: 'USER',       title: 'Account',    tier: 'user',  header: false, items: AREA_NAV.USER       },
+  { key: 'SURVEYS',    title: 'Surveys',    tier: 'user',       header: true,  items: AREA_NAV.SURVEYS    },
+  { key: 'BACKOFFICE', title: 'Backoffice', tier: 'admin',      header: true,  items: AREA_NAV.BACKOFFICE },
+  { key: 'USER',       title: 'Account',    tier: 'registered', header: false, items: AREA_NAV.USER       },
 ] as const;
 
 // Section groupings for AppHeader — derived, never hand-maintained.
@@ -342,10 +353,10 @@ export const NAV_AREAS = [
 export const NAV_SECTIONS = NAV_AREAS
   .filter(a => a.header)
   .map(a => ({
-    label:     a.title,
-    routes:    a.items.map(i => i.route) as readonly string[],
-    link:      a.items[0].route as string,
-    adminOnly: a.tier === 'admin',
+    label:  a.title,
+    routes: a.items.map(i => i.route) as readonly string[],
+    link:   a.items[0].route as string,
+    tier:   a.tier as RoleTier,
   }));
 // #endregion
 ///////////////////////////////////////////////////////////////////////////////

@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AuthUser } from '../interfaces/types';
-import { API_BASE } from '../constants';
+import { API_BASE, RoleTier, tierRank } from '../constants';
 
 interface AuthContextValue {
   user:     AuthUser | null;
   token:    string | null;
+  /** True when the caller's tier is at or above `min` on the ROLE_TIERS ladder. */
+  hasTier:  (min: RoleTier) => boolean;
   isAdmin:  boolean;
   login:    (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
@@ -14,6 +16,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue>({
   user:     null,
   token:    null,
+  hasTier:  () => false,
   isAdmin:  false,
   login:    async () => {},
   register: async () => {},
@@ -111,10 +114,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // for the three system roles name === tier.
   const tier = user ? (user.tier ?? user.role) : null;
 
+  // The one tier comparison in the frontend. It is a ladder check, not equality,
+  // so a higher rung always passes a lower requirement (an admin sees the 'user'
+  // areas). Signed-out and unrecognised tiers rank -1 and pass nothing.
+  //
+  // This mirrors permissions.js but does NOT enforce it: hiding a link is
+  // presentation. Every operation behind it is gated server-side, and must stay
+  // so — nav is never the thing keeping a caller out.
+  const hasTier = (min: RoleTier) => tierRank(tier) >= tierRank(min);
+
   return (
     <AuthContext.Provider value={{
       user, token,
-      isAdmin: tier === 'admin',
+      hasTier,
+      isAdmin: hasTier('admin'),
       login, register, logout,
     }}>
       {children}

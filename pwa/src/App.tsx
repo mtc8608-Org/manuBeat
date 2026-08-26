@@ -7,6 +7,7 @@ import { Route, Redirect } from 'react-router-dom';
 import Menu from './components/shell/Menu';
 import PrivateRoute from './components/routing/PrivateRoute';
 import AdminRoute from './components/routing/AdminRoute';
+import TierRoute from './components/routing/TierRoute';
 import Landing from './pages/public/Landing';
 import SignIn from './pages/public/SignIn';
 import Profile from './pages/user/Profile';
@@ -62,7 +63,7 @@ const App: React.FC = () => {
                 {/* legacy deep-link */}
                 <Route path="/account" exact={true} render={() => <Redirect to={ROUTE.PROFILE} />} />
 
-                <PrivateRoute path={ROUTE.SURVEYS}  exact={true} component={Surveys} />
+                <TierRoute    path={ROUTE.SURVEYS}  exact={true} component={Surveys} minTier="user" />
 
                 {/* Admin only */}
                 <AdminRoute path={ROUTE.CONTENT}       exact={true} component={Content} />

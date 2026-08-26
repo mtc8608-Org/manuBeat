@@ -225,13 +225,6 @@ receive them on their next `merge upstream/master`. Details and open follow-ups:
 
 ## Pending
 
-- **Stale seeded `user`-role description (2026-07-07)** —
-  Where: `init-scripts/01-init-db.sql:98` (same line in manuSpine and manuHunter — text identical in both).
-  What: the seeded `user` role's description still reads "plus the user-tier operations (surveys)", stale since the 2026-07-04 survey reframe moved every survey op to the `registered` tier (`permissions.js` `user: []`). The Roles backoffice page displays a claim that contradicts enforcement. Fix: reword the description to match the tier model (e.g. "full app features; the middle tier between registered and admin"). Reset-only (seed), lands in forks via `./run reset` after merge.
-  Strip: none.
-  Decisions: exact wording open; keep it framework-neutral (no domain references).
-  Depends: none.
-
 - **Regenerate `python/requirements.lock` after pandas removal (2026-07-07)** —
   Where: `python/requirements.lock` (byte-identical in manuSpine and manuHunter).
   What: the survey-reframe batch removed the `compute` domain and dropped pandas from `requirements.txt`, but the lock still pins `pandas==3.0.3`, `numpy==2.5.0` and their transitives `python-dateutil`, `six` — orphaned installs in every image build. Regenerate the lock in manuSpine per `.claude/rules/python-compute.md` (never hand-edit, never regenerate in a fork); forks inherit via merge.

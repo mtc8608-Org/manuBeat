@@ -68,7 +68,7 @@ manuSpine/
 │       │   │                #   ImageCard, HtmlImageCard, LatexCard, CollapsibleCard
 │       │   ├── forms/       # FormRenderer, ComponentForm, CodeEditor, ImagePicker,
 │       │   │                #   ListModal, RichTextEditor
-│       │   └── routing/     # PrivateRoute, AdminRoute
+│       │   └── routing/     # PrivateRoute, TierRoute, AdminRoute
 │       ├── contexts/        # AuthContext, ThemeContext
 │       ├── interfaces/      # types.ts
 │       ├── pages/           # public/ (Landing, SignIn) · backoffice/ (Configuration,

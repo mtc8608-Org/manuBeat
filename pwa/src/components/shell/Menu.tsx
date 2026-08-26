@@ -28,7 +28,7 @@ import './Menu.css';
 
 const Menu: React.FC = () => {
   const location = useLocation();
-  const { user, isAdmin, logout } = useAuth();
+  const { user, hasTier, logout } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -49,9 +49,10 @@ const Menu: React.FC = () => {
     </IonMenuToggle>
   );
 
-  // An 'admin' area is admin-only; a 'user' area needs any signed-in account.
+  // Each area declares the minimum rung that may see it; hasTier compares the
+  // caller's rung against it, so all three tiers are expressible here.
   const visibleAreas = user
-    ? NAV_AREAS.filter(area => area.tier !== 'admin' || isAdmin)
+    ? NAV_AREAS.filter(area => hasTier(area.tier))
     : [];
 
   return (

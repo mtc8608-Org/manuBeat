@@ -44,8 +44,16 @@ module.exports = {
     'userSecrets',
     'setUserSecret',
     'clearUserSecret',
-    // surveys — viewing and answering is open to every signed-in account;
-    // answer reads/edits are owner-scoped in the resolver (admin sees all)
+  ],
+
+  // GraphQL query/mutation field names requiring tier 'user' (or 'admin').
+  // Forks add their owner-scoped domain ops here.
+  user: [
+    // surveys — viewing and answering needs the 'user' rung; a 'registered'
+    // account can sign in and manage its own account, but not take surveys.
+    // Answer reads/edits are owner-scoped in the resolver (admin sees all).
+    // This is the framework's worked example of the middle rung: the nav area
+    // (NAV_AREAS) and the route guard (TierRoute) declare 'user' to match.
     'surveyList',
     'surveyComponent',
     'surveyComponentList',
@@ -54,10 +62,6 @@ module.exports = {
     'submitAnswer',
     'updateAnswer',
   ],
-
-  // GraphQL query/mutation field names requiring role 'user' (or 'admin').
-  // Empty in the framework — forks add their owner-scoped domain ops here.
-  user: [],
 
   // Everything else requires role === 'admin'.
   // (Informational — enforcement uses the fallback rule above. List admin ops,
