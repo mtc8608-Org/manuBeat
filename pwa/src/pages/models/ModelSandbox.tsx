@@ -531,14 +531,34 @@ const ModelSandbox: React.FC = () => {
 
   const fetchConfigs = useCallback(() => ApiService.getModelConfigs(), []);
 
+  // Autosave — skip the save triggered by loading a freshly-selected config
+  const skipNextSaveRef = useRef(false);
+  const saveTimeoutRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     setWorkingModel(selectedConfig ? JSON.parse(JSON.stringify(selectedConfig.config)) : null);
     setSelectedCompartment(null);
+    skipNextSaveRef.current = true;
   }, [selectedConfig?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     ApiService.getComponentByName(FORM_ID.ADD_MODEL_CONFIG).then(f => setNewForm(f ?? null));
   }, []);
+
+  // Autosave workingModel to the backend on every edit (debounced)
+  useEffect(() => {
+    if (skipNextSaveRef.current) { skipNextSaveRef.current = false; return; }
+    if (!selectedConfig || !workingModel) return;
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      setSaving(true); setSaveError(null);
+      ApiService.updateModelConfig(selectedConfig.id, { config: workingModel })
+        .then(updated => setSelectedConfig(updated))
+        .catch((err: any) => setSaveError(err.message ?? 'Save failed'))
+        .finally(() => setSaving(false));
+    }, 500);
+    return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); };
+  }, [workingModel]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
 /*
@@ -1056,21 +1076,6 @@ const ModelSandbox: React.FC = () => {
     setWorkingModel(prev => prev ? { ...prev, states: { ...prev.states, [key]: value } } : prev);
   };
 
-  // ── Save model ─────────────────────────────────────────────────────────────
-
-  const handleSave = async () => {
-    if (!selectedConfig || !workingModel) return;
-    setSaving(true); setSaveError(null);
-    try {
-      const updated = await ApiService.updateModelConfig(selectedConfig.id, { config: workingModel });
-      setSelectedConfig(updated);
-    } catch (err: any) {
-      setSaveError(err.message ?? 'Save failed');
-    } finally {
-      setSaving(false);
-    }
-  };
-
 
 /*
  ██████    ████████  ██      ██  ██████    ████████  ██████
@@ -1126,10 +1131,13 @@ const ModelSandbox: React.FC = () => {
       rightHeader={
         selectedConfig && workingModel ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px' }}>
+            {saving && (
+              <>
+                <IonSpinner name="dots" style={{ width: 16, height: 16 }} />
+                <IonNote style={{ fontSize: '0.8rem' }}>Saving…</IonNote>
+              </>
+            )}
             {saveError && <IonText color="danger" style={{ fontSize: '0.8rem' }}>{saveError}</IonText>}
-            <IonButton size="small" disabled={saving} onClick={handleSave}>
-              {saving ? <IonSpinner name="dots" /> : 'Save'}
-            </IonButton>
           </div>
         ) : undefined
       }

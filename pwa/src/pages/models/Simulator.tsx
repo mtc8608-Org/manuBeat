@@ -87,7 +87,6 @@ const Simulator: React.FC = () => {
   const [procConfigs, setProcConfigs]                 = useState<CardioProcConfig[]>([]);
   const [procGroupNames, setProcGroupNames]           = useState<string[]>([]);
   const [selectedProcForRun, setSelectedProcForRun]   = useState<CardioProcConfig | null>(null);
-  const [procRunName, setProcRunName]                 = useState('');
   const [processingState, setProcessingState]         = useState<'idle' | 'running' | 'done' | 'error'>('idle');
   const [processingError, setProcessingError]         = useState<string | null>(null);
   const [selectedProcForPlot, setSelectedProcForPlot] = useState<string | null>(null);
@@ -220,7 +219,6 @@ const Simulator: React.FC = () => {
   const resetProcState = () => {
     setProcGroupNames([]);
     setSelectedProcForRun(null);
-    setProcRunName('');
     setSelectedProcForPlot(null);
     setProcOutputs({});
     setProcessingState('idle');
@@ -244,21 +242,6 @@ const Simulator: React.FC = () => {
     } else {
       setResult(null);
       setResultError(null);
-    }
-  };
-
-  const handleRunProcessing = async () => {
-    if (!selectedRun || !selectedProcForRun || !procRunName.trim()) return;
-    const name = procRunName.trim();
-    setProcessingState('running');
-    setProcessingError(null);
-    try {
-      await ApiService.processRun(selectedRun.id, selectedProcForRun.id, name);
-      setProcessingState('done');
-      setProcGroupNames(prev => prev.includes(name) ? prev : [...prev, name]);
-    } catch (err: any) {
-      setProcessingState('error');
-      setProcessingError(err.response?.data?.detail ?? err.message ?? 'Processing failed');
     }
   };
 

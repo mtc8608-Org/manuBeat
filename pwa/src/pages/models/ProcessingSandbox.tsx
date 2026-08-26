@@ -10,6 +10,7 @@ import {
   IonInput,
   IonItem,
   IonLabel,
+  IonNote,
   IonRow,
   IonSelect,
   IonSelectOption,
@@ -345,13 +346,13 @@ const ProcessingSandbox: React.FC = () => {
     }
   };
 
-  // ── Save ───────────────────────────────────────────────────────────────────
+  // ── Save (automatic — persists on every edit) ───────────────────────────────
 
-  const handleSave = async () => {
-    if (!selectedConfig || !workingConfig) return;
+  const persistConfig = async (next: Record<string, any>) => {
+    if (!selectedConfig) return;
     setSaving(true); setSaveError(null);
     try {
-      const updated = await ApiService.updateProcConfig(selectedConfig.id, { config: workingConfig });
+      const updated = await ApiService.updateProcConfig(selectedConfig.id, { config: next });
       setSelectedConfig(updated);
     } catch (err: any) {
       setSaveError(err.message ?? 'Save failed');
@@ -371,18 +372,19 @@ const ProcessingSandbox: React.FC = () => {
     const name = stageName.trim();
     if (!name) { setStageError('Name is required'); return; }
     if (workingConfig?.[name] !== undefined) { setStageError('Stage already exists'); return; }
-    setWorkingConfig(prev => prev ? { ...prev, [name]: {} } : prev);
+    const next = { ...(workingConfig ?? {}), [name]: {} };
+    setWorkingConfig(next);
+    persistConfig(next);
     setSelectedStage(name);
     setStageModalOpen(false);
   };
 
   const handleRemoveStage = (name: string) => {
-    setWorkingConfig(prev => {
-      if (!prev) return prev;
-      const next = { ...prev };
-      delete next[name];
-      return next;
-    });
+    if (!workingConfig) return;
+    const next = { ...workingConfig };
+    delete next[name];
+    setWorkingConfig(next);
+    persistConfig(next);
     if (selectedStage === name) setSelectedStage(null);
   };
 
@@ -436,31 +438,29 @@ const ProcessingSandbox: React.FC = () => {
   const handleSubmitOp = () => {
     const key = opForm.key.trim();
     if (!key) { setOpError('Output key is required'); return; }
-    if (!selectedStage) return;
+    if (!selectedStage || !workingConfig) return;
     const params = buildParams(opForm);
     const entry  = { operation: opForm.operation, params };
 
-    setWorkingConfig(prev => {
-      if (!prev) return prev;
-      const stage = { ...(prev[selectedStage] ?? {}) };
-      if (opModalMode === 'edit' && editingOpKey && editingOpKey !== key) {
-        delete stage[editingOpKey];
-      }
-      stage[key] = entry;
-      return { ...prev, [selectedStage]: stage };
-    });
+    const stage = { ...(workingConfig[selectedStage] ?? {}) };
+    if (opModalMode === 'edit' && editingOpKey && editingOpKey !== key) {
+      delete stage[editingOpKey];
+    }
+    stage[key] = entry;
+    const next = { ...workingConfig, [selectedStage]: stage };
+    setWorkingConfig(next);
+    persistConfig(next);
     setSelectedOp(key);
     setOpModalOpen(false);
   };
 
   const handleRemoveOp = (key: string) => {
-    if (!selectedStage) return;
-    setWorkingConfig(prev => {
-      if (!prev) return prev;
-      const stage = { ...(prev[selectedStage] ?? {}) };
-      delete stage[key];
-      return { ...prev, [selectedStage]: stage };
-    });
+    if (!selectedStage || !workingConfig) return;
+    const stage = { ...(workingConfig[selectedStage] ?? {}) };
+    delete stage[key];
+    const next = { ...workingConfig, [selectedStage]: stage };
+    setWorkingConfig(next);
+    persistConfig(next);
     if (selectedOp === key) setSelectedOp(null);
   };
 
@@ -556,10 +556,13 @@ const ProcessingSandbox: React.FC = () => {
       rightHeader={
         selectedConfig && workingConfig ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px' }}>
+            {saving && (
+              <>
+                <IonSpinner name="dots" style={{ width: 16, height: 16 }} />
+                <IonNote style={{ fontSize: '0.8rem' }}>Saving…</IonNote>
+              </>
+            )}
             {saveError && <IonText color="danger" style={{ fontSize: '0.8rem' }}>{saveError}</IonText>}
-            <IonButton size="small" disabled={saving} onClick={handleSave}>
-              {saving ? <IonSpinner name="dots" /> : 'Save'}
-            </IonButton>
           </div>
         ) : undefined
       }

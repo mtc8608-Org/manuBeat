@@ -152,10 +152,30 @@ const PlotSandbox: React.FC = () => {
 
   const fetchConfigs = useCallback(() => ApiService.getPlotConfigs(), []);
 
+  // Autosave — skip the save triggered by loading a freshly-selected config
+  const skipNextSaveRef = useRef(false);
+  const saveTimeoutRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     setWorkingConfig(selectedConfig ? JSON.parse(JSON.stringify(selectedConfig.config)) : null);
     setSelectedAxis(null);
+    skipNextSaveRef.current = true;
   }, [selectedConfig?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Autosave workingConfig to the backend on every edit (debounced)
+  useEffect(() => {
+    if (skipNextSaveRef.current) { skipNextSaveRef.current = false; return; }
+    if (!selectedConfig || !workingConfig) return;
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      setSaving(true); setSaveError(null);
+      ApiService.updatePlotConfig(selectedConfig.id, { config: workingConfig })
+        .then(updated => setSelectedConfig(updated))
+        .catch((err: any) => setSaveError(err.message ?? 'Save failed'))
+        .finally(() => setSaving(false));
+    }, 500);
+    return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); };
+  }, [workingConfig]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
 /*
@@ -210,21 +230,6 @@ const PlotSandbox: React.FC = () => {
       setVersion(v => v + 1);
     } catch (e) {
       setImportError((e as Error).message);
-    }
-  };
-
-  // ── Save ───────────────────────────────────────────────────────────────────
-
-  const handleSave = async () => {
-    if (!selectedConfig || !workingConfig) return;
-    setSaving(true); setSaveError(null);
-    try {
-      const updated = await ApiService.updatePlotConfig(selectedConfig.id, { config: workingConfig });
-      setSelectedConfig(updated);
-    } catch (err: any) {
-      setSaveError(err.message ?? 'Save failed');
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -537,10 +542,13 @@ const PlotSandbox: React.FC = () => {
       rightHeader={
         selectedConfig && workingConfig ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px' }}>
+            {saving && (
+              <>
+                <IonSpinner name="dots" style={{ width: 16, height: 16 }} />
+                <IonNote style={{ fontSize: '0.8rem' }}>Saving…</IonNote>
+              </>
+            )}
             {saveError && <IonText color="danger" style={{ fontSize: '0.8rem' }}>{saveError}</IonText>}
-            <IonButton size="small" disabled={saving} onClick={handleSave}>
-              {saving ? <IonSpinner name="dots" /> : 'Save'}
-            </IonButton>
           </div>
         ) : undefined
       }
