@@ -6,8 +6,7 @@ const { GraphQLList, GraphQLString, GraphQLBoolean, GraphQLNonNull } = require('
 const { pool } = require('../../../db');
 const { UserType, UserProfileType, UserSecretType, GraphQLJSON } = require('../../types');
 const { setUserSecret, clearUserSecret, listUserSecrets } = require('../../../lib/secrets');
-
-const userId = (ctx) => ctx?.user?.id ?? null;
+const { userId } = require('../../helpers/ownership');
 
 const queries = {
   me: {

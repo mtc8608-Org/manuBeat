@@ -15,6 +15,7 @@ const {
   GraphQLJSON,
 } = require('../../types');
 const { postSurveyComponent } = require('../../helpers/survey');
+const { userId, ownerScope } = require('../../helpers/ownership');
 
 const queries = {
   surveyComponent: {
@@ -73,10 +74,7 @@ const queries = {
         to_char(sa.submitted_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS submitted_at`;
       const clauses = ['sa.survey_id = $1::uuid'];
       const params  = [survey_id];
-      if (ctx?.user?.tier !== 'admin') {
-        params.push(ctx?.user?.id);
-        clauses.push(`sa.owner_id = $${params.length}::uuid`);
-      }
+      const scope   = ownerScope(ctx, params, 'sa.owner_id');
       if (filter && Object.keys(filter).length > 0) {
         params.push(JSON.stringify(filter));
         clauses.push(`sa.answers @> $${params.length}::jsonb`);
@@ -84,7 +82,7 @@ const queries = {
       const res = await pool.query(
         `SELECT ${cols} FROM survey_answers sa
          JOIN users u ON u.id = sa.owner_id
-         WHERE ${clauses.join(' AND ')} ORDER BY sa.submitted_at DESC`,
+         WHERE ${clauses.join(' AND ')}${scope} ORDER BY sa.submitted_at DESC`,
         params
       );
       return res.rows;
@@ -217,7 +215,7 @@ const mutations = {
         `INSERT INTO survey_answers (survey_id, owner_id, answers) VALUES ($1::uuid, $2::uuid, $3::jsonb)
          RETURNING id, survey_id, owner_id, answers,
            to_char(submitted_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS submitted_at`,
-        [survey_id, ctx?.user?.id, JSON.stringify(answers)]
+        [survey_id, userId(ctx), JSON.stringify(answers)]
       );
       return res.rows[0];
     },
@@ -231,8 +229,7 @@ const mutations = {
     async resolve(_, { id, answers }, ctx) {
       console.log('-> Update answer:', id);
       const params = [JSON.stringify(answers), id];
-      const scope  = ctx?.user?.tier === 'admin' ? '' : ` AND owner_id = $${params.length + 1}::uuid`;
-      if (scope) params.push(ctx?.user?.id);
+      const scope  = ownerScope(ctx, params);
       const res = await pool.query(
         `UPDATE survey_answers SET answers = $1::jsonb WHERE id = $2::uuid${scope}
          RETURNING id, survey_id, owner_id, answers,
