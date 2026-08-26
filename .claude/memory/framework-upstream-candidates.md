@@ -20,39 +20,33 @@ here in manuSpine (never cherry-picked), and moved to **Landed**. Forks then run
 
 ## Fork status (as of 2026-08-26)
 
-- **manuHunter** (`master`, at `9089e85`) — merged the 2026-07-02/07-04 batch on
-  2026-07-07 (merge commit `ccc9d8c`), but has **NOT merged the 14 commits since**
-  (`bb976c0..2ebbf71`): the whole 2026-08-26 security batch below, plus the
-  tier-generic nav/route work. Its next pull brings all of it at once. Every one
-  of the 16 `pwa/src` files that range touched currently differs, and **all of it
-  is fork-behind debt — not one unflagged fork edit** (verified by blob-history
-  match against manuSpine; see [[fork-verbatim-surface]]).
+- **manuHunter** (`master`) — **merged everything through `161e57e` on
+  2026-08-26** (merge commits `2e23707` then `f0f29f0`): the tier-generic nav/route
+  work, the 2026-08-26 security batch, and the compute-service hardening above.
+  Verified after: `tsc --noEmit` and a full `vite build` clean, all 24 backend
+  files parse, no conflict markers, and the `pwa/src` verbatim surface
+  ([[fork-verbatim-surface]]) reduced to its two legitimate `pages/cv` +
+  `pages/jobs` folders — every other file byte-identical. In `nodejs/` only the
+  four genuinely app-tuned files differ (`backend.js`, `permissions.js`,
+  `schema/index.js`, `schema/types.js`); the one framework-file drift it carried
+  (a specialised comment in `routes/framework/files.js`) was reverted.
 
-  Fork-side follow-ups the merge will **not** do on its own: re-add APPLICATIONS
-  and CV_BUILDER as `NAV_AREAS` entries (its `Menu.tsx` still carries them as
-  hand-written JSX blocks) and delete its hand-maintained `NAV_SECTIONS` literal,
-  which upstream now derives; delete the orphaned `UserRoute.tsx` (already
-  importer-less); collapse three hand-rolled `createObjectURL` copies
-  (GeneratedCvs, Artifacts, Applications) onto `downloadBlob`; drop its local
-  ownership helpers for `schema/helpers/ownership.js`.
+  **Deviations now in force** — the fork's `user` rung is **empty by design**:
+  jobs, CV *and surveys* all sit in `registered`, owner-scoped in the resolvers.
+  So its `NAV_AREAS` entries read `tier: 'registered'` (SURVEYS included, where
+  upstream uses `'user'`) and its survey route stays on `PrivateRoute`. The merge
+  silently took upstream's `TierRoute minTier="user"` for that route and had to be
+  reverted — **check this every time**: nav and route guards mirror the *fork's*
+  `permissions.js`, never upstream's. Also still in force: no public tier (gate
+  adapted, no `permissions.public` lookup); upstream's generic `form_user_profile`
+  d050 block deleted in favour of its richer same-name form in `03-init-cv.sql`;
+  CV template seeds set `options.language: "latex"`; Dockerfile keeps TeX Live,
+  no `hdf5-tools`; role-inverting lines in shared rules/skills re-worded fork-side.
 
-  **Tier note — its `user` rung is empty by design.** Jobs, CV *and surveys* all
-  sit in `registered`, so its `NAV_AREAS` entries take `tier: 'registered'`
-  (SURVEYS included, where upstream uses `'user'`) and its domain routes stay on
-  `PrivateRoute`. Do **not** let the merge pull its survey area onto
-  `TierRoute minTier="user"` — that would hide a page its own permissions.js
-  grants. Nav mirrors the fork's permissions.js, never upstream's.
+  **Merge-artifact lesson:** `schema/types.js` came out with `UserProfileType` and
+  `UserSecretType` exported twice — the fork's list plus upstream's appended. Grep
+  merged export blocks for duplicate keys; `node --check` will not catch it.
 
-  Resolution outcomes from the 2026-07-07 merge, still in force: no public tier kept (gate adapted — no
-  `permissions.public` lookup in its `schema/index.js`); upstream's generic
-  `form_user_profile` d050 seed block **deleted** from its `01-init-db.sql`
-  (its richer same-name form in `03-init-cv.sql` wins — `components.name` is
-  UNIQUE); CV template seeds set `options.language: "latex"` explicitly;
-  Dockerfile keeps TeX Live but dropped `hdf5-tools` (only served the removed
-  compute engine); surveys placed on `PrivateRoute`/registered tier; four
-  role-inverting lines in shared rules/skills re-worded fork-side
-  (backend-api public-tier paragraph, db-schema framework-repo line,
-  new-api step 6, new-role ownership line).
 - **manuBeat** (`master`) — has NOT merged; last merged upstream **pre-port**
   (at 67c3a10), so its next pull brings the entire batch at once — and the
   security-critical GraphQL gate fix: its `schema/index.js` carries the
