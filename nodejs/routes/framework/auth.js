@@ -20,6 +20,21 @@ const loginLimiter = rateLimit({
   message: { error: 'Too many login attempts — try again later' },
 });
 
+// Separate limiter for account creation. Deliberately NOT the login limiter:
+// this one counts SUCCESSFUL requests too (a successful signup is exactly what
+// we are bounding), and self-registration is the only tokenless way to mint an
+// account that can then reach every registered-tier endpoint.
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 5,                     // new accounts per IP per hour
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many accounts created from this address — try again later' },
+});
+
+// Minimum password length, enforced server-side on every path that sets one.
+const MIN_PASSWORD_LENGTH = 10;
+
 // The JWT carries both the role name and its tier (roles.tier) — every auth
 // check compares the tier, so role/tier edits apply on the user's next login.
 router.post('/login', loginLimiter, async (req, res) => {
@@ -46,9 +61,14 @@ router.post('/login', loginLimiter, async (req, res) => {
   }
 });
 
-router.post('/register', async (req, res) => {
+router.post('/register', registerLimiter, async (req, res) => {
   const { email, password } = req.body ?? {};
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+  // Server-side floor: the client's confirm-match check is a convenience, not a
+  // control — /register is tokenless, so anything not enforced here is optional.
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return res.status(400).json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` });
+  }
   try {
     const hash = await bcrypt.hash(password, 10);
     const result = await pool.query(
@@ -89,6 +109,9 @@ router.post('/change-password', async (req, res) => {
   if (!req.user) return res.status(401).json({ error: 'Authentication required' });
   const { currentPassword, newPassword } = req.body ?? {};
   if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Both passwords required' });
+  if (newPassword.length < MIN_PASSWORD_LENGTH) {
+    return res.status(400).json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` });
+  }
   try {
     const result = await pool.query('SELECT * FROM users WHERE id = $1::uuid', [req.user.id]);
     const user = result.rows[0];
@@ -118,6 +141,9 @@ router.post('/users', async (req, res) => {
   if (req.user?.tier !== 'admin') return res.status(403).json({ error: 'Admin access required' });
   const { email, password, role = 'user' } = req.body ?? {};
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return res.status(400).json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` });
+  }
   try {
     const hash = await bcrypt.hash(password, 10);
     const result = await pool.query(
