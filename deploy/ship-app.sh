@@ -87,13 +87,23 @@ fi
 # A half-filled .env would crash-loop the backend (SECRETS_MASTER_KEY has a
 # strict 64-hex format) or seed an admin with an empty password — so verify
 # every secret is present before anything lands on the box.
+#
+# Presence is not enough: `JWT_SECRET=x` is present and forgeable. Secrets get a
+# minimum length so a dev placeholder cannot reach production; ADMIN_EMAIL is
+# only checked for presence because it is an address, not a secret.
 echo "== checking $appdir/.env on $host"
-for key in POSTGRES_PASSWORD JWT_SECRET ADMIN_EMAIL ADMIN_PASSWORD MINIO_PASSWORD; do
-  if ! ssh "$host" "grep -Eq '^$key=.+' $appdir/.env"; then
-    echo "$appdir/.env is missing $key — fill it on the box, then re-run." >&2
+MIN_SECRET_LEN=16
+for key in POSTGRES_PASSWORD JWT_SECRET ADMIN_PASSWORD MINIO_PASSWORD; do
+  if ! ssh "$host" "grep -Eq '^$key=.{$MIN_SECRET_LEN,}\$' $appdir/.env"; then
+    echo "$appdir/.env: $key missing or shorter than $MIN_SECRET_LEN chars — fix it on the box, then re-run." >&2
+    echo "  generate one with: openssl rand -base64 24" >&2
     exit 1
   fi
 done
+if ! ssh "$host" "grep -Eq '^ADMIN_EMAIL=.+' $appdir/.env"; then
+  echo "$appdir/.env is missing ADMIN_EMAIL — fill it on the box, then re-run." >&2
+  exit 1
+fi
 if ! ssh "$host" "grep -Eq '^SECRETS_MASTER_KEY=[0-9a-f]{64}\$' $appdir/.env"; then
   echo "$appdir/.env: SECRETS_MASTER_KEY must be exactly 64 hex chars (openssl rand -hex 32)." >&2
   exit 1

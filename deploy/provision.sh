@@ -1,7 +1,8 @@
 #!/bin/bash
 # STAGE 1 — provision a fresh Ubuntu box into the ManuLab platform layer:
 # docker, log rotation, SSH hardening, unattended-upgrades, swap, the
-# external `edge` network, and the /srv/caddy skeleton.
+# external `edge` network, a default-deny host firewall, and the /srv/caddy
+# skeleton.
 #
 # Idempotent: every step probes real system state and no-ops when satisfied —
 # safe to re-run after a partial failure or on a live box.
@@ -142,7 +143,36 @@ else
 fi
 
 # ============================================================================
-# STEP 7 — /srv/caddy platform skeleton
+# STEP 7 — Host firewall (default deny)
+# ============================================================================
+# Closes anything a future host process binds to 0.0.0.0 without meaning to —
+# a stray `python -m http.server`, a debug port, an apt-installed service.
+#
+# Deliberately modest: Docker writes its own iptables DOCKER chain ahead of
+# ufw's, so a container that PUBLISHES a port is still reachable regardless of
+# what is below. That is why the app stacks publish nothing in production
+# (docker-compose.prod.yml) — this firewall backstops the host, not docker.
+step "ufw (default deny inbound; ssh + http/https open)"
+if ! command -v ufw >/dev/null; then
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get install -yq ufw
+  ok "installed ufw"
+fi
+# Allow ssh BEFORE enabling, or enabling over ssh locks the box out.
+ufw allow OpenSSH        >/dev/null 2>&1 || ufw allow 22/tcp >/dev/null
+ufw allow 80/tcp         >/dev/null
+ufw allow 443/tcp        >/dev/null
+ufw default deny incoming  >/dev/null
+ufw default allow outgoing >/dev/null
+if ufw status | grep -q '^Status: active'; then
+  ok "already active (rules refreshed)"
+else
+  ufw --force enable >/dev/null   # --force: no interactive y/N over ssh
+  ok "enabled"
+fi
+
+# ============================================================================
+# STEP 8 — /srv/caddy platform skeleton
 # ============================================================================
 # Three files, two policies:
 #   code   (docker-compose.yml)  — always overwritten; the repo is the truth
