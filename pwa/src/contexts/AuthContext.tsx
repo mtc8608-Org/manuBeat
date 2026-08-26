@@ -6,7 +6,6 @@ interface AuthContextValue {
   user:     AuthUser | null;
   token:    string | null;
   isAdmin:  boolean;
-  isUser:   boolean;
   login:    (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
   logout:   () => void;
@@ -16,7 +15,6 @@ const AuthContext = createContext<AuthContextValue>({
   user:     null,
   token:    null,
   isAdmin:  false,
-  isUser:   false,
   login:    async () => {},
   register: async () => {},
   logout:   () => {},
@@ -117,7 +115,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider value={{
       user, token,
       isAdmin: tier === 'admin',
-      isUser:  tier === 'user' || tier === 'admin',
       login, register, logout,
     }}>
       {children}

@@ -319,12 +319,34 @@ export const AREA_NAV = {
   ],
 } as const;
 
-// Section groupings — used by AppHeader nav (authenticated users only).
-// The User area is deliberately absent: it is reached via the header person icon.
-export const NAV_SECTIONS = [
-  { label: 'Surveys',    routes: ['/folder/Surveys'],                                             link: '/folder/Surveys',       icon: 'clipboard'  },
-  { label: 'Backoffice', routes: ['/folder/Content', '/folder/Files', '/folder/Configuration', '/folder/Users', '/folder/Roles'],   link: '/folder/Content',       icon: 'construct',  adminOnly: true },
+// ── The single navigation source ──────────────────────────────────────────────
+// One entry per authenticated area, carrying everything the three nav surfaces
+// need: the drawer (Menu), the top-bar sections (AppHeader) and the in-page rail
+// (AreaShell, via the AREA_NAV items above). Adding an area is ONE entry here
+// plus its route in App.tsx — never hand-edit Menu.tsx or NAV_SECTIONS again.
+//
+//   title  — heading in the drawer and label in the top bar
+//   tier   — minimum tier that may see the area ('user' = any signed-in account)
+//   header — whether it gets a top-bar section button. The User area is false:
+//            it is reached via the header person icon instead.
+// Forks append their own areas here with a // [MY DOMAIN] comment.
+export const NAV_AREAS = [
+  { key: 'SURVEYS',    title: 'Surveys',    tier: 'user',  header: true,  items: AREA_NAV.SURVEYS    },
+  { key: 'BACKOFFICE', title: 'Backoffice', tier: 'admin', header: true,  items: AREA_NAV.BACKOFFICE },
+  { key: 'USER',       title: 'Account',    tier: 'user',  header: false, items: AREA_NAV.USER       },
 ] as const;
+
+// Section groupings for AppHeader — derived, never hand-maintained.
+// `link` is where the section button navigates (its first page); `routes` is
+// every path that counts as "inside" the section for active-state matching.
+export const NAV_SECTIONS = NAV_AREAS
+  .filter(a => a.header)
+  .map(a => ({
+    label:     a.title,
+    routes:    a.items.map(i => i.route) as readonly string[],
+    link:      a.items[0].route as string,
+    adminOnly: a.tier === 'admin',
+  }));
 // #endregion
 ///////////////////////////////////////////////////////////////////////////////
 

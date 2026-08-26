@@ -60,8 +60,10 @@ htmlcov/
 !.claude/rules/
 !.claude/skills/
 !.claude/agents/
-# ...except personal notes, personal infra, and the brainstorm ledger
+# ...except personal notes, personal infra, the brainstorm ledger, and the
+# unfixed-security-findings TODO
 .claude/memory/user-manuel.md
 .claude/memory/deployment-plan.md
 .claude/memory/production-walkthrough.md
 .claude/memory/idea-ledger.md
+.claude/memory/pre-deployment-todo.md

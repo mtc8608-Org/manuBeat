@@ -2,6 +2,11 @@
 // - Links to every major section of the app
 // - Shows the logged-in user's name and email
 // - Logout button (dark mode toggle lives in Settings)
+//
+// The area groups are rendered from NAV_AREAS (constants.ts), the single nav
+// source shared with AppHeader and AreaShell — adding an area needs no edit
+// here. Only the Navigation header and Logout are hand-written, because
+// neither belongs to an area.
 import {
   IonContent,
   IonIcon,
@@ -15,16 +20,10 @@ import {
 } from '@ionic/react';
 
 import { useLocation } from 'react-router-dom';
-import {
-  clipboardOutline,
-  documentTextOutline,
-  constructOutline, folderOutline,
-  personOutline, logOutOutline,
-  peopleOutline, keyOutline, settingsOutline,
-  homeOutline,
-} from 'ionicons/icons';
+import { logOutOutline, homeOutline } from 'ionicons/icons';
 import { useAuth } from '../../contexts/AuthContext';
-import { ROUTE } from '../../constants';
+import { ROUTE, NAV_AREAS } from '../../constants';
+import { ICON_MAP } from './icons';
 import './Menu.css';
 
 const Menu: React.FC = () => {
@@ -50,6 +49,11 @@ const Menu: React.FC = () => {
     </IonMenuToggle>
   );
 
+  // An 'admin' area is admin-only; a 'user' area needs any signed-in account.
+  const visibleAreas = user
+    ? NAV_AREAS.filter(area => area.tier !== 'admin' || isAdmin)
+    : [];
+
   return (
     <IonMenu contentId="main" type="overlay">
       <IonContent>
@@ -60,37 +64,20 @@ const Menu: React.FC = () => {
           {navItem(ROUTE.LANDING, homeOutline, 'Home')}
         </IonList>
 
-        {user && (
-          <IonList>
-            <IonListHeader>Surveys</IonListHeader>
-            {navItem(ROUTE.SURVEYS, clipboardOutline, 'Surveys')}
-          </IonList>
-        )}
+        {visibleAreas.map(area => (
+          <IonList key={area.key} id={area.key === 'USER' ? 'labels-list' : undefined}>
+            <IonListHeader>{area.title}</IonListHeader>
+            {area.items.map(item => navItem(item.route, ICON_MAP[item.icon], item.label))}
 
-        {isAdmin && (
-          <IonList>
-            <IonListHeader>Backoffice</IonListHeader>
-            {navItem(ROUTE.CONTENT,       documentTextOutline, 'Content')}
-            {navItem(ROUTE.FILES,         folderOutline,       'Files')}
-            {navItem(ROUTE.CONFIGURATION, constructOutline,    'Configuration')}
-            {navItem(ROUTE.USERS,         peopleOutline,       'Users')}
-            {navItem(ROUTE.ROLES,         keyOutline,          'Roles')}
+            {/* Logout closes the account group — it is not a navigable area item. */}
+            {area.key === 'USER' && (
+              <IonItem lines="none" button detail={false} onClick={handleLogout}>
+                <IonIcon aria-hidden="true" slot="start" icon={logOutOutline} />
+                <IonLabel>Logout</IonLabel>
+              </IonItem>
+            )}
           </IonList>
-        )}
-
-        {user && (
-          <IonList id="labels-list">
-            <IonListHeader>Account</IonListHeader>
-            {navItem(ROUTE.PROFILE,  personOutline,   'Profile')}
-            {navItem(ROUTE.ACCOUNT,  keyOutline,      'Account')}
-            {navItem(ROUTE.SETTINGS, settingsOutline, 'Settings')}
-
-            <IonItem lines="none" button detail={false} onClick={handleLogout}>
-              <IonIcon aria-hidden="true" slot="start" icon={logOutOutline} />
-              <IonLabel>Logout</IonLabel>
-            </IonItem>
-          </IonList>
-        )}
+        ))}
 
       </IonContent>
     </IonMenu>

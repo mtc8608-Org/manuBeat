@@ -56,18 +56,19 @@ manuSpine/
 │   ├── public/              # static assets; PNGs auto-seeded to MinIO (screenshots/)
 │   └── src/
 │       ├── App.tsx          # route registration
-│       ├── constants.ts     # FORM_ID/AREA_NAV/PANEL_CONFIG/FORM_USAGE …
+│       ├── constants.ts     # FORM_ID/AREA_NAV/NAV_AREAS/PANEL_CONFIG/FORM_USAGE …
+│       │                    #   NAV_AREAS = the single nav source (drawer, top bar, rail)
 │       ├── components/
 │       │   ├── shell/       # layout/structure: SplitPageLayout, SinglePanelLayout,
 │       │   │                #   AreaShell, AppHeader, Menu, ResourcePanel, DataTable,
 │       │   │                #   TabPanel, ModalShell, TreeEditor, EmptyState,
-│       │   │                #   JsonViewer, PdfViewer
+│       │   │                #   JsonViewer, PdfViewer · icons.ts (icon-name registry)
 │       │   ├── charts/      # EChart (owned echarts glue)
 │       │   ├── content/     # CMS cards: ContentRenderer, ContentNav, HtmlCard,
 │       │   │                #   ImageCard, HtmlImageCard, LatexCard, CollapsibleCard
 │       │   ├── forms/       # FormRenderer, ComponentForm, CodeEditor, ImagePicker,
 │       │   │                #   ListModal, RichTextEditor
-│       │   └── routing/     # PrivateRoute, UserRoute, AdminRoute
+│       │   └── routing/     # PrivateRoute, AdminRoute
 │       ├── contexts/        # AuthContext, ThemeContext
 │       ├── interfaces/      # types.ts
 │       ├── pages/           # public/ (Landing, SignIn) · backoffice/ (Configuration,

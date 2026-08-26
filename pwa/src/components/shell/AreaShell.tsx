@@ -6,37 +6,9 @@
 import React, { useEffect, useState } from 'react';
 import { IonContent, IonItem, IonLabel, IonIcon, IonList, IonListHeader, IonButton } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
-import {
-  trendingUpOutline, barChartOutline,
-  clipboardOutline,
-  documentTextOutline, folderOutline, constructOutline,
-  walletOutline, pulseOutline, gitNetworkOutline, statsChartOutline,
-  optionsOutline, layersOutline, briefcaseOutline, downloadOutline,
-  peopleOutline, keyOutline, personOutline, settingsOutline,
-  chevronBackOutline, chevronForwardOutline,
-} from 'ionicons/icons';
+import { chevronBackOutline, chevronForwardOutline } from 'ionicons/icons';
+import { ICON_MAP } from './icons';
 import './AreaShell.css';
-
-const ICON_MAP: Record<string, string> = {
-  'trending-up':   trendingUpOutline,
-  'bar-chart':     barChartOutline,
-  'clipboard':     clipboardOutline,
-  'document-text': documentTextOutline,
-  'folder':        folderOutline,
-  'construct':     constructOutline,
-  'wallet':        walletOutline,
-  'pulse':         pulseOutline,
-  'git-network':   gitNetworkOutline,
-  'stats-chart':   statsChartOutline,
-  'options-outline': optionsOutline,
-  'layers-outline':  layersOutline,
-  'briefcase':       briefcaseOutline,
-  'download':        downloadOutline,
-  'people':          peopleOutline,
-  'key':             keyOutline,
-  'person':          personOutline,
-  'settings':        settingsOutline,
-};
 
 export interface AreaNavItem {
   readonly label: string;
