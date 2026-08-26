@@ -287,6 +287,16 @@ pull-upstream. All three are **framework** bugs, so both forks inherit the fix.
   single-sourcing removed. All four now name `TierRoute`/`hasTier`/`NAV_AREAS`.
   Historical mentions in this ledger's own Landed entries are records, not
   instructions, and stay. On merge: take upstream.
+- ✅ **`lib/filestream.js` extracted** (`mayRead`, `INLINE_MIMES`, `streamFile`)
+  — these were module-private inside `routes/framework/files.js`, so a domain
+  route streaming its own `files` row had no way to reuse them and hand-rolled a
+  bare MinIO pipe instead. That is exactly what manuHunter's
+  `GET /api/cv/artifacts/:id/download` did: when the 2026-08-26 batch hardened the
+  framework path (`nosniff`, the inline-mime allowlist, attachment fallback), the
+  fork copy silently kept none of it. Behaviour of the two framework routes is
+  unchanged. On merge: take upstream, then point any domain file-streaming route
+  at `streamFile` and delete its hand-rolled headers — manuHunter's artifact
+  download needed this.
 
 ## Pending
 

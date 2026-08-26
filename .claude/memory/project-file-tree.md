@@ -47,6 +47,8 @@ manuSpine/
 │   ├── permissions.js       # GraphQL tier lists (public/registered/user; admin default)
 │   ├── secrets-registry.js  # user-secrets keychain registry
 │   ├── lib/secrets.js
+│   ├── lib/filestream.js   # mayRead + streamFile: read auth and safe headers
+│   │                       #   for any route streaming a files row (domain too)
 │   ├── routes/framework/    # REST: auth, files, content
 │   └── schema/              # index.js (gate+merge), types.js
 │       ├── helpers/         # components.js, survey.js, ownership.js (owner-scoping

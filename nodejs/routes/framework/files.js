@@ -1,6 +1,9 @@
 const express = require('express');
 const { randomUUID } = require('crypto');
 const { pool, minioClient, upload, BUCKET } = require('../../db');
+// Read-authorisation + safe response headers, shared with domain routes that
+// stream a files row of their own (see lib/filestream.js).
+const { mayRead, streamFile } = require('../../lib/filestream');
 
 const router = express.Router();
 
@@ -20,31 +23,6 @@ const fail = (res, status, message, cause) => {
 // ONE message for "no such row" and "someone else's row" alike — splitting
 // them lets an attacker walk ids and learn which are real.
 const NOT_AUTHORISED = 'File not found or not authorised';
-
-// Content assets (is_public) stream to anyone; everything else is owner-or-admin.
-const mayRead = (file, req) =>
-  file.is_public || (req.user && (req.user.tier === 'admin' || file.uploaded_by === req.user.id));
-
-// Only these render inline. Anything else downloads as an attachment, so an
-// uploaded .html or scripted .svg cannot execute on the app origin — where the
-// JWT lives in localStorage.
-const INLINE_MIMES = new Set([
-  'image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/avif', 'application/pdf',
-]);
-
-// Stream a files row from MinIO with safe disposition headers.
-const streamFile = async (file, res) => {
-  const inline = file.mime_type && INLINE_MIMES.has(file.mime_type);
-  if (file.mime_type) res.setHeader('Content-Type', file.mime_type);
-  // Never let the browser second-guess the declared type.
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader(
-    'Content-Disposition',
-    `${inline ? 'inline' : 'attachment'}; filename="${file.filename.replace(/"/g, '')}"`
-  );
-  const stream = await minioClient.getObject(file.bucket ?? BUCKET, file.key);
-  stream.pipe(res);
-};
 
 // Owner-scoped: a user sees only the files they uploaded; admin sees all.
 router.get('/files', async (req, res) => {
