@@ -59,6 +59,7 @@ const OPS: Record<Domain, {
   create: string; createInput: string;
   update: string; del: string;
   link: string; unlink: string;
+  swap: string;
 }> = {
   app: {
     getOne:      'component',        getList:     'componentList',
@@ -66,6 +67,7 @@ const OPS: Record<Domain, {
     update:      'updateComponent',  del:         'deleteComponent',
     link:        'createComponentRelation',
     unlink:      'deleteComponentRelation',
+    swap:        'swapComponentPositions',
   },
   survey: {
     getOne:      'surveyComponent',        getList:     'surveyComponentList',
@@ -73,6 +75,7 @@ const OPS: Record<Domain, {
     update:      'updateSurveyComponent',  del:         'deleteSurveyComponent',
     link:        'createSurveyComponentRelation',
     unlink:      'deleteSurveyComponentRelation',
+    swap:        'swapSurveyComponentPositions',
   },
 };
 
@@ -161,7 +164,7 @@ const unlinkNodes = async (domain: Domain, parent_id: string, child_id: string) 
 };
 
 const swapNodes = async (domain: Domain, parent_id: string, child_id_a: string, child_id_b: string) => {
-  const mut = domain === 'app' ? 'swapComponentPositions' : 'swapSurveyComponentPositions';
+  const { swap: mut } = OPS[domain];
   try {
     return await gql(`
       mutation Swap($parent_id: ID!, $child_id_a: ID!, $child_id_b: ID!) {
