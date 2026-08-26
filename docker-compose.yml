@@ -13,7 +13,11 @@ services:
     build: ./python
     image: ${COMPOSE_PROJECT_NAME}_python
     container_name: ${COMPOSE_PROJECT_NAME}_python
-    env_file: .env
+    # No env_file: the compute service is unauthenticated and credential-free by
+    # rule (.claude/rules/python-compute.md) — same as docker-compose.prod.yml.
+    # It reads no environment variable, and handing it .env put JWT_SECRET,
+    # SECRETS_MASTER_KEY and the DB/MinIO passwords one file-read away from any
+    # subprocess endpoint it exposes.
     volumes:
       - ./python:/src
     ports:

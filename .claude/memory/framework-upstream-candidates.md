@@ -252,6 +252,32 @@ receive them on their next `merge upstream/master`. Details and open follow-ups:
   is. The rule wins — that parenthetical is gone with the entry.) On merge: take
   upstream, then `./run rebuild python`.
 
+## Landed 2026-08-26 (second batch) — compute-service hardening
+
+Found by the post-merge `exposure-auditor` gate run during manuHunter's
+pull-upstream. All three are **framework** bugs, so both forks inherit the fix.
+
+- ✅ **Dev compose no longer hands the python service `.env`** (`docker-compose.yml`)
+  — the compute service reads **zero** environment variables and is
+  credential-free by rule, which `docker-compose.prod.yml` already stated in a
+  comment while the dev file contradicted it. With a subprocess endpoint that can
+  be made to read files (see below), `env_file: .env` put `JWT_SECRET`,
+  `SECRETS_MASTER_KEY`, `ADMIN_PASSWORD` and the DB/MinIO passwords one request
+  away from any signed-in account. On merge: take upstream.
+- ✅ **`is_public` is admin-only** (`routes/framework/files.js`) — the PATCH owner
+  scope decides *which* row a caller may touch, not *what* they may set, so any
+  authenticated user could publish their own upload and expose it through the two
+  tokenless download streams. Those are tokenless for content assets only. Guard
+  added at the only place `is_public` is writable. On merge: take upstream; no
+  fork behaviour changes (ImagePicker publishes from the admin-only Content page).
+- ✅ **`python-compute.md` shelling-out rule gained two mandatory items** —
+  restrict what the binary may READ (`openin_any`/`openout_any` for TeX; shell
+  escape stops `\write18`, never `\input`), and never hand a subprocess's raw
+  output to a non-admin (compiler logs exfiltrate whatever was read). The old
+  three-item list is what let manuHunter's LaTeX endpoint ship with a file-read
+  primitive. On merge: take upstream, then audit any fork subprocess endpoint
+  against the new items — manuHunter's `latex/routes.py` needed both.
+
 ## Pending
 
 - **Retire `ComponentForm.tsx` and `ListModal.tsx` (2026-07-07)** —

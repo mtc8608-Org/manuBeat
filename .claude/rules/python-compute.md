@@ -25,8 +25,10 @@ Python is unauthenticated and reachable by anything inside the docker network, s
 - **Disable shell escape** in the tool itself where it exists (`-no-shell-escape` for TeX), and never build the command as a shell string — pass an argv list to `subprocess.run` so caller input can never become a shell token.
 - **Work only inside a `tempfile.TemporaryDirectory()`**, never the repo or a shared path, so concurrent calls cannot see or clobber each other and nothing survives the request.
 - **Pass a hard `timeout=` and handle `subprocess.TimeoutExpired`** — an unbounded compile is a CPU DoS reachable by any account that can hit the Node caller.
+- **Restrict what the binary may READ.** Disabling shell escape stops command execution, not file access: TeX's `\input`/`\openin` still read any path the process can, and stock TeX Live ships `openin_any = a`. Pass the restriction in the subprocess env — `env={**os.environ, "openin_any": "p", "openout_any": "p"}` for TeX — so the tool is confined to its temp directory. Any binary that interpolates caller-supplied content needs the equivalent.
+- **Never hand a subprocess's raw output back to a non-admin.** Compiler logs are an exfiltration channel: a deliberately-failing input can print the contents of whatever it just read. Return a generic failure to ordinary callers and keep the log tail for admins (or the server log).
 
-The Node caller owns auth, owner-scoping and rate limiting *before* the call; none of that protects the subprocess itself, which is why these three are Python-side requirements rather than advice. Worked example: manuHunter's `python/api/domains/latex/routes.py`.
+The Node caller owns auth, owner-scoping and rate limiting *before* the call; none of that protects the subprocess itself, which is why these five are Python-side requirements rather than advice. The compute service also holds **no credentials at all** — neither compose file gives it an `env_file`, precisely so that a file-read primitive in a subprocess endpoint cannot reach `JWT_SECRET` or `SECRETS_MASTER_KEY`. Worked example: manuHunter's `python/api/domains/latex/routes.py`.
 
 ## Node caller conventions
 

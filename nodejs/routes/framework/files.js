@@ -105,9 +105,19 @@ router.get('/files/:id/download', async (req, res) => {
 // `is_public` is settable here because that is how ImagePicker publishes a file
 // the admin has just chosen as a content image. It is deliberately one-way in
 // practice — nothing in the app un-publishes — but an admin may clear it.
+//
+// Publishing is ADMIN-ONLY. The owner scope below decides *which* row a caller
+// may touch, not *what* they may set — without this guard any authenticated user
+// could flip is_public on their own upload and make it readable by anonymous
+// visitors through the two tokenless download streams. Those streams are
+// tokenless for content assets only, never for user uploads; that invariant is
+// enforced here, at the only place is_public is writable.
 router.patch('/files/:id', async (req, res) => {
   if (!req.user) return res.status(401).json({ error: 'Authentication required' });
   const { description, is_public } = req.body ?? {};
+  if (is_public !== undefined && req.user.tier !== 'admin') {
+    return res.status(403).json({ error: 'Only an admin may publish a file' });
+  }
   try {
     const sets   = [];
     const params = [];
