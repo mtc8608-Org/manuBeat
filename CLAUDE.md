@@ -59,6 +59,8 @@ pwa (React + Ionic + Vite)
       → postgres (schema in init-scripts/)
       → minio (file storage)
   → python (FastAPI, computation only — no DB writes)
+
+jupyter (JupyterLab over python/library)   — dev only, [MEDICAL], no credentials
 ```
 
 ### Frontend (`pwa/src/`)
@@ -89,11 +91,67 @@ Content pages are `contentPage` nodes in the shared `components` table. The root
 - `domains/` — one subdirectory per domain with its own `routes.py`.
 - Node.js calls Python via Axios and then persists results itself.
 
+### Cardiopulmonary model stack (`python/library/`, `python/config/`)
+
+A 0D lumped-parameter cardiopulmonary ODE, JSON-config driven, run in **array mode**
+(one flat `jnp` vector with integer indexing, under jit). Ported verbatim from
+CardioPulmonaryModel and still owned there — see [[model-stack-upstream]] before
+changing anything under `python/library/`. Coding conventions and the stack's
+"don't break" internals: `.claude/rules/model-stack.md`.
+
+- `library/model/` — `modelEq`/`modelEqSI` (equation classes), `modelGen` (build
+  objects from JSON), `modelClass`/`modelClassSI` (array compilers + RHS + integrators).
+- `library/run/` — `runner` (orchestration + entry points), `runnerBatchSI` (vmapped
+  batch), `stateSetup` (initial state), `progress`, `runIO`.
+- `library/postproc/` — `resultsEngine` (post-processing DAG), `dataProcessing`.
+- `library/viz/plots.py` · `library/hdf5/` (persistence) · `library/utils.py`.
+
+**Model vs scenario.** A model is STRUCTURE (`config/models/*.json` → `model_configs`);
+a scenario is VALUES (`config/scenarios/*.json` → `scenario_configs`): `shared.twin`
+targets, `shared.integration` numerics, and the `baseline`/`calibration`/`control`
+stage stacks. `runner.buildSimulationParams(runConfig, scenario)` is the one adapter
+that combines them. Run **modes**: baseline / calibration / control — a scenario only
+supports the modes whose section it declares.
+
+**4-call pipeline** (driven by `runner`): `initialiseModel` → `prepareModel` →
+`CardioPulmonaryModelArray` → `runSimulationArray`. `stateSetup.configureStates`
+seeds the equilibrium init; the raw generator init Euler-explodes.
+
+**Two stacks:** the original (`modelClass`/`modelEq`) runs fixed-step `diffrax.Euler`
+only; the SI fork (`modelClassSI`/`modelEqSI`, "step-independent") makes the cycle
+operators dt-independent and adds solver dispatch (euler/rk4/adaptive) selected from
+`scenario.shared.integration.solver`.
+
+Two HARD RULES came with this code and still apply:
+
+- **Single config surface.** A configurable value exists in exactly three places: a
+  default at the definition site, the model/scenario JSON, or the notebook `runConfig`
+  (wired through `buildSimulationParams`). Never add a knob that needs a library edit,
+  and never invent a second override mechanism.
+- **GPU is off by default.** Benchmarked 1.7–2.7× *slower* than CPU for this workload —
+  a long sequential `lax.scan` over a tiny state vector is launch-latency bound
+  ([[gpu-no-benefit]]). Both images install `jax[cpu]`; never commit `useGpu: True`.
+
+### Notebooks (`python/run_*/`)
+
+`run_cpet/`, `run_test/`, `run_convergence/`, `run_sepsis/` hold the source repo's
+driver notebooks, committed **with outputs stripped**. They are I/O only — load
+config, set the `runConfig` dict, call a runner entry point, save/process/plot; never
+physics, integrator loops, or hand-rolled saves. They run in the `jupyter` service
+(`http://localhost:8888`), which mounts the same `./python` as the API service, and
+write their artefacts to `python/notebookData/` (gitignored). Cell conventions:
+`.claude/rules/notebook-cells.md`.
+
 ### DB init (`init-scripts/`)
 Files run alphabetically on a fresh postgres volume:
 - `01-init-db.sql` — framework schema and seeds (component editor forms, survey forms, content editor forms, files table).
 - `seed-landing.sql` — full content tree: base nodes, welcome card, App Guide, Developer Guide.
 - `02-init-<domain>.sql` — domain tables, added per project.
+- `seed-physiology.sql` — **generated**, never hand-edit a config blob in it: every
+  shipped model / scenario / processing / plot config, produced by
+  `scripts/gen-physiology-seed.py` from `python/config/**`. Disk stays canonical (the
+  notebooks read it directly); re-run the generator and commit both after changing a
+  config file.
 
 **UUID convention**: framework seeds use the prefix `c51c1e5f-5cc1-4b77-8832-2d10cc97XXXX`. Content seeds use `00000000-0000-0000-0000-XXXXXXXXXXXX`. Always hardcode UUIDs for seeds referenced from code (e.g. `constants.ts` `FORM_ID`, `EDITOR_ID`, `CONTENT_EDITOR_ID`).
 

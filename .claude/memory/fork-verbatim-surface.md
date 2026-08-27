@@ -92,7 +92,17 @@ outside these sets that differs is worth the same blob-history check:
   framework routes and resolvers, the framework helpers in `schema/helpers/` —
   is verbatim.
 - **`python/`** — `api/main.py` (router includes) and `Dockerfile` (domain system
-  deps, e.g. TeX Live), plus fork-only `api/domains/<domain>/`.
+  deps, e.g. TeX Live), plus fork-only `api/domains/<domain>/`. manuBeat widens
+  this: `Dockerfile.prod` gains `hdf5-tools` plus `COPY library ./library` /
+  `COPY config ./config`, and the fork adds four top-level dirs under `python/`
+  (`library/`, `config/`, `run_*/`, `notebookData/`) with `Dockerfile.notebook`
+  and `requirements.notebook.txt`. All [MEDICAL]-commented — see
+  [[model-stack-upstream]].
+- **`docker-compose.yml`** — manuBeat's two deviations, both `[MEDICAL]`-commented
+  in the file: the five MinIO variables handed to the `python` service, and the
+  fork-only `jupyter` service. The prod compose has neither. A `pull-upstream`
+  merge must keep both blocks and never widen the first.
+- **`scripts/`** — fork-only; upstream has no such directory.
 - **`init-scripts/`** — `01-init-db.sql` and `seed-landing.sql` (a fork may
   delete a framework seed block that its own richer same-name form replaces, and
   its landing content is its own), plus fork-only `02-init-<domain>.sql` and

@@ -6,7 +6,7 @@ metadata:
   type: project
 ---
 
-# Project file tree (verified 2026-07-04)
+# Project file tree (verified 2026-08-27)
 
 Working map of the repo. **Verify against `ls` before asserting structure or
 placing a file** — an empty directory (like `charts/` once was) is invisible
@@ -98,10 +98,13 @@ fork adds three domains on top of it (as of 2026-08-27):
 
 ```
 init-scripts/
-├── 02-init-medical.sql       # [MEDICAL] model_configs / model_runs / plot+proc configs
+├── 02-init-medical.sql       # [MEDICAL] model_configs / scenario_configs / model_runs /
+│                             #   plot_configs / proc_configs (proc.config is `json`, not
+│                             #   jsonb — the post-processing engine is order-sensitive)
 ├── 03-init-bedside.sql       # [BEDSIDE] bedside_nodes, beds, bed_assignments, patients,
 │                             #   patient_files, bedside_streams/segments/events, heartbeats
-├── seed-physiology.sql       # [MEDICAL] baseline Hr-test circuit model into model_configs
+├── seed-physiology.sql       # [MEDICAL] GENERATED — all 23 shipped configs (6 models,
+│                             #   6 scenarios, 2 processing, 9 plots)
 └── seed-paper-egd.sql        # [MEDICAL] the EGD manuscript as CMS content cards
 nodejs/
 ├── realtime.js               # [BEDSIDE] ws hub on /ws/bedside (attached in backend.js)
@@ -116,11 +119,38 @@ nodejs/
     └── surveys/stats.js      # surveyStats query — the framework's deleted stats layer
 pwa/src/pages/
 ├── bedside/                  # Patients, Devices, Monitor (admin)
-└── models/                   # Simulator, ModelSandbox, PlotSandbox,
+└── models/                   # Simulator, ModelSandbox, ScenarioSandbox, PlotSandbox,
                               #   ProcessingSandbox, HdfInspector
-python/api/domains/
-├── medical/                  # cardio_routes.py, hdf5_engine.py, cardio/ (JAX model)
-└── surveys/routes.py         # pandas survey stats + CSV export
+python/
+├── api/domains/
+│   ├── medical/cardio_routes.py  # [MEDICAL] the web driver for library/ — run/status/
+│   │                             #   result, process, HDF5 inspection endpoints
+│   └── surveys/routes.py         # pandas survey stats + CSV export
+├── library/                  # [MEDICAL] the cardiopulmonary model stack, VERBATIM from
+│   │                         #   CardioPulmonaryModel — read [[model-stack-upstream]]
+│   │                         #   before touching anything in here
+│   ├── model/                #   modelEq(SI), modelGen, modelClass(SI), treeCreation
+│   ├── run/                  #   runner, runnerBatchSI, stateSetup, progress, runIO
+│   ├── postproc/             #   resultsEngine (post-processing DAG), dataProcessing
+│   ├── viz/plots.py          #   matplotlib builders — notebook-side only
+│   ├── hdf5/                 #   engine + schema_sim/_pop/_calib, migrate, raw_stream
+│   └── utils.py              #   configPath/loadScenario/labelFor/… PROJECT_ROOT is
+│                             #   this file's parent, which PINS config/ as its sibling
+├── config/                   # [MEDICAL] models/ scenarios/ processing/ plots/ +
+│                             #   labels.json, metadata.json — canonical for the
+│                             #   notebooks, seeded into Postgres by scripts/
+├── run_cpet/ run_test/ run_convergence/ run_sepsis/
+│                             # [MEDICAL] 14 driver notebooks, committed with outputs
+│                             #   stripped; run in the jupyter service, write to
+│                             #   notebookData/
+├── notebookData/             # [MEDICAL] notebook artefacts — gitignored (.gitkeep only)
+├── Dockerfile.notebook       # [MEDICAL] the jupyter image (full scientific stack)
+└── requirements.notebook.txt # [MEDICAL] its intent file (+ .lock, user-generated)
+
+scripts/                      # manuBeat's own — upstream has none. Laptop-side repo
+└── gen-physiology-seed.py    #   maintenance, never run by a container.
+                              # [MEDICAL] regenerates init-scripts/seed-physiology.sql
+                              #   from python/config/**
 ```
 
 Two of these are **recreations of framework code manuSpine deleted** (the survey

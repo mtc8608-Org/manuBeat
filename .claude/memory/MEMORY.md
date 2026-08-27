@@ -4,7 +4,6 @@
 <!-- Standing rules live in CLAUDE.md; UI conventions in .claude/rules/; procedures in .claude/skills/. -->
 
 - [Framework upstream workflow](project_framework_upstream.md) — manuSpine is the parent framework; use `git fetch upstream && git merge upstream/master` to pull updates into manuBeat
-- [CardioRespiratory port](project_cardio_port.md) — porting CardioRespiratoryModelV2 (branch V2.3) into manuBeat as the medical/cardio domain
 - [Bedside telemetry — hardware](project_bedside_hardware.md) — Pi 4 + Waveshare ADS1256 AD HAT shopping list & hospital hardware constraints
 - [Bedside telemetry — server](project_bedside_server.md) — server-side registry/ingest/realtime design for edge Pis streaming device data to manuBeat
 - [Bedside telemetry — Pi agent](project_bedside_pi.md) — headless edge-agent architecture (drivers, store-and-forward buffer, dial-out uplink) + ADS1256 working facts
@@ -18,4 +17,10 @@
 - [User secrets keychain](user-secrets-keychain.md) — LANDED design record: user_profile + encrypted user_secrets keychain (write-only API, secrets-registry.js) + Users backoffice page; invariants codified in rules/backend-api.md
 - [Mobile app path](mobile-app-path.md) — Capacitor removed 2026-07-04 (unused, CVE-carrying); PWA install covers most needs; re-add procedure if a fork ever needs app-store/native APIs
 - [EChart owned wrapper](echart-owned-wrapper.md) — chart glue is ours (charts/EChart.tsx), engine stays echarts ^6; echarts-for-react removed; manuBeat swapped its 3 imports in the 2026-08-27 merge
+- [Model stack upstream](model-stack-upstream.md) — python/library is a verbatim port of CardioPulmonaryModel's library/; the three deliberate divergences, the sync recipe, and what stayed behind
+- [GPU gives no benefit](gpu-no-benefit.md) — POLICY: GPU off by default everywhere; benchmarked 1.7–2.7x SLOWER than CPU for the batched SI calibration
+- [Model initialisation](model-initialisation.md) — how Y0 is seeded via stateSetup.configureStates: the injected inputs beyond the structural JSON, and where they come from
+- [SI default migration plan](si-default-migration-plan.md) — inherited upstream plan to make SI the one stack and delete legacy modelClass/modelEq; 0% built
+- [Utils tier-2 findings](utils-tier2-findings.md) — inherited dedup backlog from the utils audit; domain-coupled, NOT for utils.py
+- [Name notebook cells by heading](name-notebook-cells-by-heading.md) — never say "cell 17"; reference the `# region ->` text or markdown heading
 - [Project file tree](project-file-tree.md) — annotated repo map (upstream's; manuBeat adds its bedside/medical/models/surveys dirs); consult before asserting structure or placing files; update in the same commit as any directory add/move/remove
