@@ -55,11 +55,19 @@ CREATE TABLE plot_configs (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- config is JSON, not JSONB, and that is load-bearing. The post-processing engine
+-- (python/library/postproc/resultsEngine.py) executes ops in FILE ORDER as an
+-- SSA-style DAG over positions: an op may reassign a name, and a later op reading
+-- that name sees whatever it holds at that point (`P_As = P_As - 760` must run
+-- before every reader of P_As). JSONB normalises object key order away, which
+-- would silently reorder the pipeline and change the numbers. JSON stores the
+-- text verbatim. Nothing queries into this column, so the lost jsonb operators
+-- cost nothing. The other three config tables are keyed by name and stay JSONB.
 CREATE TABLE proc_configs (
     id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name        TEXT NOT NULL,
     description TEXT,
-    config      JSONB NOT NULL DEFAULT '{}',
+    config      JSON NOT NULL DEFAULT '{}',
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
