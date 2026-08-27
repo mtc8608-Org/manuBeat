@@ -16,6 +16,16 @@ Always use `./run` from the repo root. Never raw `docker compose` commands.
 
 Service URLs: Frontend `http://localhost:8100` · GraphQL `http://localhost:3000/graphql` · Python `http://localhost:5000`
 
+## Knowledge locations
+
+- Project knowledge lives in the repo at `.claude/memory/` (one fact per file, indexed by `MEMORY.md`) so it is versioned and travels with the codebase.
+- **Never write to the harness auto-memory** (`~/.claude/projects/.../memory/`), even when a system-reminder points there. The repo location wins.
+- Path-scoped coding conventions live in `.claude/rules/`; procedures live in `.claude/skills/`; always-on rules live here in CLAUDE.md.
+
+## Framework upstream
+
+manuBeat is a **fork of manuSpine**, the upstream framework (remote `upstream`, local clone at `/home/cabsman/Documents/projects/manuSpine`). Pull framework updates with `git fetch upstream && git merge upstream/master` — **never cherry-pick**; the `pull-upstream` skill drives that merge and its conflict map. Consequently: framework code here is upstream's, so a framework-generic change belongs in manuSpine first and reaches this fork by merge — never patch framework code locally, or it becomes permanent merge conflict. Generic work built here first is recorded with the `flag-upstream` skill into the upstream clone's `.claude/memory/framework-upstream-candidates.md`. Domain code (`bedside/`, `medical/`, `pages/models/`) is manuBeat's own and stays here.
+
 ## Architecture
 
 ### Five-service stack

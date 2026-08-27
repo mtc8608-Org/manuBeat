@@ -1,0 +1,21 @@
+# Memory Index
+
+<!-- One line per memory file. Keep under 200 lines. -->
+<!-- Standing rules live in CLAUDE.md; UI conventions in .claude/rules/; procedures in .claude/skills/. -->
+
+- [Framework upstream workflow](project_framework_upstream.md) — manuSpine is the parent framework; use `git fetch upstream && git merge upstream/master` to pull updates into manuBeat
+- [CardioRespiratory port](project_cardio_port.md) — porting CardioRespiratoryModelV2 (branch V2.3) into manuBeat as the medical/cardio domain
+- [Bedside telemetry — hardware](project_bedside_hardware.md) — Pi 4 + Waveshare ADS1256 AD HAT shopping list & hospital hardware constraints
+- [Bedside telemetry — server](project_bedside_server.md) — server-side registry/ingest/realtime design for edge Pis streaming device data to manuBeat
+- [Bedside telemetry — Pi agent](project_bedside_pi.md) — headless edge-agent architecture (drivers, store-and-forward buffer, dial-out uplink) + ADS1256 working facts
+- [Never run ./run](feedback_never_run.md) — never execute ./run/docker yourself; always end by stating which ./run command to use
+- [Data Collection domain](project_bedside_domain.md) — bedside admin area: patients=survey answers; bedside_nodes/beds/bed_assignments/patient_files schema
+- [ManuLab context](manulab-context.md) — manuSpine is the OSS framework every ManuLab app forks; body-analogy app family; the bigger federated-research vision; manuBeat is the cardio/bedside fork
+- [Sibling apps](sibling-apps.md) — pointers to the other apps (manuSpine upstream, manuHunter) and where their memory lives
+- [Served multi-user plan](served-multi-user-plan.md) — all ManuLab apps are single-user today but will be served multi-user; never take single-user shortcuts in framework or app design
+- [Fork verbatim surface](fork-verbatim-surface.md) — inside `pwa/src` only five wiring surfaces may differ from Spine (App.tsx, constants.ts, types.ts, Api.ts, new `pages/<domain>/`); everything else is verbatim upstream, and the measured app-tuned surface for `nodejs/`/`python/`/`init-scripts/` is recorded too — includes the diff recipe to check a fork
+- [Framework sync ledger](framework-upstream-candidates.md) — the Landed sections are the fork-side merge map (per-item deviations + conflict notes) read by pull-upstream; the 2026-08-26 security batch is the newest and hits manuBeat hard (nav single-sourcing, `files.is_public` reset-only, deactivation check vs manuBeat device tokens); manuBeat has not merged yet — its next pull brings the whole batch at once
+- [User secrets keychain](user-secrets-keychain.md) — LANDED design record: user_profile + encrypted user_secrets keychain (write-only API, secrets-registry.js) + Users backoffice page; invariants codified in rules/backend-api.md
+- [Mobile app path](mobile-app-path.md) — Capacitor removed 2026-07-04 (unused, CVE-carrying); PWA install covers most needs; re-add procedure if a fork ever needs app-store/native APIs
+- [EChart owned wrapper](echart-owned-wrapper.md) — chart glue is ours (charts/EChart.tsx), engine stays echarts ^6; echarts-for-react removed; manuBeat must swap 3 imports on next pull-upstream
+- [Project file tree](project-file-tree.md) — annotated repo map (upstream's; manuBeat adds its bedside/medical/models dirs); consult before asserting structure or placing files; update in the same commit as any directory add/move/remove
