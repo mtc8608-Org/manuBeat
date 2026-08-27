@@ -22,6 +22,7 @@ import Roles from './pages/backoffice/Roles';
 // [MEDICAL]
 import Simulator from './pages/models/Simulator';
 import ModelSandbox from './pages/models/ModelSandbox';
+import ScenarioSandbox from './pages/models/ScenarioSandbox';
 import PlotSandbox from './pages/models/PlotSandbox';
 import ProcessingSandbox from './pages/models/ProcessingSandbox';
 import HdfInspector from './pages/models/HdfInspector';
@@ -78,6 +79,7 @@ const App: React.FC = () => {
                 {/* [MEDICAL] Physiology Simulator */}
                 <PrivateRoute path={ROUTE.SIMULATOR}     exact={true} component={Simulator} />
                 <PrivateRoute path={ROUTE.MODEL_SANDBOX} exact={true} component={ModelSandbox} />
+                <PrivateRoute path={ROUTE.SCENARIO_SANDBOX} exact={true} component={ScenarioSandbox} />
                 <PrivateRoute path={ROUTE.PLOT_SANDBOX}  exact={true} component={PlotSandbox} />
                 <PrivateRoute path={ROUTE.PROC_SANDBOX}  exact={true} component={ProcessingSandbox} />
                 <PrivateRoute path={ROUTE.HDF_INSPECTOR} exact={true} component={HdfInspector} />

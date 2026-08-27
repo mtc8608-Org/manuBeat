@@ -95,9 +95,25 @@ export interface ModelConfig {
   created_at:  string;
 }
 
+// A scenario carries the VALUES of a run — twin targets, integration numerics and
+// the baseline/calibration/control stage stacks — against a model's STRUCTURE.
+// Same row shape as ModelConfig; the tables are separate because the model stack
+// keeps them separate (python/config/models vs python/config/scenarios).
+export interface ScenarioConfig {
+  id:          string;
+  name:        string;
+  description: string | null;
+  config:      Record<string, any>;
+  created_at:  string;
+}
+
+export type RunMode = 'baseline' | 'calibration' | 'control';
+
 export interface ModelRun {
   id:           string;
   config_id:    string | null;
+  scenario_id:  string | null;
+  mode:         RunMode;
   status:       'pending' | 'running' | 'done' | 'error';
   minio_key:    string | null;
   metadata:     Record<string, any> | null;
@@ -105,20 +121,42 @@ export interface ModelRun {
   completed_at: string | null;
 }
 
+// One line of the model stack's convergence trace, as emitted by
+// python/library/run/progress.py. Only a calibration over a scenario that declares
+// convergence.observations produces these; every other run reports an empty list.
+export interface CardioProgress {
+  kind:        'step' | 'sim';
+  label:       string;
+  done:        number;
+  total:       number;
+  elapsedWall: number;
+  eta:         number;
+  meanRel:     number;
+  maxRel:      number;
+  bestRel:     number;
+}
+
 export interface CardioJobStatus {
   job_id:      string;
   status:      'pending' | 'running' | 'done' | 'error';
+  mode:        RunMode;
+  progress:    CardioProgress[];
   duration_s:  number | null;
   state_count: number | null;
   minio_key:   string | null;
   error:       string | null;
 }
 
+// Mirrors library/hdf5/schema_sim.read_run_result, which in turn mirrors
+// ResultsEngine.toPayload — one payload shape across notebook and web.
 export interface CardioResult {
   stateNames:   string[];
   t:            number[];
-  ys:           Record<string, number[]>;
+  signals:      Record<string, number[]>;
   finalStates:  Record<string, number>;
+  processed:    Record<string, Record<string, number[]>>;
+  units:        Record<string, string>;
+  labels:       Record<string, string>;
   metadata:     Record<string, any>;
 }
 

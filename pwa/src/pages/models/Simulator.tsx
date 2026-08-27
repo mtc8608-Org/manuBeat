@@ -24,7 +24,10 @@ import ResourcePanel from '../../components/shell/ResourcePanel';
 import EmptyState from '../../components/shell/EmptyState';
 import ModalShell from '../../components/shell/ModalShell';
 import { useTheme } from '../../contexts/ThemeContext';
-import { ModelConfig, ModelRun, CardioResult, CardioPlotConfig, CardioProcConfig } from '../../interfaces/types';
+import {
+  ModelConfig, ScenarioConfig, RunMode, ModelRun, CardioResult, CardioProgress,
+  CardioPlotConfig, CardioProcConfig,
+} from '../../interfaces/types';
 import { AREA_NAV, ECHARTS_PALETTE, PANEL_CONFIG } from '../../constants';
 
 
@@ -35,11 +38,22 @@ const STATUS_COLOR: Record<string, string> = {
   error:   'danger',
 };
 
-const DEFAULT_RUN_PARAMS: Record<string, any> = {
-  runTime: 10,
-  dt0: 0.001,
-  returnFrequency: 100,
-};
+// Run modes, and the scenario section each one needs. buildSimulationParams reads
+// that section directly, so offering a mode a scenario does not declare would fail
+// inside the solver rather than here.
+const RUN_MODES: { mode: RunMode; section: string; label: string }[] = [
+  { mode: 'baseline',    section: 'baseline',    label: 'Baseline — one passive solve' },
+  { mode: 'calibration', section: 'calibration', label: 'Calibration — fit to twin targets' },
+  { mode: 'control',     section: 'control',     label: 'Control — active ANS stage stack' },
+];
+
+// Numeric overrides are opt-in: an empty field is omitted from the request so the
+// scenario's own shared.integration value stands.
+const OVERRIDE_FIELDS: { key: string; label: string; note: string }[] = [
+  { key: 'runTime', label: 'Run time',          note: 'simulated seconds per internal run' },
+  { key: 'dt',      label: 'Integrator step',   note: 'seconds' },
+  { key: 'dtDense', label: 'Output grid',       note: 'seconds between saved samples' },
+];
 
 const Simulator: React.FC = () => {
 
@@ -60,15 +74,19 @@ const Simulator: React.FC = () => {
 
   const [selectedRun, setSelectedRun] = useState<ModelRun | null>(null);
 
-  // Model picker modal
+  // Run picker modal — a run is model + scenario + mode
   const [pickerOpen, setPickerOpen]         = useState(false);
   const [pickerVersion, setPickerVersion]   = useState(0);
   const [pickerSelected, setPickerSelected] = useState<ModelConfig | null>(null);
+  const [pickerScenario, setPickerScenario] = useState<ScenarioConfig | null>(null);
+  const [pickerMode, setPickerMode]         = useState<RunMode>('baseline');
+  const [overrides, setOverrides]           = useState<Record<string, string>>({});
   const [runName, setRunName]               = useState('');
   const [running, setRunning]               = useState(false);
 
   // Polling
   const [pollingJobId, setPollingJobId] = useState<string | null>(null);
+  const [progress, setProgress]         = useState<CardioProgress[]>([]);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Results
@@ -134,6 +152,9 @@ const Simulator: React.FC = () => {
     pollRef.current = setInterval(async () => {
       try {
         const status = await ApiService.getCardioStatus(jobId);
+        // A calibration reports its convergence trace while it runs (the model
+        // stack's ProgressReporter); every other run reports an empty list.
+        setProgress(status.progress ?? []);
         if (status.status === 'done' || status.status === 'error') {
           if (pollRef.current) clearInterval(pollRef.current);
           pollRef.current = null;
@@ -158,12 +179,21 @@ const Simulator: React.FC = () => {
     }
   };
 
-  const executeRun = async (cfg: ModelConfig | null, params: Record<string, any>, name: string) => {
+  const executeRun = async (
+    cfg: ModelConfig | null,
+    scenario: ScenarioConfig | null,
+    mode: RunMode,
+    params: Record<string, any>,
+    name: string,
+  ) => {
     setRunning(true);
     setResult(null);
+    setProgress([]);
     try {
       const modelJson = cfg?.config ?? {};
-      const { job_id } = await ApiService.runCardioModel(cfg?.id ?? null, modelJson, params, name || undefined);
+      const { job_id } = await ApiService.runCardioModel(
+        cfg?.id ?? null, modelJson, scenario?.id ?? null, mode, params, name || undefined,
+      );
       setPollingJobId(job_id);
       setRunVersion(v => v + 1);
       startPolling(job_id);
@@ -177,15 +207,30 @@ const Simulator: React.FC = () => {
 
   const openPicker = () => {
     setPickerSelected(null);
+    setPickerScenario(null);
+    setPickerMode('baseline');
+    setOverrides({});
     setRunName('');
     setPickerOpen(true);
     setPickerVersion(v => v + 1);
   };
 
+  // Only the modes the chosen scenario declares a section for.
+  const availableModes = RUN_MODES.filter(m => {
+    const section = (pickerScenario?.config ?? {})[m.section];
+    if (!section) return false;
+    return m.mode === 'baseline' ? true : Array.isArray(section.stages) && section.stages.length > 0;
+  });
+
   const handlePickerConfirm = () => {
-    if (!pickerSelected) return;
+    if (!pickerSelected || !pickerScenario) return;
+    const params: Record<string, any> = {};
+    for (const { key } of OVERRIDE_FIELDS) {
+      const raw = overrides[key];
+      if (raw !== undefined && raw !== '' && !Number.isNaN(Number(raw))) params[key] = Number(raw);
+    }
     setPickerOpen(false);
-    executeRun(pickerSelected, DEFAULT_RUN_PARAMS, runName);
+    executeRun(pickerSelected, pickerScenario, pickerMode, params, runName);
   };
 
   const resetProcState = () => {
@@ -275,7 +320,7 @@ const Simulator: React.FC = () => {
     const tAdd  = ax.options?.offset   ?? 0;
     const t     = res.t.map(v => v - tOff + tAdd);
     const hasR  = right.length > 0;
-    const allYs = { ...res.ys, ...procOutputs };
+    const allYs = { ...res.signals, ...procOutputs };
 
     const mkSeries = (names: string[], yIdx: number, map: string): LineSeriesOption[] =>
       names.map((name, i) => ({
@@ -326,7 +371,7 @@ const Simulator: React.FC = () => {
       series: selectedStates.map(name => ({
         name,
         type: 'line',
-        data: result.ys[name]?.map((v, idx) => [result.t[idx], v]) ?? [],
+        data: result.signals[name]?.map((v, idx) => [result.t[idx], v]) ?? [],
         symbol: 'none',
         lineStyle: { color: stateColor(name) },
         itemStyle: { color: stateColor(name) },
@@ -344,6 +389,45 @@ const Simulator: React.FC = () => {
     label: run.status,
     color: STATUS_COLOR[run.status] ?? 'medium',
   });
+
+  // Live view while a run is in flight. A calibration streams its convergence
+  // trace (max|rel| against the twin targets); everything else just spins.
+  const latest = progress[progress.length - 1];
+  const progressPanel = (
+    <>
+      <IonItem lines="none">
+        <IonSpinner name="dots" style={{ marginInlineEnd: 12 }} />
+        <IonLabel>Running…</IonLabel>
+      </IonItem>
+      {latest && (
+        <>
+          <IonItem lines="none">
+            <IonLabel>
+              {latest.label}
+              <IonNote style={{ display: 'block', fontSize: '0.75rem' }}>
+                {latest.total > 0 && `${Math.round(100 * latest.done / latest.total)}% · `}
+                {Number.isFinite(latest.elapsedWall) && `${latest.elapsedWall.toFixed(0)} s elapsed`}
+              </IonNote>
+            </IonLabel>
+          </IonItem>
+          <IonItem lines="none">
+            <IonNote style={{ fontSize: '0.75rem' }}>
+              mean|rel| {latest.meanRel.toFixed(1)}% · max|rel| {latest.maxRel.toFixed(1)}%
+              {' '}· best {latest.bestRel.toFixed(1)}%
+            </IonNote>
+          </IonItem>
+        </>
+      )}
+      {!latest && (
+        <IonItem lines="none">
+          <IonNote style={{ fontSize: '0.75rem' }}>
+            No convergence trace for this run — only a calibration over a scenario that
+            declares convergence observations reports one.
+          </IonNote>
+        </IonItem>
+      )}
+    </>
+  );
 
   return (
     <SplitPageLayout
@@ -386,6 +470,8 @@ const Simulator: React.FC = () => {
               content: !result ? (
                 resultError ? (
                   <IonItem lines="none"><IonText color="danger">{resultError}</IonText></IonItem>
+                ) : pollingJobId ? (
+                  progressPanel
                 ) : (
                   <EmptyState message="Select a completed run or start a new one" />
                 )
@@ -614,7 +700,7 @@ const Simulator: React.FC = () => {
         />
       }
     >
-      {/* Model picker */}
+      {/* Run picker — model (structure) + scenario (values) + mode */}
       <ModalShell
         isOpen={pickerOpen}
         onDismiss={() => setPickerOpen(false)}
@@ -631,7 +717,53 @@ const Simulator: React.FC = () => {
           onSelect={setPickerSelected}
           emptyMessage="No models in database"
         />
+        <ResourcePanel<ScenarioConfig>
+          fetcher={ApiService.getScenarioConfigs}
+          refreshToken={String(pickerVersion)}
+          title="Select scenario"
+          getLabel={sc => sc.name}
+          getSubLabel={sc => sc.description ?? ''}
+          selectedId={pickerScenario?.id}
+          onSelect={sc => {
+            setPickerScenario(sc);
+            setPickerMode('baseline');
+          }}
+          emptyMessage="No scenarios in database"
+        />
         <div style={{ padding: '0 16px' }}>
+          <IonItem lines="none">
+            <IonSelect
+              label="Mode" labelPlacement="stacked"
+              value={pickerMode}
+              disabled={!pickerScenario}
+              onIonChange={e => setPickerMode(e.detail.value)}
+            >
+              {availableModes.map(m => (
+                <IonSelectOption key={m.mode} value={m.mode}>{m.label}</IonSelectOption>
+              ))}
+            </IonSelect>
+          </IonItem>
+          {pickerScenario && availableModes.length < RUN_MODES.length && (
+            <IonItem lines="none">
+              <IonNote>
+                This scenario declares no{' '}
+                {RUN_MODES.filter(m => !availableModes.some(a => a.mode === m.mode))
+                  .map(m => m.mode).join(' or ')}{' '}
+                stage stack, so those modes are unavailable.
+              </IonNote>
+            </IonItem>
+          )}
+          {OVERRIDE_FIELDS.map(f => (
+            <IonItem lines="none" key={f.key}>
+              <IonInput
+                label={f.label} labelPlacement="stacked" type="number"
+                placeholder={`scenario default — ${f.note}`}
+                value={overrides[f.key] ?? ''}
+                onIonInput={e => setOverrides(o => ({ ...o, [f.key]: e.detail.value ?? '' }))}
+                clearInput
+              />
+            </IonItem>
+          ))}
           <IonItem lines="none">
             <IonLabel position="stacked">Run name (optional)</IonLabel>
             <IonInput
@@ -643,7 +775,11 @@ const Simulator: React.FC = () => {
           </IonItem>
         </div>
         <div style={{ padding: '8px 16px' }}>
-          <IonButton expand="block" disabled={!pickerSelected || running || !!pollingJobId} onClick={handlePickerConfirm}>
+          <IonButton
+            expand="block"
+            disabled={!pickerSelected || !pickerScenario || running || !!pollingJobId}
+            onClick={handlePickerConfirm}
+          >
             {running ? <IonSpinner name="dots" /> : 'Run'}
           </IonButton>
         </div>

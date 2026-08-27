@@ -49,13 +49,14 @@ module.exports = {
     // Processing Sandbox and HDF Inspector pages sit behind PrivateRoute, so any
     // signed-in account reaches them, and this tier mirrors that.
     //
-    // The writes are deliberately NOT here: model_configs / model_runs /
-    // plot_configs / proc_configs carry no owner column, and an unowned row is a
-    // shared row — shared rows are admin-writable only (ownership.js,
-    // db-schema.md). Leaving the mutations at this rung would let any signed-in
-    // account delete another's configs and runs. Move them back down only
-    // together with owner_id columns and ownerScope/assertOwner in the resolver.
+    // The writes are deliberately NOT here: model_configs / scenario_configs /
+    // model_runs / plot_configs / proc_configs carry no owner column, and an
+    // unowned row is a shared row — shared rows are admin-writable only
+    // (ownership.js, db-schema.md). Leaving the mutations at this rung would let
+    // any signed-in account delete another's configs and runs. Move them back down
+    // only together with owner_id columns and ownerScope/assertOwner in the resolver.
     'modelConfigs', 'modelConfig', 'modelRuns',
+    'scenarioConfigs', 'scenarioConfig',
     'plotConfigs', 'procConfigs',
   ],
 
@@ -90,9 +91,10 @@ module.exports = {
     'createSurveyComponent', 'updateSurveyComponent', 'deleteSurveyComponent',
     'createSurveyComponentRelation', 'deleteSurveyComponentRelation', 'swapSurveyComponentPositions',
     'createSurvey', 'deleteAnswer',
-    // [MEDICAL] writes to the shared, unowned model/plot/proc tables — see the
-    // note on the medical reads in the registered tier above.
+    // [MEDICAL] writes to the shared, unowned model/scenario/plot/proc tables —
+    // see the note on the medical reads in the registered tier above.
     'createModelConfig', 'updateModelConfig', 'deleteModelConfig',
+    'createScenarioConfig', 'updateScenarioConfig', 'deleteScenarioConfig',
     'createModelRun', 'updateModelRun', 'deleteModelRun',
     'createPlotConfig', 'updatePlotConfig', 'deletePlotConfig',
     'createProcConfig', 'updateProcConfig', 'deleteProcConfig',

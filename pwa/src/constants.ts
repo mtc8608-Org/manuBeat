@@ -118,6 +118,8 @@ export const FORM_ID = {
   NEW_PAGE:     'form_new_page',
   // [MEDICAL] — Model Sandbox
   ADD_MODEL_CONFIG: 'form_add_model_config',
+  // [MEDICAL] — Scenario Sandbox
+  ADD_SCENARIO_CONFIG: 'form_add_scenario_config',
 } as const;
 // #endregion
 ///////////////////////////////////////////////////////////////////////////////
@@ -211,6 +213,7 @@ export const FORM_USAGE: Record<string, string> = {
   [ROLE_FORM.CREATE]:             'Roles — new role modal',
   // [MEDICAL]
   [FORM_ID.ADD_MODEL_CONFIG]:     'Model Sandbox — new model config modal',
+  [FORM_ID.ADD_SCENARIO_CONFIG]:  'Scenario Sandbox — new scenario config modal',
   // [BEDSIDE] fetched by UUID (PATIENT_FORM_COMPONENT_ID), registered by name
   form_patient_demographics:      'Patients — demographics form',
 };
@@ -316,6 +319,16 @@ export const PANEL_CONFIG = {
     add: { enabled: true, label: 'New Run' },
     filter: { text: { enabled: false }, type: { enabled: false } },
   },
+  SCENARIO_CONFIGS: {
+    title: 'Scenarios', emptyMessage: 'No scenarios yet.',
+    add: { enabled: true, label: 'New Scenario' },
+    filter: { text: { enabled: false }, type: { enabled: false } },
+  },
+  SCENARIO_STAGES: {
+    title: 'Stages', emptyMessage: 'No stages in this section.',
+    add: { enabled: true, label: 'Add Stage' },
+    filter: { text: { enabled: false }, type: { enabled: false } },
+  },
   COMPARTMENTS: {
     title: 'Compartments', emptyMessage: 'No compartments yet.',
     add: { enabled: true, label: 'Add' },
@@ -395,6 +408,7 @@ export const ROUTE = {
   // [MEDICAL]
   SIMULATOR:      '/folder/Simulator',
   MODEL_SANDBOX:  '/folder/ModelSandbox',
+  SCENARIO_SANDBOX: '/folder/ScenarioSandbox',
   PLOT_SANDBOX:   '/folder/PlotSandbox',
   PROC_SANDBOX:   '/folder/ProcessingSandbox',
   HDF_INSPECTOR:  '/folder/HdfInspector',
@@ -419,6 +433,10 @@ export const AREA_NAV = {
   PHYSIOLOGY: [
     { label: 'Simulator',           route: '/folder/Simulator',          icon: 'pulse'          },
     { label: 'Model Sandbox',       route: '/folder/ModelSandbox',       icon: 'git-network'    },
+    // 'trending-up' is already in the shared icons.ts registry — picking a
+    // registered name keeps this addition inside the fork's own constants.ts
+    // rather than patching framework code for one icon import.
+    { label: 'Scenario Sandbox',    route: '/folder/ScenarioSandbox',    icon: 'trending-up'    },
     { label: 'Plot Sandbox',        route: '/folder/PlotSandbox',        icon: 'stats-chart'    },
     { label: 'Processing Sandbox',  route: '/folder/ProcessingSandbox',  icon: 'options-outline'},
     { label: 'HDF Inspector',       route: '/folder/HdfInspector',       icon: 'layers-outline' },

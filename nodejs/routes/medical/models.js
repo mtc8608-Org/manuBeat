@@ -32,19 +32,49 @@ const requireAdmin = (req, res, next) => {
 
 // POST /api/cardio/run
 // Creates a model_run row, fires the Python job, returns job_id + run_id.
+//
+// A run is model (structure) + scenario (values) + mode. Node owns every DB read —
+// Python holds no credentials — so both configs are fetched here and POSTed in the
+// body. The client may send scenario_json inline (the Simulator's unsaved edits);
+// otherwise scenario_id is resolved against scenario_configs.
 router.post('/cardio/run', async (req, res) => {
-  const { config_id, model_json, simulation_params, name } = req.body;
+  const { config_id, model_json, scenario_id, scenario_json, mode, simulation_params, name } = req.body;
+  const runMode = mode ?? 'baseline';
   let runId;
   try {
+    let scenario = scenario_json;
+    let scenarioName = '';
+    if (scenario_id) {
+      const scRes = await pool.query(
+        'SELECT name, config FROM scenario_configs WHERE id = $1::uuid', [scenario_id],
+      );
+      if (!scRes.rows.length) return res.status(404).json({ error: 'scenario_config not found' });
+      scenarioName = scRes.rows[0].name;
+      scenario = scenario ?? scRes.rows[0].config;
+    }
+    if (!scenario) {
+      return res.status(400).json({ error: 'scenario_id or scenario_json is required' });
+    }
+
+    let modelName = '';
+    if (config_id) {
+      const mcRes = await pool.query(
+        'SELECT name FROM model_configs WHERE id = $1::uuid', [config_id],
+      );
+      modelName = mcRes.rows[0]?.name ?? '';
+    }
+
     const runRes = await pool.query(
-      'INSERT INTO model_runs (config_id, status) VALUES ($1::uuid, $2) RETURNING id',
-      [config_id ?? null, 'pending'],
+      `INSERT INTO model_runs (config_id, scenario_id, mode, status)
+       VALUES ($1::uuid, $2::uuid, $3, $4) RETURNING id`,
+      [config_id ?? null, scenario_id ?? null, runMode, 'pending'],
     );
     runId = runRes.rows[0].id;
 
     const pythonRes = await axios.post(
       `${PYTHON()}/cardio/run`,
-      { run_id: runId, model_json, simulation_params },
+      { run_id: runId, model_json, scenario_json: scenario, mode: runMode,
+        model_name: modelName, scenario_name: scenarioName, simulation_params },
       { timeout: 10000 },
     );
     const { job_id } = pythonRes.data;
@@ -154,6 +184,29 @@ router.get('/cardio/configs', async (req, res) => {
     res.json(pythonRes.data);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/cardio/scenarios — the scenario JSONs shipped on disk in python/config.
+// The app reads scenario_configs from Postgres; these two expose the disk originals
+// the seeds were generated from, for diffing a DB row against the shipped file.
+router.get('/cardio/scenarios', async (req, res) => {
+  try {
+    const pythonRes = await axios.get(`${PYTHON()}/cardio/scenarios`, { timeout: 5000 });
+    res.json(pythonRes.data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/cardio/scenario/:filename
+router.get('/cardio/scenario/:filename', async (req, res) => {
+  try {
+    const pythonRes = await axios.get(`${PYTHON()}/cardio/scenario/${req.params.filename}`, { timeout: 5000 });
+    res.json(pythonRes.data);
+  } catch (err) {
+    const status = err.response?.status ?? 500;
+    res.status(status).json({ error: err.message });
   }
 });
 

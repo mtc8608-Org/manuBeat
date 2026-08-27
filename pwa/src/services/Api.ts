@@ -3,7 +3,7 @@ import { createClient } from 'graphql-http';
 import { API_BASE, GQL_URL, ENDPOINT, WS_BASE } from '../constants';
 import {
   ComponentResults, FileRecord, Survey, SurveyAnswer,
-  ModelConfig, ModelRun, CardioJobStatus, CardioResult,
+  ModelConfig, ScenarioConfig, RunMode, ModelRun, CardioJobStatus, CardioResult,
   CardioPlotConfig, CardioProcConfig, HdfNode, HdfDataset,
   Patient, Bed, BedsideNode, BedAssignment,
   BedsideStream, BedsideSegment, NodeHeartbeat,
@@ -577,13 +577,50 @@ const getModelRuns = async (config_id?: string): Promise<ModelRun[]> => {
     const result = await gql(
       `query ModelRuns($config_id: ID) {
          modelRuns(config_id: $config_id) {
-           id config_id status minio_key metadata created_at completed_at
+           id config_id scenario_id mode status minio_key metadata created_at completed_at
          }
        }`,
       { config_id: config_id ?? null },
     );
     return result?.data?.modelRuns ?? [];
   } catch (e) { console.error('getModelRuns error:', e); return []; }
+};
+
+// ── [MEDICAL] Cardio scenario configs ─────────────────────────────────────────
+
+const getScenarioConfigs = async (): Promise<ScenarioConfig[]> => {
+  try {
+    const result = await gql(`{ scenarioConfigs { id name description config created_at } }`);
+    return result?.data?.scenarioConfigs ?? [];
+  } catch (e) { console.error('getScenarioConfigs error:', e); return []; }
+};
+
+const createScenarioConfig = async (name: string, description: string, config: Record<string, any>): Promise<ScenarioConfig> => {
+  const result = await gql(
+    `mutation CreateScenarioConfig($name: String!, $description: String, $config: JSON!) {
+       createScenarioConfig(name: $name, description: $description, config: $config) {
+         id name description config created_at
+       }
+     }`,
+    { name, description, config },
+  );
+  return result?.data?.createScenarioConfig;
+};
+
+const updateScenarioConfig = async (id: string, fields: { name?: string; description?: string; config?: Record<string, any> }): Promise<ScenarioConfig> => {
+  const result = await gql(
+    `mutation UpdateScenarioConfig($id: ID!, $name: String, $description: String, $config: JSON) {
+       updateScenarioConfig(id: $id, name: $name, description: $description, config: $config) {
+         id name description config created_at
+       }
+     }`,
+    { id, ...fields },
+  );
+  return result?.data?.updateScenarioConfig;
+};
+
+const deleteScenarioConfig = async (id: string): Promise<void> => {
+  await gql(`mutation { deleteScenarioConfig(id: "${id}") }`);
 };
 
 // ── [MEDICAL] Cardio plot configs ─────────────────────────────────────────────
@@ -662,13 +699,22 @@ const deleteProcConfig = async (id: string): Promise<void> => {
 
 // ── [MEDICAL] Cardio REST (run, status, result, HDF5, processing) ─────────────
 
+// A run is model (structure) + scenario (values) + mode. Pass scenario_id for a
+// stored scenario; scenario_json carries unsaved Simulator edits and wins when both
+// are sent. simulation_params holds numeric overrides only (runTime, dt, dtDense,
+// solver, stack) — anything omitted keeps the scenario's own value.
 const runCardioModel = async (
   config_id: string | null,
   model_json: Record<string, any>,
+  scenario_id: string | null,
+  mode: RunMode,
   simulation_params: Record<string, any>,
   name?: string,
+  scenario_json?: Record<string, any>,
 ): Promise<{ run_id: string; job_id: string; status: string }> => {
-  const res = await http.post('/cardio/run', { config_id, model_json, simulation_params, name });
+  const res = await http.post('/cardio/run', {
+    config_id, model_json, scenario_id, scenario_json, mode, simulation_params, name,
+  });
   return res.data;
 };
 
@@ -995,6 +1041,8 @@ const ApiService = {
   generateContent,
   // [MEDICAL] model configs
   getModelConfigs, createModelConfig, updateModelConfig, deleteModelConfig, deleteModelRun, getModelRuns,
+  // [MEDICAL] scenario configs
+  getScenarioConfigs, createScenarioConfig, updateScenarioConfig, deleteScenarioConfig,
   // [MEDICAL] plot configs
   getPlotConfigs, createPlotConfig, updatePlotConfig, deletePlotConfig,
   // [MEDICAL] proc configs
