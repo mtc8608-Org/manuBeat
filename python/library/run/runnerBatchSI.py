@@ -176,7 +176,8 @@ def batchedCalibration(simulationParams, sampled_params, param_names, observatio
     # aligned by name to THIS call's `observations`, and the trace is returned as result["progress"].
     prog = sp.get("progress") or {}
     metricsOn = bool(progressEvery) and prog.get("targetArr") is not None
-    reporter = progressLib.ProgressReporter(logEnabled=prog.get("logProgress", True)) if metricsOn else None
+    reporter = progressLib.ProgressReporter(logEnabled=prog.get("logProgress", True),
+                                            onEmit=prog.get("onEmit")) if metricsOn else None
     if metricsOn:
         tgtByObs = dict(zip(prog["observations"], prog["targetArr"]))
         offByObs = dict(zip(prog["observations"], prog["offsetArr"]))

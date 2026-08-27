@@ -52,8 +52,15 @@ def initialiseModel(simulationParams):
     """Load metadata + model JSON into a modelStructure. Identical to models.initialiseModel."""
     metadata = utils.loadJSONfile(utils.configPath('metadata.json'))
 
-    modelStructure = utils.loadJSONfile(
-        utils.configPath('models', simulationParams['modelFileName']))
+    # manuBeat divergence from CardioPulmonaryModel — port this back upstream.
+    # Web callers hold the model JSON in Postgres, not on disk, so an optional
+    # simulationParams['modelStructure'] is used verbatim in place of reading
+    # config/models/<modelFileName>. Deep-copied because everything below and the
+    # calibration runners mutate the structure in place. Notebooks never set it,
+    # and every other line of this function is identical either way.
+    preloaded = simulationParams.get('modelStructure')
+    modelStructure = copy.deepcopy(preloaded) if preloaded is not None else \
+        utils.loadJSONfile(utils.configPath('models', simulationParams['modelFileName']))
 
     modelStructure['data'] = metadata['data']
     modelStructure['gasRegions'] = metadata['gasRegions']

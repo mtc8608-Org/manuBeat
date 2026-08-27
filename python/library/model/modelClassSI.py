@@ -62,8 +62,13 @@ def initialiseModel(simulationParams):
     """Load metadata + model JSON into a modelStructure. Identical to models.initialiseModel."""
     metadata = utils.loadJSONfile(utils.configPath('metadata.json'))
 
-    modelStructure = utils.loadJSONfile(
-        utils.configPath('models', simulationParams['modelFileName']))
+    # manuBeat divergence from CardioPulmonaryModel — port this back upstream.
+    # Parity copy of the modelClass.initialiseModel branch: an optional
+    # simulationParams['modelStructure'] (the model JSON straight from Postgres)
+    # replaces the disk read. Deep-copied because the runners mutate it in place.
+    preloaded = simulationParams.get('modelStructure')
+    modelStructure = copy.deepcopy(preloaded) if preloaded is not None else \
+        utils.loadJSONfile(utils.configPath('models', simulationParams['modelFileName']))
 
     modelStructure['data'] = metadata['data']
     modelStructure['gasRegions'] = metadata['gasRegions']

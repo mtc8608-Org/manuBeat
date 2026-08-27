@@ -1,7 +1,31 @@
 """
-Cardio-pulmonary model routes.
-POST /cardio/run kicks off async computation; results are stored in MinIO as HDF5.
-The minio key is built from run_id (the stable DB UUID) so it survives Python restarts.
+[MEDICAL] Cardiopulmonary model routes — the web driver for python/library.
+
+What this module computes, numbered:
+
+  1. POST /cardio/run          — expands (model JSON, scenario JSON, mode, numeric
+                                 overrides) into the library's simulationParams,
+                                 solves the 0D lumped-parameter cardiopulmonary ODE
+                                 on a worker thread, and writes the run artifact.
+  2. GET  /cardio/status/{id}  — job state, plus the live convergence trace a
+                                 calibration emits while it is still running.
+  3. GET  /cardio/result*      — the stored run as a JSON payload for the web app.
+  4. POST /cardio/process/{id} — replays a post-processing config over a stored run
+                                 through the ResultsEngine DAG and appends the
+                                 outputs to the same artifact.
+  5. GET/DELETE/POST /cardio/hdf5/*  — tree, dataset, delete and repack over the
+                                 stored artifact, for the HDF Inspector page.
+
+The library is imported, never reimplemented: `runner` owns orchestration,
+`resultsEngine` owns post-processing, `schema_sim`/`engine` own persistence. Nothing
+here contains physics, an integrator loop, or a hand-rolled HDF5 write — see
+.claude/rules/model-stack.md.
+
+Node/Python split: Node owns auth, owner-scoping and every Postgres read — it fetches
+the model, scenario and processing configs and POSTs them in the request body; this
+service holds no DB credentials and runs no queries. It does hold MinIO credentials,
+the one documented deviation from the framework rule (docker-compose.yml explains
+why), because run artifacts are streamed to object storage from here.
 """
 import json
 import os
@@ -10,16 +34,16 @@ import tempfile
 import time
 import traceback
 import uuid
-from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
-import numpy as np
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 from pydantic import BaseModel
 
-from .cardio import model as cardio_model
-from .cardio import model_generator, utils
-from . import hdf5_engine as engine
+import library.utils as utils
+from library.hdf5 import engine, schema_sim
+from library.model import modelGen
+from library.postproc import resultsEngine
+from library.run import runner
 
 # ── MinIO client ───────────────────────────────────────────────────────────────
 from minio import Minio
@@ -33,18 +57,28 @@ _minio = Minio(
 _BUCKET = os.environ.get("MINIO_BUCKET", "uploads")
 
 # ── In-memory job registry ─────────────────────────────────────────────────────
-# { job_id: { status, run_id, error?, duration_s?, state_count? } }
+# { job_id: { status, run_id, mode, progress[], error?, duration_s?, ... } }
 _jobs: dict[str, dict] = {}
-_executor = ThreadPoolExecutor(max_workers=2)
+
+# Cap on retained convergence lines per job. A long staged calibration emits one line
+# every progressEvery simulated seconds; without a cap a runaway run would grow the
+# registry unbounded. The tail is what a progress display wants anyway.
+_MAX_PROGRESS_RECORDS = 500
 
 router = APIRouter(prefix="/cardio", tags=["cardio"])
+
+_MODES = ("baseline", "calibration", "control")
 
 # ── Request models ─────────────────────────────────────────────────────────────
 
 class RunRequest(BaseModel):
-    run_id: str                  # stable DB UUID from model_runs table
-    model_json: dict
-    simulation_params: dict
+    run_id: str                          # stable DB UUID from model_runs
+    model_json: dict                     # model_configs.config — structure/physics
+    scenario_json: dict                  # scenario_configs.config — values + stages
+    mode: str = "baseline"               # baseline | calibration | control
+    model_name: str = ""                 # provenance only, stored in /config
+    scenario_name: str = ""              # provenance only, stored in /config
+    simulation_params: dict = {}         # numeric overrides on top of the scenario
 
 class ValidateRequest(BaseModel):
     model_json: dict
@@ -70,69 +104,120 @@ def _download_hdf5(run_id: str, tmp_path: str) -> None:
     _minio.fget_object(_BUCKET, _minio_key(run_id), tmp_path)
 
 
+# ── runConfig assembly ─────────────────────────────────────────────────────────
+
+def _build_run_config(req: RunRequest) -> dict:
+    """The web equivalent of a notebook's runConfig cell.
+
+    `runner.buildSimulationParams` is the ONE adapter from runConfig + scenario to the
+    simulationParams the library consumes, so the route builds a runConfig rather than
+    a simulationParams dict — the scenario stays canonical and only the keys the caller
+    actually sent override it (same precedence a notebook gets).
+    """
+    sp = req.simulation_params or {}
+    cfg = {
+        # File references are provenance only here: the model and scenario arrive as
+        # dicts from Postgres, not from config/. buildSimulationParams still wants a
+        # `model` key, and it lands in the artifact's /config[run_config].
+        "model":    req.model_name or "(database)",
+        "scenario": req.scenario_name or "(database)",
+        "mode":     req.mode,
+        # Saving and plotting are the route's job, not the library's: the artifact goes
+        # to MinIO below, and matplotlib is not installed in the API image.
+        "output":   {"save": False, "path": "", "name": "", "logProgress": True},
+        "plots":    [],
+        # Post-processing is a separate endpoint against a stored run, so the run
+        # itself never carries one.
+        "postProcessing": None,
+        "printStatus": bool(sp.get("printStatus", False)),
+        # "legacy" (modelClass, diffrax.Euler only) or "SI" (modelClassSI, honours
+        # solver.type). The scenario's own solver choice reaches the SI stack through
+        # shared.integration.solver.
+        "stack": sp.get("stack", "legacy"),
+    }
+    # Numeric overrides: present-only, so an untouched field keeps the scenario's value.
+    for key in ("runTime", "dt", "dtDense", "progressEvery"):
+        if sp.get(key) is not None:
+            cfg[key] = sp[key]
+    if sp.get("solver"):
+        cfg["solver"] = sp["solver"]
+    return cfg
+
+
+def _assert_mode_supported(mode: str, scenario: dict) -> None:
+    """Fail before the solve rather than with a KeyError three layers down."""
+    if mode not in _MODES:
+        raise ValueError(f"mode must be one of {_MODES}, got {mode!r}")
+    if mode == "control" and not (scenario.get("control") or {}).get("stages"):
+        raise ValueError("This scenario declares no control.stages — control mode "
+                         "needs a control stage stack (only the cpet scenario has one).")
+    if mode == "calibration" and not (scenario.get("calibration") or {}):
+        raise ValueError("This scenario declares no calibration section.")
+    if "shared" not in scenario or "integration" not in scenario.get("shared", {}):
+        raise ValueError("Scenario is missing shared.integration (dt / runTime / "
+                         "gasExchange / useEquilibriumStates).")
+
+
 # ── Simulation thread ──────────────────────────────────────────────────────────
 
-def _run_simulation(job_id: str, run_id: str,
-                    model_json: dict, simulation_params: dict) -> None:
+def _run_simulation(job_id: str, req: RunRequest) -> None:
     _jobs[job_id]["status"] = "running"
     t0 = time.time()
     tmp_path = None
     try:
-        import jax.numpy as jnp
+        _assert_mode_supported(req.mode, req.scenario_json)
 
-        params = {
-            "modelFileName":   simulation_params.get("modelFileName", "model_Hr_test.json"),
-            "runTime":         float(simulation_params.get("runTime", 10)),
-            "runsToIgnore":    int(simulation_params.get("runsToIgnore", 0)),
-            "runsToSave":      int(simulation_params.get("runsToSave", 1)),
-            "printStatus":     bool(simulation_params.get("printStatus", False)),
-            "calibration":     simulation_params.get("calibration", {}),
-            "returnFrequency": int(simulation_params.get("returnFrequency", 100)),
-            "dt":              float(simulation_params.get("dt0", simulation_params.get("dt", 0.001))),
-        }
+        run_config = _build_run_config(req)
+        simulationParams = runner.buildSimulationParams(run_config, req.scenario_json)
 
-        if model_json:
-            metadata = utils.loadJSONfile(
-                os.path.join(os.path.dirname(__file__), "cardio", "configs", "metadata.json")
-            )
-            model_structure = {**model_json}
-            model_structure['data'] = metadata['data']
-            model_structure['gasRegions'] = metadata['gasRegions']
-            model_structure['configurations']['simulationParameters']['calibration'] = params['calibration']
-        else:
-            model_structure = cardio_model.initialiseModel(params)
-        eqDict, namesDict, modelDataDict = cardio_model.prepareModel(params, model_structure)
-        cpModel = cardio_model.CardioPulmonaryModelArray(eqDict, namesDict, model_structure)
+        # The model JSON comes from Postgres, not config/models/ — see the manuBeat
+        # divergence note in modelClass.initialiseModel. Passed as a plain dict: the
+        # list→ndarray coercion utils.loadJSONfile does only applies to TOP-LEVEL list
+        # values, and neither a model nor a scenario JSON has any.
+        simulationParams["modelStructure"] = req.model_json
 
-        initial_states = modelDataDict["initialStates"]
-        constants      = modelDataDict["constantList"]
-        states_arr     = jnp.array(initial_states, dtype=float)
-        constants_arr  = jnp.array(constants, dtype=float)
+        # Live convergence trace. Only fires for a calibration over a scenario that
+        # declares convergence.observations (the sepsis and solver_compare scenarios);
+        # everything else reports plain wall-clock lines to the container log.
+        simulationParams["progress"]["onEmit"] = _progress_recorder(job_id)
 
-        runsRes, final_states = cardio_model.runSimulationArray(
-            states_arr, cpModel, params, {},
-            modelDataDict["structures"], constants_arr,
-        )
+        states, _modelObjects, modelStructure, results, _structures = \
+            runner.run(simulationParams)
 
-        state_names = namesDict["stateNames"]
-        n_samples   = len(list(runsRes.values())[0])
-        total_time  = params["runsToSave"] * params["runTime"]
-        t_axis      = np.linspace(0.0, total_time, n_samples)
+        # raw/ holds the signals; T is stored separately as the time vector. Mirrors
+        # library/run/runIO.saveRun, which writes this exact artifact from a notebook.
+        signals     = {k: v for k, v in results.items() if k != "T"}
+        state_names = list(states.keys())
+        return_freq = (int(round(1 / simulationParams["dtDense"]))
+                       if simulationParams.get("dtDense") else 100)
         duration    = round(time.time() - t0, 2)
 
-        _, tmp_path = tempfile.mkstemp(suffix='.hdf5')
-        engine.write_run_result(
-            tmp_path             = tmp_path,
-            job_id               = job_id,
-            config_id            = run_id,
-            runsRes              = runsRes,
-            t_axis               = t_axis,
-            state_names          = state_names,
-            final_states         = final_states,
-            model_structure_json = json.dumps(model_structure),
-            run_params           = params,
+        _, tmp_path = tempfile.mkstemp(suffix=".hdf5")
+        schema_sim.write_run_result(
+            tmp_path,
+            runs            = signals,
+            t_axis          = results["T"],
+            state_names     = state_names,
+            final_states    = [float(states[k]) for k in state_names],
+            model_structure = utils.modelStructureJSON(modelStructure),
+            run_params      = {"runTime":         simulationParams["runTime"],
+                               "dt":              simulationParams["dt"] or 0,
+                               "returnFrequency": return_freq},
+            job_id          = job_id,
+            config_id       = req.run_id,
         )
-        _upload_hdf5(run_id, tmp_path)
+        # /config is the recipe (source inputs), distinct from model_structure (the
+        # mutated structure that actually ran, calibrated params included). Storing it
+        # makes the artifact self-describing and re-runnable.
+        schema_sim.append_config(
+            tmp_path,
+            configs = {"model":    req.model_json,
+                       "scenario": req.scenario_json,
+                       "metadata": utils.loadJSONfile(utils.configPath("metadata.json"))},
+            run_config = run_config,
+            mode       = req.mode,
+        )
+        _upload_hdf5(req.run_id, tmp_path)
 
         file_size_bytes = os.path.getsize(tmp_path)
         # ru_maxrss is kilobytes on Linux
@@ -142,7 +227,7 @@ def _run_simulation(job_id: str, run_id: str,
             "status":          "done",
             "duration_s":      duration,
             "state_count":     len(state_names),
-            "minio_key":       _minio_key(run_id),
+            "minio_key":       _minio_key(req.run_id),
             "file_size_bytes": file_size_bytes,
             "max_rss_mb":      max_rss_mb,
         })
@@ -157,15 +242,29 @@ def _run_simulation(job_id: str, run_id: str,
             os.remove(tmp_path)
 
 
+def _progress_recorder(job_id: str):
+    """Callback handed to ProgressReporter.emit — appends each convergence line to the
+    job entry as it happens, so /cardio/status shows a calibration converging instead
+    of an opaque 'running' for minutes. Bounded to the most recent lines."""
+    def record(rec: dict) -> None:
+        job = _jobs.get(job_id)
+        if job is None:
+            return
+        trace = job.setdefault("progress", [])
+        trace.append(rec)
+        if len(trace) > _MAX_PROGRESS_RECORDS:
+            del trace[:-_MAX_PROGRESS_RECORDS]
+    return record
+
+
 # ── Routes ─────────────────────────────────────────────────────────────────────
 
 @router.post("/run")
 def run_model(req: RunRequest, background_tasks: BackgroundTasks):
     job_id = str(uuid.uuid4())
-    _jobs[job_id] = {"status": "pending", "run_id": req.run_id}
-    background_tasks.add_task(
-        _run_simulation, job_id, req.run_id, req.model_json, req.simulation_params
-    )
+    _jobs[job_id] = {"status": "pending", "run_id": req.run_id,
+                     "mode": req.mode, "progress": []}
+    background_tasks.add_task(_run_simulation, job_id, req)
     return {"job_id": job_id, "status": "pending"}
 
 
@@ -203,7 +302,7 @@ def _read_result(run_id: str) -> dict:
     try:
         _, tmp_path = tempfile.mkstemp(suffix='.hdf5')
         _download_hdf5(run_id, tmp_path)
-        return engine.read_run_result(tmp_path)
+        return schema_sim.read_run_result(tmp_path)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
@@ -213,23 +312,40 @@ def _read_result(run_id: str) -> dict:
 
 @router.get("/configs")
 def list_configs():
-    configs_dir = os.path.join(os.path.dirname(__file__), "cardio", "configs")
-    configs = []
-    for fname in os.listdir(configs_dir):
-        if fname.startswith("model_") and fname.endswith(".json"):
-            configs.append({
-                "filename": fname,
-                "name": fname.replace("model_", "").replace(".json", "").replace("_", " ").title(),
-            })
-    return configs
+    """The model JSONs shipped on disk in config/models/. The app reads model_configs
+    from Postgres instead; this is the disk view the seeds were generated from."""
+    models_dir = utils.configPath("models")
+    return [{"filename": fname,
+             "name": fname.replace(".json", "").replace("_", " ")}
+            for fname in sorted(os.listdir(models_dir)) if fname.endswith(".json")]
 
 
 @router.get("/model/{filename}")
 def get_model_file(filename: str):
     safe = os.path.basename(filename)
-    path = os.path.join(os.path.dirname(__file__), "cardio", "configs", safe)
+    path = utils.configPath("models", safe)
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail=f"Model file '{safe}' not found")
+    with open(path) as f:
+        return json.load(f)
+
+
+@router.get("/scenarios")
+def list_scenarios():
+    """The scenario JSONs shipped on disk in config/scenarios/ — disk counterpart of
+    /configs, and the source the scenario_configs seeds were generated from."""
+    scen_dir = utils.configPath("scenarios")
+    return [{"filename": fname,
+             "name": fname.replace(".json", "").replace("_", " ")}
+            for fname in sorted(os.listdir(scen_dir)) if fname.endswith(".json")]
+
+
+@router.get("/scenario/{filename}")
+def get_scenario_file(filename: str):
+    safe = os.path.basename(filename)
+    path = utils.configPath("scenarios", safe)
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail=f"Scenario file '{safe}' not found")
     with open(path) as f:
         return json.load(f)
 
@@ -366,45 +482,62 @@ def get_processed_outputs(run_id: str, proc_name: str):
 @router.post("/process/{run_id}")
 def process_run(run_id: str, req: ProcessRequest):
     """
-    Apply a post-processing config to a completed run and append results
-    into /processed/{proc_config_id}/ in the same HDF5 file.
-    """
-    from .cardio import data_processing as dp
+    Apply a post-processing config to a completed run and append the results into
+    /processed/{proc_run_name}/ in the same HDF5 file.
 
+    The config is replayed through the ResultsEngine DAG — the same engine the
+    notebooks use via runIO.processResults — so a signal computed here and one
+    computed in a notebook come out identical.
+    """
     tmp_path = None
     try:
         _, tmp_path = tempfile.mkstemp(suffix='.hdf5')
         _download_hdf5(run_id, tmp_path)
 
-        model_structure_raw = engine.get_dataset(tmp_path, '/model_structure')
-        model_structure = json.loads(model_structure_raw['data'])
+        model_structure = json.loads(
+            engine.get_dataset(tmp_path, '/model_structure')['data'])
 
+        # ResultsEngine reads the raw store as a flat {name: array} dict and needs T
+        # in it (it sizes the signal store from T); the artifact keeps T out of raw/
+        # and stores it as the time vector, so put it back.
         import h5py as h5
-        runsRes = {}
         with h5.File(tmp_path, 'r') as f:
-            for name in f['raw']:
-                runsRes[name] = f['raw'][name][()]
+            raw_signals = {name: f['raw'][name][()] for name in f['raw']}
+            raw_signals['T'] = f['time'][()]
 
-        _, modelObjects, _ = model_generator.initModelObjects(model_structure)
-        proc_output = dp.processVariables(
-            runsRes, modelObjects, req.proc_config, model_structure
-        )
-        # Keep only variables explicitly defined as outputs in the proc config
-        # (new variables and altered raw states alike), not untouched raw states.
-        config_output_keys = {key for stage in req.proc_config.values() for key in stage}
-        proc_output = {k: v for k, v in proc_output.items() if k in config_output_keys}
+        # A handful of processing ops (compliance, sigmoid ranges) read the live
+        # equation objects rather than arrays. Rebuilding them from the stored
+        # structure is what makes processing replayable long after the run.
+        # initModelObjectsNewGasExchange branches internally on the structure's
+        # gasExchange flag, so it covers both the gas and no-gas builds.
+        _states, modelObjects, _structures = \
+            modelGen.initModelObjectsNewGasExchange(model_structure)
 
-        engine.append_processed(
-            tmp_path         = tmp_path,
-            proc_name        = req.proc_run_name,
+        proc_engine = resultsEngine.ResultsEngine(
+            raw_signals, req.proc_config, model_structure, modelObjects=modelObjects)
+        proc_engine.evaluate()
+        assembled = proc_engine.assembleLegacy()
+
+        # Raw leaves pass through the engine untouched and already live in raw/, so
+        # store only the names the config actually defines — engine.order is exactly
+        # that set, in first-seen order (mirrors runIO.saveProcessed).
+        proc_output = {k: assembled[k] for k in proc_engine.order if k in assembled}
+
+        schema_sim.append_processed(
+            tmp_path, req.proc_run_name, proc_output,
+            proc_config      = req.proc_config,
             proc_config_id   = req.proc_config_id,
-            proc_output      = proc_output,
-            proc_config_json = json.dumps(req.proc_config),
             proc_config_name = req.proc_config_name,
         )
         _upload_hdf5(run_id, tmp_path)
-        return {"ok": True, "proc_name": req.proc_run_name, "proc_config_id": req.proc_config_id}
+        return {"ok": True, "proc_name": req.proc_run_name,
+                "proc_config_id": req.proc_config_id,
+                "outputs": list(proc_output),
+                "errors": [{"name": n, "op": o, "reason": r}
+                           for n, o, r in proc_engine.errors]}
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:

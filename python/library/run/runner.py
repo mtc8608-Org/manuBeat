@@ -428,7 +428,8 @@ def runCalibrationSI(simulationParams, stateOverrides=None):
     prog = sp.get("progress") or {}
     progObs, tArr, oArr = prog.get("observations"), prog.get("targetArr"), prog.get("offsetArr")
     metricsOn = bool(progressEvery) and progObs is not None and tArr is not None
-    reporter = (progressLib.ProgressReporter(logEnabled=prog.get("logProgress", True))
+    reporter = (progressLib.ProgressReporter(logEnabled=prog.get("logProgress", True),
+                                             onEmit=prog.get("onEmit"))
                 if metricsOn else None)
 
     # base init vector overlaid with the per-sample parameter draw (params ARE state names)

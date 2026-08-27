@@ -116,8 +116,15 @@ class ProgressReporter:
     #: numeric columns persisted by schema_pop.write_progress (order = dataset column order)
     FIELDS = ("done", "total", "elapsedWall", "eta", "acc", "meanRel", "maxRel", "bestRel")
 
-    def __init__(self, logEnabled=True):
+    def __init__(self, logEnabled=True, onEmit=None):
         self.logEnabled = logEnabled
+        # manuBeat divergence from CardioPulmonaryModel — port this back upstream.
+        # onEmit(record) fires once per emitted line, as it happens. `records` is only
+        # handed to the caller when the run finishes (runner.py end of runCalibrationSI),
+        # which is too late for a web UI polling a job that takes minutes. Reached from
+        # simulationParams["progress"]["onEmit"]; None everywhere else, so notebooks are
+        # unaffected. A raising callback must never kill a run — see emit().
+        self.onEmit = onEmit
         self.records = []
         self._prevWall = 0.0        # last finite elapsedWall, for the per-section (Δwall) column
 
@@ -145,14 +152,23 @@ class ProgressReporter:
             print(line, flush=True)
             if np.isfinite(elapsedWall):
                 self._prevWall = elapsedWall
+        record = {
+            "kind": kind, "label": label,
+            "done": float(done), "total": float(total),
+            "elapsedWall": float(elapsedWall), "eta": float(eta),
+            "acc": float(acc) if acc is not None else np.nan,
+            "meanRel": stats["meanRel"], "maxRel": stats["maxRel"], "bestRel": stats["bestRel"],
+        }
         if self.logEnabled:
-            self.records.append({
-                "kind": kind, "label": label,
-                "done": float(done), "total": float(total),
-                "elapsedWall": float(elapsedWall), "eta": float(eta),
-                "acc": float(acc) if acc is not None else np.nan,
-                "meanRel": stats["meanRel"], "maxRel": stats["maxRel"], "bestRel": stats["bestRel"],
-            })
+            self.records.append(record)
+        # manuBeat divergence (see __init__): live per-line hook. Swallowed on error —
+        # a broken progress consumer must not abort a calibration that has already
+        # burned minutes of solve.
+        if self.onEmit is not None:
+            try:
+                self.onEmit(record)
+            except Exception:
+                pass
         return line
 
 # endregion
