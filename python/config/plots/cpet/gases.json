@@ -1,0 +1,916 @@
+{
+  "formatOptions": {
+    "nbins": 6,
+    "fonts": {
+      "title": 15,
+      "xlabel": 10,
+      "ylabel": 12,
+      "legend": 10,
+      "ticks": 9
+    },
+    "gases": {
+      "O2": {
+        "color": "tab:blue",
+        "label": "O2",
+        "name": "Oxygen"
+      },
+      "C2": {
+        "color": "tab:red",
+        "label": "C2",
+        "name": "Carbon Dioxide"
+      },
+      "N2": {
+        "color": "tab:green",
+        "label": "N2",
+        "name": "Nitrogen"
+      }
+    }
+  },
+  "simulationParams": {
+    "runTime": 5,
+    "runsToIgnore": 1,
+    "runsToSave": 40,
+    "sampPeriod": 0.01,
+    "atmPressure": 760.0,
+    "control": false,
+    "calibration": false,
+    "modelFileName": "gasExchangeTest.json",
+    "project_folder": "/home/cabsman/Documents/projects/CardioRespiratoryModelV2"
+  },
+  "figSize": {
+    "width": 15,
+    "height": 30
+  },
+  "grid": {
+    "rows": 20,
+    "cols": 2
+  },
+  "axes": {
+    "ax_0&1_0_Gases":{
+    "row": 0,
+    "rowSpan": 2,
+    "col": 0,
+    "colSpan": 1,
+    "type": "multiSideBySide",
+    "params": {
+      "left": ["dv_Air_O2","V_MetO2","dvO2_blood","dv_Air_C2","V_MetCO2","dvC2_blood"],
+      "title": "Gases in the Air",
+      "colorsLeft": "jet",
+      "right": ["dv_Air_O2","V_MetO2","dvO2_blood","dv_Air_C2","V_MetCO2","dvC2_blood"],
+      "colorsRight": "jet"
+    },
+    "options": {
+      "zeroTime": true,
+      "toIgnore": 0,
+      "offset": 0.05,
+      "round": 2,
+      "legend": {
+        "show": true,
+        "left": "center left",
+        "right": "center left"
+      },
+      "ticks": {
+        "useCustomTicks": true,
+        "dependentScales": false,
+        "params": {
+          "averageLeft": true,
+          "maxLeft": true,
+          "minLeft": true,
+          "averageRight": true,
+          "maxRight": true,
+          "minRight": true
+        }
+      }
+    }
+    },
+    "ax_0&1_1_WorkRate":{
+    "row": 0,
+    "rowSpan": 2,
+    "col": 1,
+    "colSpan": 1,
+    "type": "multiSideBySide",
+    "params": {
+      "left": ["Upt_TissuesLeg","ATP_ProductionLeg","ATP_OxidationLeg","ATP_FatLeg1","ATP_GycolisisLeg"],
+      "title": "Work Rate (Currently production of ATP in Leg)",
+      "colorsLeft": "jet",
+      "right": ["Upt_TissuesLeg","ATP_ProductionLeg","ATP_OxidationLeg","ATP_FatLeg1","ATP_GycolisisLeg"],
+      "colorsRight": "jet"
+    },
+    "options": {
+      "zeroTime": true,
+      "toIgnore": 0,
+      "offset": 0.05,
+      "round": 2,
+      "legend": {
+        "show": true,
+        "left": "upper left",
+        "right": "upper left"
+      },
+      "ticks": {
+        "useCustomTicks": true,
+        "dependentScales": false,
+        "params": {
+          "averageLeft": true,
+          "maxLeft": true,
+          "minLeft": true,
+          "averageRight": true,
+          "maxRight": true,
+          "minRight": true
+        }
+      }
+    }
+    },
+    "ax_2_0_":{
+      "row": 2,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Total_ProdLeg_C2","Flow_ClLeg_C2"],
+        "title": "",
+        "colorsLeft": "Reds",
+        "right": ["Total_ProdLeg_C2","Flow_ClLeg_C2"],
+        "colorsRight": "Reds"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper left"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_2_1_":{
+      "row": 2,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Total_ProdLeg_O2","Flow_ClLeg_O2"],
+        "title": "",
+        "colorsLeft": "Blues",
+        "right": ["Total_ProdLeg_O2","Flow_ClLeg_O2"],
+        "colorsRight": "Blues"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper left"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_3_0_":{
+      "row": 3,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["dv_C2_Leg","dvCalc_C2_Leg"],
+        "title": "",
+        "colorsLeft": "Reds",
+        "right": ["dv_C2_Leg","dvCalc_C2_Leg"],
+        "colorsRight": "Reds"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_3_1_":{
+      "row": 3,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["dv_O2_Leg","dvCalc_O2_Leg"],
+        "title": "",
+        "colorsLeft": "Blues",
+        "right": ["dv_O2_Leg","dvCalc_O2_Leg"],
+        "colorsRight": "Blues"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_4_0_":{
+      "row": 4,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["error_C2_Leg"],
+        "title": "",
+        "colorsLeft": "Reds",
+        "right": ["error_C2_Leg"],
+        "colorsRight": "Reds"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_4_1_":{
+      "row": 4,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["error_O2_Leg"],
+        "title": "",
+        "colorsLeft": "Blues",
+        "right": ["error_O2_Leg"],
+        "colorsRight": "Blues"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+
+
+
+
+    
+    "ax_8_0_Flows_C2":{
+    "row": 8,
+    "rowSpan": 1,
+    "col": 0,
+    "colSpan": 1,
+    "type": "multiSideBySide",
+    "params": {
+      "left": ["error_C2_Alveoli"],
+      "title": "",
+      "colorsLeft": "Reds",
+      "right": ["error_C2_Alveoli"],
+      "colorsRight": "Reds"
+    },
+    "options": {
+      "zeroTime": true,
+      "toIgnore": 0,
+      "offset": 0.05,
+      "round": 2,
+      "legend": {
+        "show": true,
+        "left": "upper left",
+        "right": "upper left"
+      },
+      "ticks": {
+        "useCustomTicks": true,
+        "dependentScales": true,
+        "params": {
+          "averageLeft": true,
+          "maxLeft": true,
+          "minLeft": true,
+          "averageRight": true,
+          "maxRight": true,
+          "minRight": true
+        }
+      }
+    }
+    },
+    "ax_8_1_Flows_O2":{
+    "row": 8,
+    "rowSpan": 1,
+    "col": 1,
+    "colSpan": 1,
+    "type": "multiSideBySide",
+    "params": {
+      "left": ["error_O2_Alveoli"],
+      "title": "",
+      "colorsLeft": "Blues",
+      "right": ["error_O2_Alveoli"],
+      "colorsRight": "Blues"
+    },
+    "options": {
+      "zeroTime": true,
+      "toIgnore": 0,
+      "offset": 0.05,
+      "round": 2,
+      "legend": {
+        "show": true,
+        "left": "upper left",
+        "right": "upper left"
+      },
+      "ticks": {
+        "useCustomTicks": true,
+        "dependentScales": true,
+        "params": {
+          "averageLeft": true,
+          "maxLeft": true,
+          "minLeft": true,
+          "averageRight": true,
+          "maxRight": true,
+          "minRight": true
+        }
+      }
+    }
+    }
+
+
+
+  },
+
+  "saved":{
+    "ax_6_0_Flows_C2":{
+    "row": 6,
+    "rowSpan": 1,
+    "col": 0,
+    "colSpan": 1,
+    "type": "multiSideBySide",
+    "params": {
+      "left": ["Q_C2_La_Cp","Q_C2_Tissues"],
+      "title": "Flows of CO2 in Lungs and Tissues",
+      "colorsLeft": "Reds",
+      "right": ["Q_C2_La_Cp","Q_C2_Tissues"],
+      "colorsRight": "Reds"
+    },
+    "options": {
+      "zeroTime": true,
+      "toIgnore": 0,
+      "offset": 0.05,
+      "round": 2,
+      "legend": {
+        "show": true,
+        "left": "upper left",
+        "right": "upper left"
+      },
+      "ticks": {
+        "useCustomTicks": true,
+        "dependentScales": true,
+        "params": {
+          "averageLeft": true,
+          "maxLeft": true,
+          "minLeft": true,
+          "averageRight": true,
+          "maxRight": true,
+          "minRight": true
+        }
+      }
+    }
+    },
+    "ax_6_1_Flows_O2":{
+    "row": 6,
+    "rowSpan": 1,
+    "col": 1,
+    "colSpan": 1,
+    "type": "multiSideBySide",
+    "params": {
+      "left": ["Q_O2_La_Cp","Q_O2_Tissues"],
+      "title": "Flows of O2 in Lungs and Tissues",
+      "colorsLeft": "Blues",
+      "right": ["Q_O2_La_Cp","Q_O2_Tissues"],
+      "colorsRight": "Blues"
+    },
+    "options": {
+      "zeroTime": true,
+      "toIgnore": 0,
+      "offset": 0.05,
+      "round": 2,
+      "legend": {
+        "show": true,
+        "left": "upper left",
+        "right": "upper left"
+      },
+      "ticks": {
+        "useCustomTicks": true,
+        "dependentScales": true,
+        "params": {
+          "averageLeft": true,
+          "maxLeft": true,
+          "minLeft": true,
+          "averageRight": true,
+          "maxRight": true,
+          "minRight": true
+        }
+      }
+    }
+    },
+    "ax_7_0_Flows_C2":{
+    "row": 7,
+    "rowSpan": 1,
+    "col": 0,
+    "colSpan": 1,
+    "type": "multiSideBySide",
+    "params": {
+      "left": ["Flow_CpLa_C2","dv_Air_C2"],
+      "title": "Flows of CO2 in Lungs and Tissues",
+      "colorsLeft": "Reds",
+      "right": ["Flow_CpLa_C2","dv_Air_C2"],
+      "colorsRight": "Reds"
+    },
+    "options": {
+      "zeroTime": true,
+      "toIgnore": 0,
+      "offset": 0.05,
+      "round": 2,
+      "legend": {
+        "show": true,
+        "left": "upper left",
+        "right": "upper left"
+      },
+      "ticks": {
+        "useCustomTicks": true,
+        "dependentScales": true,
+        "params": {
+          "averageLeft": true,
+          "maxLeft": true,
+          "minLeft": true,
+          "averageRight": true,
+          "maxRight": true,
+          "minRight": true
+        }
+      }
+    }
+    },
+    "ax_7_1_Flows_O2":{
+    "row": 7,
+    "rowSpan": 1,
+    "col": 1,
+    "colSpan": 1,
+    "type": "multiSideBySide",
+    "params": {
+      "left": ["Flow_CpLa_O2","dv_Air_O2"],
+      "title": "Flows of O2 in Lungs and Tissues",
+      "colorsLeft": "Blues",
+      "right": ["Flow_CpLa_O2","dv_Air_O2"],
+      "colorsRight": "Blues"
+    },
+    "options": {
+      "zeroTime": true,
+      "toIgnore": 0,
+      "offset": 0.05,
+      "round": 2,
+      "legend": {
+        "show": true,
+        "left": "upper left",
+        "right": "upper left"
+      },
+      "ticks": {
+        "useCustomTicks": true,
+        "dependentScales": true,
+        "params": {
+          "averageLeft": true,
+          "maxLeft": true,
+          "minLeft": true,
+          "averageRight": true,
+          "maxRight": true,
+          "minRight": true
+        }
+      }
+    }
+    },
+    "ax_2_1_":{
+      "row": 2,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["dvO2_blood"],
+        "title": "",
+        "colorsLeft": "Blues",
+        "right": ["dvC2_blood"],
+        "colorsRight": "Reds"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+
+    "ax_2_0_TotalGas":{
+      "row": 2,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Total_Air_Zero"],
+        "title": "Variation of total gas volume",
+        "colorsLeft": "Reds",
+        "right": ["TotalFlow"],
+        "colorsRight": "Blues"
+      },
+        "options": {
+          "zeroTime": true,
+          "toIgnore": 0,
+          "offset": 0.05,
+          "round": 2,
+          "legend": {
+            "show": true,
+            "left": "upper left",
+            "right": "upper right"
+          },
+          "ticks": {
+            "useCustomTicks": true,
+            "dependentScales": true,
+            "params": {
+              "averageLeft": true,
+              "maxLeft": true,
+              "minLeft": true,
+              "averageRight": true,
+              "maxRight": true,
+              "minRight": true
+            }
+          }
+      }
+    },
+    "ax_2_1_Diff_AtmFlow":{
+    "row": 2,
+    "rowSpan": 1,
+    "col": 1,
+    "colSpan": 1,
+    "type": "multiSideBySide",
+    "params": {
+      "left": ["Diff_AtmFlow"],
+      "title": "Total Air Variation - total flow",
+      "colorsLeft": "Reds",
+      "right": ["Diff_AtmFlow"],
+      "colorsRight": "Reds"
+    },
+    "options": {
+      "zeroTime": true,
+      "toIgnore": 0,
+      "offset": 0.05,
+      "round": 2,
+      "legend": {
+        "show": true,
+        "left": "upper left",
+        "right": "upper left"
+      },
+      "ticks": {
+        "useCustomTicks": true,
+        "dependentScales": true,
+        "params": {
+          "averageLeft": true,
+          "maxLeft": true,
+          "minLeft": true,
+          "averageRight": true,
+          "maxRight": true,
+          "minRight": true
+        }
+      }
+    }
+    },
+    "ax_3_0":{
+    "row": 3,
+    "rowSpan": 1,
+    "col": 0,
+    "colSpan": 1,
+    "type": "multiSideBySide",
+    "params": {
+      "left": ["V_O2_Tidal","V_C2_Tidal"],
+      "title": "",
+      "colorsLeft": "Reds",
+      "right": ["V_O2_Tidal","V_C2_Tidal"],
+      "colorsRight": "Reds"
+    },
+    "options": {
+      "zeroTime": true,
+      "toIgnore": 0,
+      "offset": 0.05,
+      "round": 2,
+      "legend": {
+        "show": true,
+        "left": "upper left",
+        "right": "upper left"
+      },
+      "ticks": {
+        "useCustomTicks": true,
+        "dependentScales": true,
+        "params": {
+          "averageLeft": true,
+          "maxLeft": true,
+          "minLeft": true,
+          "averageRight": true,
+          "maxRight": true,
+          "minRight": true
+        }
+      }
+    }
+    },
+    "ax_3_1":{
+    "row": 3,
+    "rowSpan": 1,
+    "col": 1,
+    "colSpan": 1,
+    "type": "multiSideBySide",
+    "params": {
+      "left": ["Total_VBlood_Gas_Zero","Diff_AtmFlow_int"],
+      "title": "Total Retained CO2 and Total difference integrated",
+      "colorsLeft": "Reds",
+      "right": ["Total_VBlood_Gas_Zero","Diff_AtmFlow_int"],
+      "colorsRight": "Reds"
+    },
+    "options": {
+      "zeroTime": true,
+      "toIgnore": 0,
+      "offset": 0.05,
+      "round": 2,
+      "legend": {
+        "show": true,
+        "left": "upper left",
+        "right": "upper left"
+      },
+      "ticks": {
+        "useCustomTicks": true,
+        "dependentScales": true,
+        "params": {
+          "averageLeft": true,
+          "maxLeft": true,
+          "minLeft": true,
+          "averageRight": true,
+          "maxRight": true,
+          "minRight": true
+        }
+      }
+    }
+    },
+    "ax_4_0_V'O2/V'CO2":{
+    "row": 4,
+    "rowSpan": 1,
+    "col": 0,
+    "colSpan": 1,
+    "type": "multiSideBySide",
+    "params": {
+      "left": ["V'CO2","V'CO2_Alv","V'O2","V'O2_Alv"],
+      "title": "O2 Uptake & CO2 Production (from variation of volme)",
+      "colorsLeft": "coolwarm",
+      "right": ["V'CO2","V'CO2_Alv","V'O2","V'O2_Alv"],
+      "colorsRight": "coolwarm"
+    },
+    "options": {
+      "zeroTime": true,
+      "toIgnore": 0,
+      "offset": 0.05,
+      "round": 2,
+      "legend": {
+        "show": true,
+        "left": "upper right",
+        "right": "upper right"
+      },
+      "ticks": {
+        "useCustomTicks": true,
+        "dependentScales": true,
+        "params": {
+          "averageLeft": true,
+          "maxLeft": true,
+          "minLeft": true,
+          "averageRight": true,
+          "maxRight": true,
+          "minRight": true
+        }
+      }
+    }
+    },
+    "ax_4_1_MetabolismProd":{
+    "row": 4,
+    "rowSpan": 1,
+    "col": 1,
+    "colSpan": 1,
+    "type": "multiSideBySide",
+    "params": {
+      "left": ["V_MetCO2Prod","V_MetO2Prod"],
+      "title": "",
+      "colorsLeft": "Reds",
+      "right": ["V_MetCO2Prod","V_MetO2Prod"],
+      "colorsRight": "Reds"
+    },
+    "options": {
+      "zeroTime": true,
+      "toIgnore": 0,
+      "offset": 0.05,
+      "round": 2,
+      "legend": {
+        "show": true,
+        "left": "upper left",
+        "right": "upper left"
+      },
+      "ticks": {
+        "useCustomTicks": true,
+        "dependentScales": true,
+        "params": {
+          "averageLeft": true,
+          "maxLeft": true,
+          "minLeft": true,
+          "averageRight": true,
+          "maxRight": true,
+          "minRight": true
+        }
+      }
+    }
+    },
+
+
+    "ax_5_0_Q_CO2&O2":{
+    "row": 5,
+    "rowSpan": 1,
+    "col": 0,
+    "colSpan": 1,
+    "type": "multiSideBySide",
+    "params": {
+      "left": ["Q_O2_La_Cp","Q_C2_La_Cp"],
+      "title": "",
+      "colorsLeft": "jet",
+      "right": ["Q_O2_La_Cp","Q_C2_La_Cp"],
+      "colorsRight": "jet"
+    },
+    "options": {
+      "zeroTime": true,
+      "toIgnore": 0,
+      "offset": 0.05,
+      "round": 2,
+      "legend": {
+        "show": true,
+        "left": "upper left",
+        "right": "upper left"
+      },
+      "ticks": {
+        "useCustomTicks": true,
+        "dependentScales": true,
+        "params": {
+          "averageLeft": true,
+          "maxLeft": true,
+          "minLeft": true,
+          "averageRight": true,
+          "maxRight": true,
+          "minRight": true
+        }
+      }
+    }
+    },
+    "ax_5_1_Q_CO2&O2":{
+    "row": 5,
+    "rowSpan": 1,
+    "col": 1,
+    "colSpan": 1,
+    "type": "multiSideBySide",
+    "params": {
+      "left": ["Flow_CpLa_O2","Flow_CpLa_C2"],
+      "title": "",
+      "colorsLeft": "jet",
+      "right": ["Flow_CpLa_O2","Flow_CpLa_C2"],
+      "colorsRight": "jet"
+    },
+    "options": {
+      "zeroTime": true,
+      "toIgnore": 0,
+      "offset": 0.05,
+      "round": 2,
+      "legend": {
+        "show": true,
+        "left": "upper left",
+        "right": "upper left"
+      },
+      "ticks": {
+        "useCustomTicks": true,
+        "dependentScales": true,
+        "params": {
+          "averageLeft": true,
+          "maxLeft": true,
+          "minLeft": true,
+          "averageRight": true,
+          "maxRight": true,
+          "minRight": true
+        }
+      }
+    }
+    }
+  }
+}
+

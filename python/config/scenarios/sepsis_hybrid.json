@@ -1,0 +1,468 @@
+{
+  "shared": {
+    "twin": {
+      "twinTargets": {
+        "TotalBloodVolume": 750.0,
+        "Sys_P_As": 85.0,
+        "amp_P_As": 35.0,
+        "Sys_P_Ap": 22.5,
+        "Dia_P_Ap": 13.5,
+        "CVP": 8.0,
+        "HR": 130.0,
+        "CO": 2500.0,
+        "avg_P_Cp": 2.0,
+        "avg_P_Cs": 12.5
+      },
+      "volumeDistribution": {
+        "As": 0.13,
+        "Cs": 0.05,
+        "Vs": 0.64,
+        "Vt": 0.04,
+        "Hr": 0.02,
+        "Ap": 0.035,
+        "Cp": 0.03,
+        "Vp": 0.035,
+        "Hl": 0.02
+      },
+      "flowDistribution": {}
+    },
+    "integration": {
+      "dt": 0.0005,
+      "dtDense": 0.01,
+      "runTime": 10,
+      "gasExchange": false,
+      "useEquilibriumStates": true,
+      "solver": {
+        "type": "euler",
+        "rtol": 1e-06,
+        "atol": 1e-09,
+        "maxSteps": 8192,
+        "eventTol": 1e-10,
+        "dtMax": null,
+        "projDt": null
+      }
+    }
+  },
+  "baseline": {
+    "runs": {
+      "ignore": 1,
+      "save": 5
+    }
+  },
+  "calibration": {
+    "strategy": "staged",
+    "maxCubicFactor": 10.0,
+    "maxLinearFactor": 1.0,
+    "adaptive": {
+      "parameters": [
+        "C_Vs",
+        "R_Ap_Cp",
+        "R_Cs_Vs",
+        "R_As_Cs",
+        "E_Hl",
+        "E_Hr",
+        "C_As",
+        "C_Ap",
+        "V0_As",
+        "V0_Ap",
+        "e_Hl",
+        "e_Hr",
+        "C_Cs",
+        "C_Vt",
+        "C_Cp",
+        "C_Vp"
+      ],
+      "warmupRunsToIgnore": 5,
+      "initialMultiplier": 1.0,
+      "maxLoops": 8,
+      "runsToIgnorePerLoop": 1,
+      "runsToSavePerLoop": 0,
+      "holdRunsToSave": 20
+    },
+    "stages": [
+      {
+        "description": "Settle from the sampled initial state (controllers off)",
+        "multiplierC": 0.0,
+        "multiplierL": 0.0,
+        "runsToIgnore": 5,
+        "runsToSave": 0,
+        "multiplier": 0.0,
+        "parameters": [
+          "C_Vs",
+          "R_Ap_Cp",
+          "R_Cs_Vs",
+          "R_As_Cs",
+          "E_Hl",
+          "E_Hr",
+          "C_As",
+          "C_Ap",
+          "V0_As",
+          "V0_Ap",
+          "e_Hl",
+          "e_Hr",
+          "C_Cs",
+          "C_Vt",
+          "C_Cp",
+          "C_Vp"
+        ],
+        "targets": {},
+        "states": {}
+      },
+      {
+        "description": "Aggressive calibration (multiplierC = 10.0)",
+        "multiplierC": 0.0,
+        "multiplierL": 0.25,
+        "runsToIgnore": 0,
+        "runsToSave": 0,
+        "parameters": [
+          "R_Ap_Cp",
+          "R_Cs_Vs",
+          "R_As_Cs",
+          "E_Hl",
+          "E_Hr",
+          "C_As",
+          "C_Ap",
+          "V0_As",
+          "V0_Ap",
+          "e_Hl",
+          "e_Hr",
+          "C_Vs",
+          "C_Cs",
+          "C_Vt",
+          "C_Cp",
+          "C_Vp"
+        ],
+        "targets": {},
+        "states": {}
+      },
+      {
+        "description": "Aggressive calibration (multiplierC = 10.0)",
+        "multiplierC": 0.1,
+        "multiplierL": 0.0,
+        "runsToIgnore": 0,
+        "runsToSave": 100,
+        "parameters": [
+          "R_Ap_Cp",
+          "R_Cs_Vs",
+          "R_As_Cs",
+          "E_Hl",
+          "E_Hr",
+          "C_As",
+          "C_Ap",
+          "V0_As",
+          "V0_Ap",
+          "e_Hl",
+          "e_Hr",
+          "C_Vs",
+          "C_Cs",
+          "C_Vt",
+          "C_Cp",
+          "C_Vp"
+        ],
+        "targets": {},
+        "states": {}
+      },
+      {
+        "description": "Aggressive calibration (multiplierC = 10.0)",
+        "multiplierC": 1.0,
+        "multiplierL": 0.0,
+        "runsToIgnore": 0,
+        "runsToSave": 100,
+        "parameters": [
+          "R_Ap_Cp",
+          "R_Cs_Vs",
+          "R_As_Cs",
+          "E_Hl",
+          "E_Hr",
+          "C_As",
+          "C_Ap",
+          "V0_As",
+          "V0_Ap",
+          "e_Hl",
+          "e_Hr",
+          "C_Vs",
+          "C_Cs",
+          "C_Vt",
+          "C_Cp",
+          "C_Vp"
+        ],
+        "targets": {},
+        "states": {}
+      },
+      {
+        "description": "Aggressive calibration (multiplierC = 10.0)",
+        "multiplierC": 10.0,
+        "multiplierL": 0.0,
+        "runsToIgnore": 0,
+        "runsToSave": 250,
+        "parameters": [
+          "R_Ap_Cp",
+          "R_Cs_Vs",
+          "R_As_Cs",
+          "E_Hl",
+          "E_Hr",
+          "C_As",
+          "C_Ap",
+          "V0_As",
+          "V0_Ap",
+          "e_Hl",
+          "e_Hr",
+          "C_Vs",
+          "C_Cs",
+          "C_Vt",
+          "C_Cp",
+          "C_Vp"
+        ],
+        "targets": {},
+        "states": {}
+      },
+      {
+        "description": "Aggressive calibration (multiplierC = 10.0)",
+        "multiplierC": 100.0,
+        "multiplierL": 0.0,
+        "runsToIgnore": 0,
+        "runsToSave": 0,
+        "parameters": [
+          "R_Ap_Cp",
+          "R_As_Cs",
+          "E_Hl",
+          "E_Hr",
+          "R_Cs_Vs"
+        ],
+        "targets": {},
+        "states": {}
+      },
+      {
+        "description": "Settle from the sampled last state (controllers off)",
+        "multiplierC": 0.0,
+        "multiplierL": 0.0,
+        "runsToIgnore": 0,
+        "runsToSave": 5,
+        "multiplier": 0.0,
+        "parameters": [
+          "C_Vs",
+          "R_Ap_Cp",
+          "R_Cs_Vs",
+          "R_As_Cs",
+          "E_Hl",
+          "E_Hr",
+          "C_As",
+          "C_Ap",
+          "V0_As",
+          "V0_Ap",
+          "e_Hl",
+          "e_Hr",
+          "C_Cs",
+          "C_Vt",
+          "C_Cp",
+          "C_Vp"
+        ],
+        "targets": {},
+        "states": {}
+      }
+    ]
+  },
+  "population": {
+    "phenotypes": {
+      "normal": {
+        "TotalBloodVolume": [
+          700.0,
+          800.0
+        ],
+        "Sys_P_As": [
+          75.0,
+          90.0
+        ],
+        "amp_P_As": [
+          2.0,
+          3.0
+        ],
+        "Sys_P_Ap": [
+          20.0,
+          25.0
+        ],
+        "Dia_P_Ap": [
+          12.0,
+          15.0
+        ],
+        "CVP": [
+          8.0,
+          12.0
+        ],
+        "HR": [
+          120.0,
+          140.0
+        ],
+        "CO": [
+          1750.0,
+          3000.0
+        ],
+        "avg_P_Cp": [
+          1.0,
+          4.0
+        ],
+        "avg_P_Cs": [
+          0.3,
+          0.7
+        ]
+      },
+      "warmShock": {
+        "TotalBloodVolume": [
+          400.0,
+          800.0
+        ],
+        "Sys_P_As": [
+          60.0,
+          80.0
+        ],
+        "amp_P_As": [
+          1.75,
+          2.0
+        ],
+        "Sys_P_Ap": [
+          20.0,
+          25.0
+        ],
+        "Dia_P_Ap": [
+          12.0,
+          15.0
+        ],
+        "CVP": [
+          4.0,
+          10.0
+        ],
+        "HR": [
+          160.0,
+          200.0
+        ],
+        "CO": [
+          2750.0,
+          3500.0
+        ],
+        "avg_P_Cp": [
+          1.0,
+          4.0
+        ],
+        "avg_P_Cs": [
+          0.3,
+          0.7
+        ]
+      },
+      "coldShock": {
+        "TotalBloodVolume": [
+          400.0,
+          800.0
+        ],
+        "Sys_P_As": [
+          60.0,
+          80.0
+        ],
+        "amp_P_As": [
+          3.0,
+          4.0
+        ],
+        "Sys_P_Ap": [
+          20.0,
+          25.0
+        ],
+        "Dia_P_Ap": [
+          12.0,
+          15.0
+        ],
+        "CVP": [
+          4.0,
+          10.0
+        ],
+        "HR": [
+          160.0,
+          200.0
+        ],
+        "CO": [
+          1000.0,
+          2000.0
+        ],
+        "avg_P_Cp": [
+          1.0,
+          4.0
+        ],
+        "avg_P_Cs": [
+          0.3,
+          0.7
+        ]
+      }
+    },
+    "clinicalOrder": [
+      "TotalBloodVolume",
+      "Sys_P_As",
+      "amp_P_As",
+      "Sys_P_Ap",
+      "Dia_P_Ap",
+      "CVP",
+      "HR",
+      "CO",
+      "avg_P_Cp",
+      "avg_P_Cs"
+    ],
+    "observations": [
+      "avg_P_Vs",
+      "avg_P_Cp",
+      "avg_P_Cs",
+      "keep_max_P_As",
+      "keep_SV_Hl",
+      "keep_max_P_Ap",
+      "amp_P_As",
+      "amp_P_Ap",
+      "avg_V_As",
+      "avg_V_Ap",
+      "avg_V_Hl",
+      "avg_V_Hr",
+      "avg_V_Cs",
+      "avg_V_Vt",
+      "avg_V_Cp",
+      "avg_V_Vp"
+    ],
+    "targetStates": [
+      "target_avg_P_Vs",
+      "target_avg_P_Cp",
+      "target_avg_P_Cs",
+      "target_keep_max_P_As",
+      "target_keep_SV_Hl",
+      "target_keep_max_P_Ap",
+      "target_amp_P_As",
+      "target_amp_P_Ap",
+      "target_avg_V_As",
+      "target_avg_V_Ap",
+      "target_avg_V_Hl",
+      "target_avg_V_Hr",
+      "target_avg_V_Cs",
+      "target_avg_V_Vt",
+      "target_avg_V_Cp",
+      "target_avg_V_Vp"
+    ],
+    "driverStates": [
+      "Cyc_HC"
+    ]
+  },
+  "convergence": {
+    "observations": [
+      "avg_P_Vs",
+      "avg_P_Cp",
+      "avg_P_Cs",
+      "keep_max_P_As",
+      "keep_SV_Hl",
+      "keep_max_P_Ap",
+      "amp_P_As",
+      "keep_min_P_Ap",
+      "avg_V_As",
+      "avg_V_Ap",
+      "avg_V_Hl",
+      "avg_V_Hr",
+      "avg_V_Cs",
+      "avg_V_Vt",
+      "avg_V_Cp",
+      "avg_V_Vp",
+      "V_Vs",
+      "Cyc_HC"
+    ]
+  }
+}

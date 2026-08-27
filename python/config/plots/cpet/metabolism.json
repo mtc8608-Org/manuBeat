@@ -1,0 +1,706 @@
+{
+  "formatOptions": {
+    "nbins": 6,
+    "fonts": {
+      "title": 15,
+      "xlabel": 10,
+      "ylabel": 12,
+      "legend": 10,
+      "ticks": 9
+    },
+    "gases": {
+      "O2": {
+        "color": "tab:blue",
+        "label": "O2",
+        "name": "Oxygen"
+      },
+      "C2": {
+        "color": "tab:red",
+        "label": "C2",
+        "name": "Carbon Dioxide"
+      },
+      "N2": {
+        "color": "tab:green",
+        "label": "N2",
+        "name": "Nitrogen"
+      }
+    }
+  },
+  "simulationParams": {
+    "runTime": 5,
+    "runsToIgnore": 1,
+    "runsToSave": 40,
+    "sampPeriod": 0.01,
+    "atmPressure": 760.0,
+    "control": false,
+    "calibration": false,
+    "modelFileName": "gasExchangeTest.json",
+    "project_folder": "/home/cabsman/Documents/projects/CardioRespiratoryModelV2"
+  },
+  "figSize": {
+    "width": 15,
+    "height": 22
+  },
+  "grid": {
+    "rows": 12,
+    "cols": 2
+  },
+  "axes": {
+    
+
+    "ax_0_0_NAD+":{
+      "row": 0,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Y_NAD+_TissueLeg"],
+        "right": ["Y_NAD+_TissueLeg"],
+        "title": "Concentration of NAD+ in Leg",
+        "colorsLeft": "Greens",
+        "colorsRight": "Greens"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 0,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_1_0_MetabolismLeg":{
+      "row": 1,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["k_C3H6O3_C3H5O3H"],
+        "right": ["k_C3H6O3_C3H5O3H"],
+        "title": "Glicolisys and Lactatolisys in Leg",
+        "colorsLeft": "Reds",
+        "colorsRight": "Blues"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 0,
+        "legend": {
+          "show": false,
+          "left": "upper left",
+          "right": "upper left"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_0&1_1_ATP_Production":{
+      "row": 0,
+      "rowSpan": 2,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Upt_TissuesLeg","ATP_ProductionLeg","ATP_OxidationLeg","ATP_FatLeg","ATP_FatLeg1","ATP_GycolisisLeg"],
+        "right": ["Upt_TissuesLeg","ATP_ProductionLeg","ATP_OxidationLeg","ATP_FatLeg","ATP_FatLeg1","ATP_GycolisisLeg"],
+        "title": "ATP Production in Leg",
+        "colorsLeft": "jet",
+        "colorsRight": "jet"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 0,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper left"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+
+    "ax_2_0_MetabolismHead":{
+      "row": 2,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["k_Head_C3H6O3_C3H5O3H"],
+        "right": ["k_Head_C3H6O3_C3H5O3H"],
+        "title": "Glicolisys and Lactatolisys in Head",
+        "colorsLeft": "Reds",
+        "colorsRight": "Blues"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 0,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper left"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_2_1_ATP_ProductionHead":{
+      "row": 2,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Upt_TissuesHead","ATP_ProductionHead","ATP_OxidationHead","ATP_FatHead","ATP_GycolisisHead"],
+        "right": ["Upt_TissuesHead","ATP_ProductionHead","ATP_OxidationHead","ATP_FatHead","ATP_GycolisisHead"],
+        "title": "ATP Production in Head",
+        "colorsLeft": "jet",
+        "colorsRight": "jet"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 0,
+        "legend": {
+          "show": false,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+
+    "ax_3_0_MetabolismAbdomen":{
+      "row": 3,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["k_Physio_C3H6O3_C3H5O3H"],
+        "right": ["k_Physio_C3H6O3_C3H5O3H"],
+        "title": "Glicolisys and Lactatolisys in Abdomen",
+        "colorsLeft": "Reds",
+        "colorsRight": "Blues"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 0,
+        "legend": {
+          "show": false,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_3_1_ATP_ProductionAbdomen":{
+      "row": 3,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Upt_TissuesAbdomen","ATP_ProductionAbdomen","ATP_OxidationAbdomen","ATP_FatAbdomen","ATP_GycolisisAbdomen"],
+        "right": ["Upt_TissuesAbdomen","ATP_ProductionAbdomen","ATP_OxidationAbdomen","ATP_FatAbdomen","ATP_GycolisisAbdomen"],
+        "title": "ATP Production in Abdomen",
+        "colorsLeft": "jet",
+        "colorsRight": "jet"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 0,
+        "legend": {
+          "show": false,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+
+    "ax_4&5_0_TissuesO2":{
+      "row": 4,
+      "rowSpan": 2,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Y_O2_Ch","Y_O2_TissueHead","Y_O2_Cl","Y_O2_TissueLeg","Y_O2_Ca","Y_O2_TissueAbdomen"],
+        "title": "Head Blood & Tissue [O2]",
+        "colorsLeft": "jet",
+        "right": ["Y_O2_Ch","Y_O2_TissueHead","Y_O2_Cl","Y_O2_TissueLeg","Y_O2_Ca","Y_O2_TissueAbdomen"],
+        "colorsRight": "jet"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_4&5_1_BloodO2":{
+      "row": 4,
+      "rowSpan": 2,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Y_O2_Cp","Y_O2_As","Y_O2_Ch","Y_O2_Cl","Y_O2_Ca","Y_O2_Ap"],
+        "title": "All Blood & Tissue [O2]",
+        "colorsLeft": "jet",
+        "right": ["Y_O2_Cp","Y_O2_As","Y_O2_Ch","Y_O2_Cl","Y_O2_Ca","Y_O2_Ap"],
+        "colorsRight": "jet"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+
+    "ax_6&7_0_TissueC2":{
+      "row": 6,
+      "rowSpan": 2,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Y_C2_Ch","Y_C2_TissueHead","Y_C2_Cl","Y_C2_TissueLeg","Y_C2_Ca","Y_C2_TissueAbdomen"],
+        "title": "Blood & Tissue [CO2]",
+        "colorsLeft": "jet",
+        "right": ["Y_C2_Ch","Y_C2_TissueHead","Y_C2_Cl","Y_C2_TissueLeg","Y_C2_Ca","Y_C2_TissueAbdomen"],
+        "colorsRight": "jet"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_6&7_1_BloodC2":{
+      "row": 6,
+      "rowSpan": 2,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Y_C2_Cp","Y_C2_Vp","Y_C2_As","Y_C2_Ch","Y_C2_Cl","Y_C2_Ca","Y_C2_Vs","Y_C2_Ap"],
+        "title": "All Blood & Tissue [CO2]",
+        "colorsLeft": "jet",
+        "right": ["Y_C2_Cp","Y_C2_Vp","Y_C2_As","Y_C2_Ch","Y_C2_Cl","Y_C2_Ca","Y_C2_Vs","Y_C2_Ap"],
+        "colorsRight": "jet"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+
+    "ax_8/9_0_BloodHemoglobin":{
+      "row": 8,
+      "rowSpan": 2,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Y_Hb_Cp","Y_Hb_As","Y_Hb_Ch","Y_Hb_Cl","Y_Hb_Ca","Y_Hb_Ap"],
+        "right": ["Y_HbO2_Cp","Y_HbO2_As","Y_HbO2_Ch","Y_HbO2_Cl","Y_HbO2_Ca","Y_HbO2_Ap"],
+        "title": "De-Oxy (Blues) and Oxy (Reds) Hemoglobin",
+        "colorsLeft": "Blues",
+        "colorsRight": "Reds"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round":0,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_8&9_1_SPO2":{
+      "row": 8,
+      "rowSpan": 2,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["SPO2_Cp","SPO2_As","SPO2_Ch","SPO2_Ca","SPO2_Cl","SPO2_Ap"],
+        "right": ["SPO2_Cp","SPO2_As","SPO2_Ch","SPO2_Ca","SPO2_Cl","SPO2_Ap"],
+        "title": "Oxygen Saturation in blood",
+        "colorsLeft": "jet",
+        "colorsRight": "jet"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round":0,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+
+    "ax_10/11_0_BloodC2":{
+      "row": 10,
+      "rowSpan": 2,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Y_HCO3-_Cp","Y_HCO3-_As","Y_HCO3-_Ch","Y_HCO3-_Cl","Y_HCO3-_Ca","Y_HCO3-_Ap"],
+        "title": "All Blood & Tissue [HCO3-]",
+        "colorsLeft": "jet",
+        "right": ["Y_HCO3-_Cp","Y_HCO3-_As","Y_HCO3-_Ch","Y_HCO3-_Cl","Y_HCO3-_Ca","Y_HCO3-_Ap"],
+        "colorsRight": "jet"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+
+    "ax_10_1_C3H5O3H":{
+      "row": 10,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Y_C3H5O3H_TissueLeg","Y_C3H5O3H_TissueHead","Y_C3H5O3H_TissueAbdomen"],
+        "right": ["Y_C3H5O3H_TissueLeg","Y_C3H5O3H_TissueHead","Y_C3H5O3H_TissueAbdomen"],
+        "title": "Concentration of Lactic Acid in Leg, Head and Abdomen",
+        "colorsLeft": "Greens",
+        "colorsRight": "Greens"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 0,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper left"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_11_1_AcidBlood":{
+      "row": 11,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Y_C3H5O3-_TissueLeg","Y_C3H5O3-_Cl","Y_C3H5O3-_As"],
+        "right": ["Y_C3H5O3-_TissueLeg","Y_C3H5O3-_Cl","Y_C3H5O3-_As"],
+        "title": "Lactate Concentration in Leg and Arterial Blood",
+        "colorsLeft": "Greens",
+        "colorsRight": "Greens"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 0,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper left"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    }
+  },
+  "axes_Saved":{
+    "ax_4_0_HeadO2":{
+      "row": 4,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Y_O2_Ch","Y_O2_TissueHead"],
+        "title": "Head Blood & Tissue [O2]",
+        "colorsLeft": "Blues",
+        "right": ["Y_O2_Ch","Y_O2_TissueHead"],
+        "colorsRight": "Blues"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_5_0_/leg&AbdoneO2":{
+      "row": 5,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Y_O2_Cl","Y_O2_TissueLeg","Y_O2_Ca","Y_O2_TissueAbdomen"],
+        "title": "Leg and Abdomen Blood & Tissue [O2]",
+        "colorsLeft": "coolwarm",
+        "right": ["Y_O2_Cl","Y_O2_TissueLeg","Y_O2_Ca","Y_O2_TissueAbdomen"],
+        "colorsRight": "coolwarm"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    }
+  }
+}
+

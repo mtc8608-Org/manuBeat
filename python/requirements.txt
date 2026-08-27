@@ -8,8 +8,14 @@ minio
 pandas
 numpy
 
-# [MEDICAL] cardiovascular model + HDF5 patient data
+# [MEDICAL] cardiopulmonary model (python/library) + HDF5 patient data.
+# jax[cpu]: GPU is deliberately off — the model is a long sequential lax.scan over a
+# small state vector, launch-latency bound, benchmarked 1.7-2.7x SLOWER on GPU.
+# diffrax is the integrator (Euler on the legacy stack, euler/rk4/adaptive on SI);
+# optimistix backs the SI stack's adaptive root finds. Neither is optional.
 jax[cpu]
 equinox
+diffrax
+optimistix
 h5py
 scipy

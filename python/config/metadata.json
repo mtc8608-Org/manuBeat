@@ -1,0 +1,687 @@
+{
+    "data":{
+        "resistors":{
+            "types":[
+                {
+                    "name": "diode",
+                    "eqObject":{
+                        "rIdx": "str (name of the variable with the resistance value)",
+                        "l": "str (name of the variable with the inductance value)" ,
+                        "pInIdx": "str (name of the variable with the input pressure value)",
+                        "pOutIdx": "str (name of the variable with the output pressure value)",
+                        "flowIdx": "str (name of the variable with the flow value)",
+                        "inertial": "bool (if the resistor is inertial)"
+                    },
+                    "params":{
+                        "R": "float (value of the resistance)"
+                    }
+                },
+                {
+                    "name": "resistor",
+                    "eqObject":{
+                        "rIdx": "str (name of the variable with the resistance value)",
+                        "l": "str (name of the variable with the inductance value)" ,
+                        "pInIdx": "str (name of the variable with the input pressure value)",
+                        "pOutIdx": "str (name of the variable with the output pressure value)",
+                        "flowIdx": "str (name of the variable with the flow value)",
+                        "inertial": "bool (if the resistor is inertial)"
+                    },
+                    "params":{
+                        "R": "float (value of the resistance)"
+                    }
+                },
+                {
+                    "name": "diode_inertial",
+                    "eqObject":{
+                        "rIdx": "str (name of the variable with the resistance value)",
+                        "l": "str (name of the variable with the inductance value)" ,
+                        "pInIdx": "str (name of the variable with the input pressure value)",
+                        "pOutIdx": "str (name of the variable with the output pressure value)",
+                        "flowIdx": "str (name of the variable with the flow value)",
+                        "inertial": "bool (if the resistor is inertial)"
+                    },
+                    "params":{
+                        "R": "float (value of the resistance)",
+                        "L": "float (value of the inductance)",
+                        "y0": "float (value of the initial flow)"
+                    }
+                },
+                {
+                    "name": "inertial",
+                    "eqObject":{
+                        "rIdx": "str (name of the variable with the resistance value)",
+                        "l": "str (name of the variable with the inductance value)" ,
+                        "pInIdx": "str (name of the variable with the input pressure value)",
+                        "pOutIdx": "str (name of the variable with the output pressure value)",
+                        "flowIdx": "str (name of the variable with the flow value)",
+                        "inertial": "bool (if the resistor is inertial)"
+                    },
+                    "params":{
+                        "R": "float (value of the resistance)",
+                        "L": "float (value of the inductance)",
+                        "y0": "float (value of the initial flow)"
+                    }
+                }
+            ]
+        },
+        "capacitors":{
+            "types":[
+                {
+                    "name": "elastance",
+                    "eqObject": {
+                        "volIdx": "name of the volume",
+                        "biasPIdx": "name of the bias pressure",
+                        "eMaxIdx": "name of the maximum elastance",
+                        "eMinIdx": "name of the minimum elastance",
+                        "hcIdx": "name of the Cycle Controller (HR, RC, ...)",
+                        "td": "name of the time fraction between systole and diastole"
+                    },
+                    "params":{
+                        "Emax": "float (value of the maximum elastance)",
+                        "Emin": "float (value of the minimum elastance)",
+                        "y0": "float (value of the initial volume)",
+                        "td": "float (value of the time fraction between systole and diastole)"
+                    }
+                },
+                {
+                    "name": "capacitor",
+                    "eqObject": {
+                        "volIdx": "name of the volume",
+                        "C": "name of the compliance",
+                        "biasPIdx": "name of the bias pressure"
+                    },
+                    "params":{
+                        "C": "float (value of the compliance)",
+                        "y0": "float (value of the initial volume)"
+                    }
+                },
+                {
+                    "name": "semiCompliant",
+                    "eqObject": {
+                        "volIdx": "name of the volume",
+                        "C": "name of the compliance",
+                        "biasPIdx": "name of the bias pressure",
+                        "unstressedVolumeIdx": "name of the unstressed volume"
+                    },
+                    "params":{
+                        "C": "float (value of the compliance)",
+                        "y0": "float (value of the initial volume)",
+                        "V0": "float (value of the unstressed volume)"
+                    }
+                },
+                {
+                    "name": "pleural",
+                    "eqObject": {
+                        "C": "name of the compliance",
+                        "biasPIdx": "name of the bias pressure",
+                        "children": "list of the children volumes",
+                        "unstressedVolumeIdx": "name of the unstressed volume",
+                        "pressureName": "name of the pressure variable",
+                        "step": "value of the step of the simulation"
+                    },
+                    "params":{
+                        "C": "float (value of the compliance)",
+                        "p0": "float (value of the initial pressure)",
+                        "V0": "float (value of the unstressed volume)"
+                    }
+                },
+                {
+                    "name": "thorax",
+                    "eqObject": {
+                        "unstressedVolumeIdx": "name of the unstressed volume",
+                        "C": "name of the compliance",
+                        "V0MaxIdx": "name of the maximum unstressed volume",
+                        "V0MinIdx": "name of the minimum unstressed volume",
+                        "biasPIdx": "name of the bias pressure",
+                        "children": "list of the children volumes",
+                        "cycle": "name of the cycle",
+                        "pressureName": "name of the pressure variable",
+                        "td": "name of the time fraction between systole and diastole",
+                        "step": "value of the step of the simulation"
+                    },
+                    "params":{
+                        "C": "float (value of the compliance)",
+                        "p0": "float (value of the initial pressure)",
+                        "V0Min": "float (value of the minimum unstressed volume)",
+                        "V0Max": "float (value of the maximum unstressed volume)",
+                        "td": "float (value of the time fraction between systole and diastole)"
+                    }
+                },
+                {
+                    "name": "constantPressure",
+                    "eqObject": {},
+                    "params":{
+                        "p0": "float (value of the initial pressure)"
+                    }
+                },
+                {
+                    "name": "ventilator",
+                    "eqObject": {
+                        "amplitude": "name of the amplitude variable",
+                        "PEEP": "name of the PEEP variable",
+                        "rcIdx": "name of the RC variable",
+                        "I": "name of the inspiration time variable",
+                        "E": "name of the expiration time variable",
+                        "slopeFraction": "name of the ventilator curve slope fraction variable",
+                        "pressureName": "name of the pressure variable",
+                        "step": "value of the step of the simulation"
+                    },
+                    "params":{
+                        "PEEP": "float (value of the PEEP)",
+                        "amplitude": "float (value of the amplitude)",
+                        "I": "float (value of the inspiration time)",
+                        "E": "float (value of the expiration time)",
+                        "slopeFraction": "float (value of the ventilator curve slope fraction)"
+                    }
+                },
+                {
+                    "name": "ventilatorFile",
+                    "eqObject": {
+                        "pressureName": "name of the pressure variable",
+                        "file": "S1_1",
+                        "step": "value of the step of the simulation"
+                    },
+                    "params":{
+                        "file": "str (name of the dataset with the ventilator curve)"
+                    }
+                }
+            ]
+        },
+        "controllers":{},
+        "integrators":{},
+        "averages":{},
+        "prefixes": {
+            "avg_keep_SV_Hl": {
+                "prefix": "avg_keep_SV_Hl",
+                "name": "Stroke Volume",
+                "unit": "mL"
+            },
+            "average": {
+                "prefix": "avg_",
+                "name": "Average",
+                "unit": "no_unit"
+            },
+            "unknown": {
+                "prefix": "unk_",
+                "name": "Unknown",
+                "unit": "unk"
+            },
+            "toAdd": {
+                "prefix": "toAdd_",
+                "name": "toAdd",
+                "unit": "unk"
+            },
+            "RER": {
+                "prefix": "RER",
+                "name": "RER",
+                "unit": "no unit"
+            },
+            "SPO2": {
+                "prefix": "SPO2",
+                "name": "SPO2",
+                "unit": "no unit"
+            },
+            "chemoreceptor": {
+                "prefix": "chemoreceptor",
+                "name": "chemoreceptor",
+                "unit": "no unit"
+            },
+            "baroreceptor": {
+                "prefix": "baroreceptor",
+                "name": "baroreceptor",
+                "unit": "no unit"
+            },
+            "flow": {
+                "prefix": "Q_",
+                "name": "Flow",
+                "unit": "mL/s"
+            },
+            "averageQ": {
+                "prefix": "avg_Q_",
+                "name": "Average",
+                "unit": "mL/s"
+            },
+            "pressure": {
+                "prefix": "P_",
+                "name": "Pressure",
+                "unit": "mmHg"
+            },
+            "averageP": {
+                "prefix": "avg_P_",
+                "name": "Average Pressure",
+                "unit": "mmHg"
+            },
+            "ampP": {
+                "prefix": "amp_P_",
+                "name": "Amplitude Pressure",
+                "unit": "mmHg"
+            },
+            "resistor": {
+                "prefix": "R_",
+                "name": "Resistance",
+                "unit": "mmHg/(mL/s)"
+            },
+            "inductance": {
+                "prefix": "L_",
+                "name": "Inductance",
+                "unit": "mmHg/(mL/s^2)"
+            },
+            "capacitor": {
+                "prefix": "C_",
+                "name": "Compliance",
+                "unit": "mL/mmHg"
+            },
+            "volume": {
+                "prefix": "V_",
+                "name": "Volume",
+                "unit": "mL"
+            },
+            "averageV": {
+                "prefix": "avg_V_",
+                "name": "Average Volume",
+                "unit": "mL"
+            },
+            "unstressedVolume": {
+                "prefix": "V0_",
+                "name": "Unstressed Volume",
+                "unit": "mL"
+            },
+            "unstressedVolumeMin": {
+                "prefix": "VV0_",
+                "name": "Min Unstressed Volume",
+                "unit": "mL"
+            },
+            "unstressedVolumeMax": {
+                "prefix": "Vv0_",
+                "name": "Max Unstressed Volume",
+                "unit": "mL"
+            },
+            "cycle": {
+                "prefix": "Cyc_",
+                "name": "Cycle",
+                "unit": "s"
+            },
+            "trigger": {
+                "prefix": "Trig_",
+                "name": "Trigger",
+                "unit": "s"
+            },
+            "timer": {
+                "prefix": "Tim_",
+                "name": "Timer",
+                "unit": "s"
+            },
+            "elastance": {
+                "prefix": "el_",
+                "name": "Elastance",
+                "unit": "mmHg/mL"
+            },
+            "elastanceMax": {
+                "prefix": "E_",
+                "name": "Max Elastance",
+                "unit": "mmHg/mL"
+            },
+            "elastanceMin": {
+                "prefix": "e_",
+                "name": "Min Elastance",
+                "unit": "mmHg/mL"
+            },
+            "time": {
+                "prefix": "t_",
+                "name": "Time",
+                "unit": "s"
+            },
+            "threshold": {
+                "prefix": "Th_",
+                "name": "Threshold",
+                "unit": "no_unit"
+            },
+            "Iven": {
+                "prefix": "Iven_",
+                "name": "I of I/E ratio",
+                "unit": "no_unit"
+            },
+            "Even": {
+                "prefix": "Even_",
+                "name": "E of I/E ratio",
+                "unit": "no_unit"
+            },
+            "PEEP": {
+                "prefix": "PEEP_",
+                "name": "PEEP",
+                "unit": "mmHg"
+            },
+            "amplitude": {
+                "prefix": "Amp_",
+                "name": "Amplitude",
+                "unit": "mmHg"
+            },
+            "slopeFraction": {
+                "prefix": "Slope_",
+                "name": "Slope Fraction",
+                "unit": "no_unit"
+            },
+            "inspiratoryThreshold": {
+                "prefix": "ti_",
+                "name": "Inspiratory Threshold Time",
+                "unit": "s"
+            },
+            "diastolicThreshold": {
+                "prefix": "td_",
+                "name": "Diastolic Threshold Time",
+                "unit": "s"
+            },
+            
+            "integral": {
+                "prefix": "int_",
+                "name": "Integral",
+                "unit": "no_unit"
+            },
+            "concentration": {
+                "prefix": "Y_",
+                "name": "Concentration",
+                "unit": "mmol/mL"
+            },
+            "partialConcentrationDifference": {
+                "prefix": "pdY_",
+                "name": "Concentration Variation",
+                "unit": "mmol/(mL*s)"
+            },
+            "energyUptake": {
+                "prefix": "Upt_",
+                "name": "Energy Uptake",
+                "unit": "mmol/s"
+            },
+            "energyProduction": {
+                "prefix": "Prd_",
+                "name": "Energy Production",
+                "unit": "mmol/s"
+            },
+            "area": {
+                "prefix": "area_",
+                "name": "Area",
+                "unit": "?mm^2?"
+            },
+            "reactionConstant": {
+                "prefix": "k_",
+                "name": "ReactionConstant",
+                "unit": "?s-1?"
+            },
+            "ATProduction":{
+                "prefix": "ATP_",
+                "name": "ATP",
+                "unit": "mmol/mL*s"
+            },
+            "CardiacOutput":{
+                "prefix": "CardiacOutput",
+                "name": "CardiacOutput",
+                "unit": "L/Min"
+            },
+            "MinuteVentilation":{
+                "prefix": "MinuteVentilation",
+                "name": "MinuteVentilation",
+                "unit": "L/Min"
+            },
+            "HeartRate":{
+                "prefix": "HeartRate",
+                "name": "HeartRate",
+                "unit": "beats/Min"
+            },
+            "RespiratoryRate":{
+                "prefix": "RespiratoryRate",
+                "name": "RespiratoryRate",
+                "unit": "breaths/Min"
+            },
+            "Upatakes":{
+                "prefix": "Vu_",
+                "name": "MinuteVentilation",
+                "unit": "L/Min"
+            }
+            
+        }
+    },
+    "gasRegions":{
+        "Atmosphere":{
+            "gases":{
+                "O2":152.0,
+                "C2":0.2,
+                "N2":607.8
+            },
+            "total":760.0,
+            "state":"gas"
+        },
+        "Alveoli":{
+            "gases":{
+                "O2":136.0,
+                "C2":16.0,
+                "N2":608.0
+            },
+            "total":760.0,
+            "state":"gas"
+        },
+        "Arterial":{
+            "gases":{
+                "O2":81.6,
+                "C2":40.0,
+                "N2":-1.0,
+                "H2CO3":0.0000000000001,
+                "HCO3-":0.0000000000001,
+                "H+":0.0000000000001
+            },
+            "total":760.0,
+            "state":"dissolved"
+        },
+        "Venous":{
+            "gases":{
+                "O2":0.0000000000001,
+                "C2":0.634,
+                "N2":-1.0,
+                "H2CO3":0.0000000000001,
+                "HCO3-":0.0000000000001,
+                "H+":0.0000000000001
+            },
+            "total":760.0,
+            "state":"dissolved"
+        },
+
+        "blood":{
+            "gases":{
+                "N2":-1.0,
+                "O2":0.01723,
+                "C2":0.040104,
+                "H2CO3":0.00040108,
+                "HCO3-":0.0319999,
+                "H+":0.000000001
+            },
+            "total":760.0,
+            "state":"dissolved"
+        },
+        "tissues":{
+            "gases":{
+                "N2":-1.0,
+                "O2":0.009764,
+                "C2":0.0458026,
+                "H2CO3":0.000458026,
+                "HCO3-":0.0320000705,
+                "H+":0.000000001,
+                
+                "C6H12O6": 10.0,
+                "C3H6O3": 0.025,
+                "C3H5O3-": 1e-15,
+                "C3H5O3H": 1e-15,
+                "NAD+": 0.024999,
+                "NADH": 0.000001
+            },
+            "total":760.0,
+            "state":"dissolved"
+        },
+        "bloodEmpty":{
+            "gases":{
+                "O2":1e-12,
+                "C2":1e-12,
+                "N2":-1.0,
+                "HCO3-":1e-20,
+                "H+":1e-20
+            },
+            "total":760.0,
+            "state":"dissolved"
+        },
+
+        "bloodAtmosphere":{
+            "gases":{
+                "O2":0.2067784171552314,
+                "C2":0.006000038389074525,
+                "N2":-1.0,
+                "HCO3-":24.0,
+                "H+":5e-8,
+                
+                "Hb": 0.18206522016558724,
+                "HbO2": 18.817934779834516
+            },
+            "total":760.0,
+            "state":"dissolved"
+        },
+        "tissueAtmosphere":{
+            "gases":{
+                "O2":0.2067784171552314,
+                "C2":0.006000038389074525,
+                "N2":-1.0,
+                "HCO3-":24.0,
+                "H+":5e-8,
+                
+                "NAD+": 0.024999,
+                "NADH": 0.000001,
+                "C3H6O3": 1.0,
+                
+                "Hb": -1.0,
+                "HbO2": -1.0
+            },
+            "total":760.0,
+            "state":"dissolved"
+        },
+
+        "bloodPhysioVen":{
+            "gases":{
+                "O2":0.037195922437034123,
+                "C2":0.6410150865290594,
+                "N2":-1.0,
+                
+                "C3H5O3-": 1e-8,
+                "HCO3-":24.0,
+                
+                "Hb": 0.63305755608625,
+                "HbO2": 18.36694244371657
+            },
+            "total":760.0,
+            "state":"dissolved"
+        },
+        "bloodPhysioArt":{
+            "gases":{
+                "O2":0.12078407485995948,
+                "C2":0.5558506938115537,
+                "N2":-1.0,
+                
+                "C3H5O3-": 1e-8,
+                "HCO3-":24.0,
+                
+                "Hb": 0.1732818561667134,
+                "HbO2": 18.8267181436324
+            },
+            "total":760.0,
+            "state":"dissolved"
+        },
+        "tissuePhysio":{
+            "gases":{
+                "O2":0.05099474423662364,
+                "C2":0.6181438041504151,
+                "N2":-1.0,
+                
+                "HCO3-":24.0,
+
+                "C3H5O3H": 1e-8,
+                "C3H5O3-": 1e-8,
+                
+                "NAD+": 0.02421889584042436,
+                "NADH": 0.0007811041595807961,
+                "C3H6O3": 1.0,
+                
+                "Hb": -1.0,
+                "HbO2": -1.0
+            },
+            "total":760.0,
+            "state":"dissolved"
+        },
+        "tissueHead":{
+            "gases":{
+                "O2":0.05099474423662364,
+                "C2":0.6181438041504151,
+                "N2":-1.0,
+                
+                "HCO3-":24.0,
+
+                "C3H5O3H": 1e-8,
+                "C3H5O3-": 1e-8,
+                
+                "NAD+": 0.02421889584042436,
+                "NADH": 0.0007811041595807961,
+                "C3H6O3": 1.0,
+                
+                "Hb": -1.0,
+                "HbO2": -1.0
+            },
+            "total":760.0,
+            "state":"dissolved"
+        },
+        "tissueLeg":{
+            "gases":{
+                "O2":0.05099474423662364,
+                "C2":0.6181438041504151,
+                "N2":-1.0,
+                
+                "HCO3-":24.0,
+
+                "C3H5O3H": 1e-8,
+                "C3H5O3-": 1e-8,
+                
+                "NAD+": 0.02421889584042436,
+                "NADH": 0.0007811041595807961,
+                "C3H6O3": 1.0,
+                
+                "Hb": -1.0,
+                "HbO2": -1.0
+            },
+            "total":760.0,
+            "state":"dissolved"
+        },
+
+
+        "bloodPlr":{
+            "gases":{
+                "O2":-1.0,
+                "C2":-1.0,
+                "N2":-1.0,
+                "H2CO3":-1.0,
+                "HCO3-":-1.0,
+                "H+":-1.0
+            },
+            "total":760.0,
+            "state":"dissolved"
+        },
+        "Tissues":{
+            "gases":{
+                "O2":30.0,
+                "C2":50.0,
+                "N2":-1.0,
+                "H2CO3":-1.0,
+                "HCO3-":-1.0,
+                "H+":-1.0
+            },
+            "total":760.0,
+            "state":"dissolved"
+        }
+    },
+    "constants":{
+        "airViscosity": 1.3576114259577783e-07,
+        "bloodViscosity": 2.6252154645592402e-05
+    }
+}

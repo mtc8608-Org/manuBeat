@@ -37,6 +37,32 @@ services:
     networks:
       - default
     command: ./api/watch
+  # [MEDICAL] JupyterLab container — manuBeat-only, absent from upstream and from
+  # docker-compose.prod.yml. It is the debugging surface over python/library: the
+  # same bind mount as the python service, so notebooks import the exact library
+  # the API runs and write their artefacts into python/notebookData/.
+  #
+  # No env_file and no environment block — a notebook is arbitrary code execution
+  # by design, so it gets no credentials at all, not even the five MinIO variables
+  # the API service carries. It reaches nothing but the source tree.
+  #
+  # Token auth is off because the port is bound to 127.0.0.1 like every other port
+  # in this file. If you ever move it to 0.0.0.0, restore the token first.
+  jupyter:
+    build:
+      context: ./python
+      dockerfile: Dockerfile.notebook
+    image: ${COMPOSE_PROJECT_NAME}_jupyter
+    container_name: ${COMPOSE_PROJECT_NAME}_jupyter
+    volumes:
+      - ./python:/src
+    ports:
+      - 127.0.0.1:${JUPYTER_PORT}:8888
+    networks:
+      - default
+    command: >
+      jupyter lab --ip 0.0.0.0 --port 8888 --no-browser --allow-root
+      --ServerApp.root_dir=/src --IdentityProvider.token=''
   # Nodejs container
   nodejs:
     build: ./nodejs

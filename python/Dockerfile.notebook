@@ -1,0 +1,32 @@
+# syntax=docker/dockerfile:1
+# [MEDICAL] JupyterLab image — the debugging surface over python/library.
+#
+# Separate from ./Dockerfile on purpose: the API service imports the same library
+# but needs none of the plotting/sampling stack, and this image must never grow
+# into the one that ships to production (there is no Dockerfile.prod counterpart —
+# notebooks are a dev tool and the jupyter service is absent from
+# docker-compose.prod.yml).
+#
+# Source, config and notebooks all arrive through the ./python:/src bind mount,
+# exactly as the API service gets them — nothing is baked in.
+FROM python:3.13
+
+ARG UID=1000
+ARG GID=1000
+
+# Same BuildKit cache-mount treatment as ./Dockerfile: the .deb files and apt index
+# stay on the host between builds. hdf5-tools carries h5repack, which
+# library/hdf5/engine.py shells out to in repack().
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    rm -f /etc/apt/apt.conf.d/docker-clean && \
+    apt-get update && apt-get install -y --no-install-recommends \
+    hdf5-tools
+
+# requirements.notebook.lock is the enforced pip freeze (requirements.notebook.txt
+# states intent, unpinned, and pulls in requirements.txt). Regeneration procedure:
+# .claude/rules/python-compute.md.
+COPY requirements.notebook.lock .
+RUN pip install -r requirements.notebook.lock
+
+WORKDIR /src

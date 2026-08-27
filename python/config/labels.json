@@ -1,0 +1,333 @@
+{
+ "_comment": "Model-generated variable name -> display labels. `latex` is a matplotlib/LaTeX math string (paper-quality), `plain` a unicode fallback, `unit` the physical unit. Ported/extended from My-ICU-Twin's paper_label dict. utils.labelFor(name, fmt) resolves these, falling back to the raw name when absent.",
+ "avg_P_Vs": {
+  "latex": "$\\overline{P}_{Vs}$",
+  "plain": "P̄_Vs",
+  "unit": "mmHg"
+ },
+ "avg_P_Cp": {
+  "latex": "$\\overline{P}_{Cp}$",
+  "plain": "P̄_Cp",
+  "unit": "mmHg"
+ },
+ "avg_P_Cs": {
+  "latex": "$\\overline{P}_{Cs}$",
+  "plain": "P̄_Cs",
+  "unit": "mmHg"
+ },
+ "avg_P_As": {
+  "latex": "$\\overline{P}_{As}$",
+  "plain": "P̄_As",
+  "unit": "mmHg"
+ },
+ "avg_P_Ap": {
+  "latex": "$\\overline{P}_{Ap}$",
+  "plain": "P̄_Ap",
+  "unit": "mmHg"
+ },
+ "keep_max_P_As": {
+  "latex": "$P_{As}^{\\max}$",
+  "plain": "SysP_As",
+  "unit": "mmHg"
+ },
+ "keep_max_P_Ap": {
+  "latex": "$P_{Ap}^{\\max}$",
+  "plain": "SysP_Ap",
+  "unit": "mmHg"
+ },
+ "keep_min_P_As": {
+  "latex": "$P_{As}^{\\min}$",
+  "plain": "DiaP_As",
+  "unit": "mmHg"
+ },
+ "keep_min_P_Ap": {
+  "latex": "$P_{Ap}^{\\min}$",
+  "plain": "DiaP_Ap",
+  "unit": "mmHg"
+ },
+ "amp_P_As": {
+  "latex": "$PP_{As}$",
+  "plain": "PP_As",
+  "unit": "mmHg"
+ },
+ "amp_P_Ap": {
+  "latex": "$PP_{Ap}$",
+  "plain": "PP_Ap",
+  "unit": "mmHg"
+ },
+ "Sys_P_As": {
+  "latex": "$SysP_{As}$",
+  "plain": "SysP_As",
+  "unit": "mmHg"
+ },
+ "Sys_P_Ap": {
+  "latex": "$SysP_{Ap}$",
+  "plain": "SysP_Ap",
+  "unit": "mmHg"
+ },
+ "Dia_P_As": {
+  "latex": "$DiaP_{As}$",
+  "plain": "DiaP_As",
+  "unit": "mmHg"
+ },
+ "Dia_P_Ap": {
+  "latex": "$DiaP_{Ap}$",
+  "plain": "DiaP_Ap",
+  "unit": "mmHg"
+ },
+ "avg_V_As": {
+  "latex": "$\\overline{V}_{As}$",
+  "plain": "V̄_As",
+  "unit": "mL"
+ },
+ "avg_V_Ap": {
+  "latex": "$\\overline{V}_{Ap}$",
+  "plain": "V̄_Ap",
+  "unit": "mL"
+ },
+ "avg_V_Hl": {
+  "latex": "$\\overline{V}_{Hl}$",
+  "plain": "V̄_Hl",
+  "unit": "mL"
+ },
+ "avg_V_Hr": {
+  "latex": "$\\overline{V}_{Hr}$",
+  "plain": "V̄_Hr",
+  "unit": "mL"
+ },
+ "avg_V_Cs": {
+  "latex": "$\\overline{V}_{Cs}$",
+  "plain": "V̄_Cs",
+  "unit": "mL"
+ },
+ "avg_V_Cp": {
+  "latex": "$\\overline{V}_{Cp}$",
+  "plain": "V̄_Cp",
+  "unit": "mL"
+ },
+ "avg_V_Vt": {
+  "latex": "$\\overline{V}_{Vt}$",
+  "plain": "V̄_Vt",
+  "unit": "mL"
+ },
+ "avg_V_Vp": {
+  "latex": "$\\overline{V}_{Vp}$",
+  "plain": "V̄_Vp",
+  "unit": "mL"
+ },
+ "V_Vs": {
+  "latex": "$V_{Vs}$",
+  "plain": "V_Vs",
+  "unit": "mL"
+ },
+ "V_Total_Blood": {
+  "latex": "$V_{Total}$",
+  "plain": "V_Total",
+  "unit": "mL"
+ },
+ "keep_SV_Hl": {
+  "latex": "$SV$",
+  "plain": "SV",
+  "unit": "mL"
+ },
+ "Cyc_HC": {
+  "latex": "$T_{cyc}$",
+  "plain": "T_cyc",
+  "unit": "s"
+ },
+ "HeartRate": {
+  "latex": "$HR$",
+  "plain": "HR",
+  "unit": "bpm"
+ },
+ "HR": {
+  "latex": "$HR$",
+  "plain": "HR",
+  "unit": "bpm"
+ },
+ "CO": {
+  "latex": "$CO$",
+  "plain": "CO",
+  "unit": "mL/min"
+ },
+ "Cardiac Output": {
+  "latex": "$CO$",
+  "plain": "CO",
+  "unit": "mL/min"
+ },
+ "CVP": {
+  "latex": "$CVP$",
+  "plain": "CVP",
+  "unit": "mmHg"
+ },
+ "TotalBloodVolume": {
+  "latex": "$TBV$",
+  "plain": "TBV",
+  "unit": "mL"
+ },
+ "C_Vs": {
+  "latex": "$C_{Vs}$",
+  "plain": "C_Vs",
+  "unit": "mL/mmHg"
+ },
+ "C_As": {
+  "latex": "$C_{As}$",
+  "plain": "C_As",
+  "unit": "mL/mmHg"
+ },
+ "C_Ap": {
+  "latex": "$C_{Ap}$",
+  "plain": "C_Ap",
+  "unit": "mL/mmHg"
+ },
+ "C_Cs": {
+  "latex": "$C_{Cs}$",
+  "plain": "C_Cs",
+  "unit": "mL/mmHg"
+ },
+ "C_Cp": {
+  "latex": "$C_{Cp}$",
+  "plain": "C_Cp",
+  "unit": "mL/mmHg"
+ },
+ "C_Vt": {
+  "latex": "$C_{Vt}$",
+  "plain": "C_Vt",
+  "unit": "mL/mmHg"
+ },
+ "C_Vp": {
+  "latex": "$C_{Vp}$",
+  "plain": "C_Vp",
+  "unit": "mL/mmHg"
+ },
+ "R_Ap_Cp": {
+  "latex": "$R_{ApCp}$",
+  "plain": "R_ApCp",
+  "unit": "mmHg·s/mL"
+ },
+ "R_Cs_Vs": {
+  "latex": "$R_{CsVs}$",
+  "plain": "R_CsVs",
+  "unit": "mmHg·s/mL"
+ },
+ "R_As_Cs": {
+  "latex": "$R_{AsCs}$",
+  "plain": "R_AsCs",
+  "unit": "mmHg·s/mL"
+ },
+ "L_Hl_As": {
+  "latex": "$L_{HlAs}$",
+  "plain": "L_HlAs",
+  "unit": "mmHg·s²/mL"
+ },
+ "E_Hl": {
+  "latex": "$E_{Hl}$",
+  "plain": "E_Hl",
+  "unit": "mmHg/mL"
+ },
+ "E_Hr": {
+  "latex": "$E_{Hr}$",
+  "plain": "E_Hr",
+  "unit": "mmHg/mL"
+ },
+ "e_Hl": {
+  "latex": "$e_{Hl}$",
+  "plain": "e_Hl",
+  "unit": "mmHg/mL"
+ },
+ "e_Hr": {
+  "latex": "$e_{Hr}$",
+  "plain": "e_Hr",
+  "unit": "mmHg/mL"
+ },
+ "V0_As": {
+  "latex": "$V0_{As}$",
+  "plain": "V0_As",
+  "unit": "mL"
+ },
+ "V0_Ap": {
+  "latex": "$V0_{Ap}$",
+  "plain": "V0_Ap",
+  "unit": "mL"
+ },
+ "Total Resistance": {
+  "latex": "$R_{Total}$",
+  "plain": "R_Total",
+  "unit": "mmHg·s/mL"
+ },
+ "Total Compliance": {
+  "latex": "$C_{Total}$",
+  "plain": "C_Total",
+  "unit": "mL/mmHg"
+ },
+ "Total systolic Elastance": {
+  "latex": "$E_{Total}$",
+  "plain": "E_Total",
+  "unit": "mmHg/mL"
+ },
+ "Total diastolic Elastance": {
+  "latex": "$e_{Total}$",
+  "plain": "e_Total",
+  "unit": "mmHg/mL"
+ },
+ "R Ratio": {
+  "latex": "$\\frac{R_{AsCs}}{R_{AsCs} + R_{CsVs}}$",
+  "plain": "R_AsCs/(R_AsCs+R_CsVs)",
+  "unit": ""
+ },
+ "Pressure Drop Artery": {
+  "latex": "$\\%\\Delta P\\ \\text{via}\\ R_{AsCs}$",
+  "plain": "%dP via R_AsCs",
+  "unit": "%"
+ },
+ "Pressure Drop Vein": {
+  "latex": "$\\%\\Delta P\\ \\text{via}\\ R_{CsVs}$",
+  "plain": "%dP via R_CsVs",
+  "unit": "%"
+ },
+ "Relative Error": {
+  "latex": "$\\sigma$",
+  "plain": "rel. err",
+  "unit": "%"
+ },
+ "RER": {
+  "latex": "$RER$",
+  "plain": "RER",
+  "unit": ""
+ },
+ "V'O2": {
+  "latex": "$\\dot{V}_{O_2}$",
+  "plain": "V'O2",
+  "unit": "mL/min"
+ },
+ "V'CO2": {
+  "latex": "$\\dot{V}_{CO_2}$",
+  "plain": "V'CO2",
+  "unit": "mL/min"
+ },
+ "SpO2": {
+  "latex": "$SpO_2$",
+  "plain": "SpO2",
+  "unit": "%"
+ },
+ "SPO2": {
+  "latex": "$SpO_2$",
+  "plain": "SpO2",
+  "unit": "%"
+ },
+ "P_As": {
+  "latex": "$P_{As}$",
+  "plain": "P_As",
+  "unit": "mmHg"
+ },
+ "P_Ap": {
+  "latex": "$P_{Ap}$",
+  "plain": "P_Ap",
+  "unit": "mmHg"
+ },
+ "P_Vs": {
+  "latex": "$P_{Vs}$",
+  "plain": "P_Vs",
+  "unit": "mmHg"
+ }
+}

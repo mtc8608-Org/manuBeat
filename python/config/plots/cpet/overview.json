@@ -1,0 +1,1203 @@
+{
+  "formatOptions": {
+    "nbins": 5,
+    "fonts": {
+      "title": 17,
+      "xlabel": 12,
+      "ylabel": 15,
+      "legend": 12,
+      "ticks": 12
+    },
+    "gases": {
+      "O2": {
+        "color": "tab:blue",
+        "label": "O2",
+        "name": "Oxygen"
+      },
+      "C2": {
+        "color": "tab:red",
+        "label": "C2",
+        "name": "Carbon Dioxide"
+      },
+      "N2": {
+        "color": "tab:green",
+        "label": "N2",
+        "name": "Nitrogen"
+      }
+    }
+  },
+  "simulationParams": {
+    "runTime": 5,
+    "runsToIgnore": 1,
+    "runsToSave": 40,
+    "sampPeriod": 0.01,
+    "atmPressure": 760.0,
+    "control": false,
+    "calibration": false,
+    "modelFileName": "gasExchangeTest.json",
+    "project_folder": "/home/cabsman/Documents/projects/CardioRespiratoryModelV2"
+  },
+  "figSize": {
+    "width": 15,
+    "height": 40
+  },
+  "grid": {
+    "rows": 20,
+    "cols": 3
+  },
+  "axes": {
+    "ax_0_0_CO_mVen":{
+      "row": 0,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["CardiacOutput"],
+        "right": ["MinuteVentilation"],
+        "title": "CO (blue) and VE (red)",
+        "colorsLeft": "Blues",
+        "colorsRight": "Reds"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.0,
+        "round": 2,
+        "legend": {
+          "show": false,
+          "left": "upper left",
+          "right": "lower right"
+        },
+        "ticks": {
+          "useCustomTicks": false,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_1_0_Rates":{
+      "row": 1,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["HeartRate"],
+        "right": ["RespiratoryRate"],
+        "title": "HR (blue) & RR (green)",
+        "colorsLeft": "Blues",
+        "colorsRight": "Greens"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": false,
+          "left": "upper left",
+          "right": "lower right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_2_0_V'O2/V'CO2":{
+      "row": 2,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["V'CO2","V'O2"],
+        "title": "O2 Uptake & CO2 Production (mL/min)",
+        "colorsLeft": "coolwarm",
+        "right": ["RER"],
+        "colorsRight": "Greens"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "lower right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_3_0_SPO2":{
+      "row": 3,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["SPO2_As"],
+        "right": ["SPO2_As"],
+        "title": "Arterial SPO2",
+        "colorsLeft": "Reds",
+        "colorsRight": "Reds"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round":0,
+        "legend": {
+          "show": false,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_4_0_TV&SV":{
+      "row": 4,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["V_tidalVolume"],
+        "title": "TV (blue) and SV (red)",
+        "colorsLeft": "Blues",
+        "right": ["avg_keep_SV_Hl"],
+        "colorsRight": "Reds"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": false,
+          "left": "upper left",
+          "right": "upper left"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_5_0_HCO3":{
+      "row": 5,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Y_HCO3-_TissueLeg","Y_HCO3-_As"],
+        "title": "Blood (grey) & Tissue (red) [HCO3-]",
+        "colorsLeft": "coolwarm",
+        "right": ["Y_HCO3-_TissueLeg","Y_HCO3-_As"],
+        "colorsRight": "coolwarm"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": false,
+          "left": "upper left",
+          "right": "upper left"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_6&7_0_Y_CO2":{
+      "row": 6,
+      "rowSpan": 2,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Y_C2_TissueLeg","Y_C2_Cl","Y_C2_La","Y_C2_As"],
+        "title": "Blood & Tissue [CO2]",
+        "colorsLeft": "coolwarm",
+        "right": ["Y_C2_TissueLeg","Y_C2_Cl","Y_C2_La","Y_C2_As"],
+        "colorsRight": "coolwarm"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper left"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_8&9_0_Y_O2":{
+      "row": 8,
+      "rowSpan": 2,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Y_O2_TissueLeg","Y_O2_Cl","Y_O2_La","Y_O2_As"],
+        "title": "Head Blood & Tissue [O2]",
+        "colorsLeft": "coolwarm",
+        "right": ["Y_O2_TissueLeg","Y_O2_Cl","Y_O2_La","Y_O2_As"],
+        "colorsRight": "coolwarm"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": false,
+          "left": "upper left",
+          "right": "upper left"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+
+
+    
+
+
+
+
+
+    "ax_0_1_BaroReceptors":{
+      "row": 0,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "oneAgainstAnotherMulti",
+      "params": {
+        "yLeft": ["efferent_Pressure_Range","baroreceptor"],
+        "xLeft": ["P_range","avg_P_As_Original"],
+        
+        "yRight": ["efferent_Pressure_Range","baroreceptor"],
+        "xRight": ["P_range","avg_P_As_Original"],
+
+        "title": "BaroReceptor",
+        "xLabel": "Pressure Aorta [mmHg]",
+        
+        "yLeftLabel": "",
+        "yRightLabel": "",
+        
+        "colorsLeft": "plasma",
+        "colorsRight": "plasma"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.1,
+        "round": 2,
+        "legend": {
+          "show": false,
+          "left": "center left",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": false,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_1_1_P_As":{
+      "row": 1,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["avg_P_As_Original","inflectionPoint_baroreceptor"],
+        "right": ["avg_P_As_Original","inflectionPoint_baroreceptor"],
+        "title": "avg_P_As",
+        "colorsLeft": "Reds",
+        "colorsRight": "Reds"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": false,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_2_1_chemoreceptor":{
+      "row": 2,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "oneAgainstAnotherMulti",
+      "params": {
+        "yLeft": ["efferent_Chemo_Range","chemoreceptor"],
+        "xLeft": ["Y_range","Y_C2_As"],
+        
+        "yRight": ["efferent_Chemo_Range","chemoreceptor"],
+        "xRight": ["Y_range","Y_C2_As"],
+
+        "title": "ChemoReceptor",
+        "xLabel": "[CO2] Head [mmol/mL]",
+        
+        "yLeftLabel": "",
+        "yRightLabel": "",
+        
+        "colorsLeft": "plasma",
+        "colorsRight": "plasma"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.1,
+        "round": 2,
+        "legend": {
+          "show": false,
+          "left": "center left",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": false,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_3_1_Y_C2_As":{
+      "row": 3,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Y_C2_As","inflectionPoint_chemoreceptor"],
+        "right": ["Y_C2_As","inflectionPoint_chemoreceptor"],
+        "title": "Y_C2_As",
+        "colorsLeft": "Reds",
+        "colorsRight": "Reds"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": false,
+          "left": "upper left",
+          "right": "upper left"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_4_1_chemoreceptorFast":{
+      "row": 4,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["baroreceptor"],
+        "right": ["chemoreceptor"],
+        "title": "baro (green) & chemo (blue) receptors",
+        "colorsLeft": "Greens",
+        "colorsRight": "Blues"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": false,
+          "left": "upper left",
+          "right": "upper left"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_5&6_1_Resistances":{
+      "row": 5,
+      "rowSpan": 2,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["R_As_Cl", "R_As_Ca"],
+        "right": ["R_Cl_Vs", "R_Ca_Vs"],
+        "title": "Systemic Resistances",
+        "colorsLeft": "Reds",
+        "colorsRight": "Blues"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 0,
+        "legend": {
+          "show": true,
+          "left": "lower left",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_7_1_BaroReceptors":{
+      "row": 7,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "oneAgainstAnotherMulti",
+      "params": {
+        "yLeft": ["headFlowRange","baroHead"],
+        "xLeft": ["Sv_range", "Q_Ch_Vh"],
+        
+        "yRight": ["headFlowRange","baroHead"],
+        "xRight": ["Sv_range", "Q_Ch_Vh"],
+
+        "title": "BaroReceptor Head",
+        "xLabel": "Flow Head [ml/s]",
+        
+        "yLeftLabel": "",
+        "yRightLabel": "",
+        
+        "colorsLeft": "plasma",
+        "colorsRight": "plasma"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.1,
+        "round": 2,
+        "legend": {
+          "show": false,
+          "left": "center left",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": false,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_8_1_HeadFlow":{
+      "row": 8,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Q_Ch_Vh"],
+        "title": "Flow Head",
+        "colorsLeft": "Reds",
+        "right": ["Q_Ch_Vh"],
+        "colorsRight": "Reds"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": false,
+          "left": "upper left",
+          "right": "upper left"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_9_1_R_":{
+      "row": 9,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["R_As_Ch"],
+        "right": ["R_Ch_Vh"],
+        "title": "Resistances Head",
+        "colorsLeft": "Reds",
+        "colorsRight": "Blues"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 0,
+        "legend": {
+          "show": true,
+          "left": "center left",
+          "right": "center right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    
+    
+    
+    
+    
+
+    
+    
+    "ax_0&1_2_WorkRate":{
+      "row": 0,
+      "rowSpan": 2,
+      "col": 2,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Upt_TissuesLeg","ATP_ProductionLeg","ATP_OxidationLeg","ATP_FatLeg1","ATP_GycolisisLeg"],
+        "title": "ATP Production in Leg",
+        "colorsLeft": "jet",
+        "right": ["Upt_TissuesLeg","ATP_ProductionLeg","ATP_OxidationLeg","ATP_FatLeg1","ATP_GycolisisLeg"],
+        "colorsRight": "jet"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper left"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_2_2_ATP_ProductionAbdomen":{
+      "row": 2,
+      "rowSpan": 1,
+      "col": 2,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Upt_TissuesAbdomen","ATP_ProductionAbdomen","ATP_OxidationAbdomen","ATP_FatAbdomen","ATP_GycolisisAbdomen"],
+        "right": ["Upt_TissuesAbdomen","ATP_ProductionAbdomen","ATP_OxidationAbdomen","ATP_FatAbdomen","ATP_GycolisisAbdomen"],
+        "title": "ATP Production in Abdomen",
+        "colorsLeft": "jet",
+        "colorsRight": "jet"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 0,
+        "legend": {
+          "show": false,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_3_2_glycolysis":{
+      "row": 3,
+      "rowSpan": 1,
+      "col": 2,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["k_C3H6O3_C3H5O3H", "k_Physio_C3H6O3_C3H5O3H", "k_Head_C3H6O3_C3H5O3H"],
+        "right": ["k_C3H6O3_C3H5O3H", "k_Physio_C3H6O3_C3H5O3H", "k_Head_C3H6O3_C3H5O3H"],
+        "title": "Glycolysis Leg, Abdomen, Head (blue)",
+        "colorsLeft": "coolwarm",
+        "colorsRight": "coolwarm"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 0,
+        "legend": {
+          "show": false,
+          "left": "upper left",
+          "right": "upper left"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_4_2_NAD+":{
+      "row": 4,
+      "rowSpan": 1,
+      "col": 2,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Y_NAD+_TissueLeg","Y_NAD+_TissueAbdomen","Y_NAD+_TissueHead"],
+        "right": ["Y_NAD+_TissueLeg","Y_NAD+_TissueAbdomen","Y_NAD+_TissueHead"],
+        "title": "[NAD+] Leg, Abdomen and Head (blue)",
+        "colorsLeft": "coolwarm",
+        "colorsRight": "coolwarm"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 0,
+        "legend": {
+          "show": false,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_5_2_Lactic_Acid":{
+      "row": 5,
+      "rowSpan": 1,
+      "col": 2,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Y_C3H5O3H_TissueLeg"],
+        "right": ["Y_C3H5O3-_As"],
+        "title": "Leg [Lactic A.] (green) & Bld. [Lactate] (red)",
+        "colorsLeft": "Greens",
+        "colorsRight": "Reds"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 0,
+        "legend": {
+          "show": false,
+          "left": "center left",
+          "right": "center right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_6&7_2_Areas":{
+      "row": 6,
+      "rowSpan": 2,
+      "col": 2,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["area_Cp","area_Cl","area_Ca","area_Ch"],
+        "right": ["C_Cp","C_Cl","C_Ca","C_Ch"],
+        "title": "Area and Compliance of Caplliaries",
+        "colorsLeft": "jet",
+        "colorsRight": "copper"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "lower left"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_8_2_VenousPressure":{
+      "row": 8,
+      "rowSpan": 1,
+      "col": 2,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["P_Vs"],
+        "title": "Venous Pressure (red) & Volume (blue)",
+        "colorsLeft": "Reds",
+        "right": ["V_Vs"],
+        "colorsRight": "Blues"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": false,
+          "left": "center left",
+          "right": "center right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_9_2_PP":{
+      "row": 9,
+      "rowSpan": 1,
+      "col": 2,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["amp_P_As"],
+        "right": ["amp_P_As"],
+        "title": "Aorta Pulse Pressure",
+        "colorsLeft": "Reds",
+        "colorsRight": "Reds"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": false,
+          "left": "upper left",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    }
+
+    ,
+    "ax_10_2_PP":{
+      "row": 10,
+      "rowSpan": 1,
+      "col": 2,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Q_Cl_Vs"],
+        "right": ["Q_Cl_Vs"],
+        "title": "Q_Cl_Vs",
+        "colorsLeft": "Reds",
+        "colorsRight": "Reds"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": false,
+          "left": "upper left",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_10_1_PP":{
+      "row": 10,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Q_Ca_Vs"],
+        "right": ["Q_Ca_Vs"],
+        "title": "Q_Ca_Vs",
+        "colorsLeft": "Reds",
+        "colorsRight": "Blues"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": false,
+          "left": "upper left",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_10_0_PP":{
+      "row": 10,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["V_Ca", "V_Cl"],
+        "right": ["V_Ca", "V_Cl"],
+        "title": "V_Ca and V_Cl",
+        "colorsLeft": "Reds",
+        "colorsRight": "Blues"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": false,
+          "left": "upper left",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    }
+
+  },
+  "saved":{
+    "ax_1_1_RER":{
+      "row": 1,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["RER","RER_Alv"],
+        "title": "Respiratory Exchange Ratio (Trachea & Alveoli)",
+        "colorsLeft": "Blues",
+        "right": ["RER","RER_Alv"],
+        "colorsRight": "Blues"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_3_1_StrokeVolumesLegsHead":{
+      "row": 3,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["keep_SV_Ah","keep_SV_Cl","keep_SV_Ca"],
+        "title": "Stroke Volumes (Head, Leg, and Abdomen)",
+        "colorsLeft": "gist_rainbow",
+        "right": ["keep_SV_Ah","keep_SV_Cl","keep_SV_Ca"],
+        "colorsRight": "gist_rainbow"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_6_0_Lactalysis_Leg":{
+      "row": 6,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Lactalysis_Leg"],
+        "right": ["Lactalysis_Leg"],
+        "title": "Lactalysis Leg (reaction Rate)",
+        "colorsLeft": "Reds",
+        "colorsRight": "Reds"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    }
+
+  }
+}
+

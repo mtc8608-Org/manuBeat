@@ -1,0 +1,803 @@
+{
+  "formatOptions": {
+    "nbins": 6,
+    "fonts": {
+      "title": 15,
+      "xlabel": 10,
+      "ylabel": 12,
+      "legend": 10,
+      "ticks": 9
+    },
+    "gases": {
+      "O2": {
+        "color": "tab:blue",
+        "label": "O2",
+        "name": "Oxygen"
+      },
+      "C2": {
+        "color": "tab:red",
+        "label": "C2",
+        "name": "Carbon Dioxide"
+      },
+      "N2": {
+        "color": "tab:green",
+        "label": "N2",
+        "name": "Nitrogen"
+      }
+    }
+  },
+  "simulationParams": {
+    "runTime": 5,
+    "runsToIgnore": 1,
+    "runsToSave": 40,
+    "sampPeriod": 0.01,
+    "atmPressure": 760.0,
+    "control": false,
+    "calibration": false,
+    "modelFileName": "gasExchangeTest.json",
+    "project_folder": "/home/cabsman/Documents/projects/CardioRespiratoryModelV2"
+  },
+  "figSize": {
+    "width": 15,
+    "height": 17
+  },
+  "grid": {
+    "rows": 10,
+    "cols": 2
+  },
+  "axes": {
+    "ax_0_0_CO_mVen":{
+      "row": 0,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["CardiacOutput"],
+        "right": ["MinuteVentilation"],
+        "title": "CardiacOutput (blue) and Minute Ventilation (red)",
+        "colorsLeft": "Blues",
+        "colorsRight": "Reds"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.0,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "lower right"
+        },
+        "ticks": {
+          "useCustomTicks": false,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_0_1_Rates":{
+      "row": 0,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["HeartRate"],
+        "right": ["RespiratoryRate"],
+        "title": "Heart & Respiratory Rates",
+        "colorsLeft": "Blues",
+        "colorsRight": "Reds"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "lower right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_1_0_ArterialPressures":{
+      "row": 1,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+
+      "params": {
+        "left": ["P_As","avg_P_As"],
+        "right": ["P_As","avg_P_As"],
+        "colorsLeft": "Reds",
+        "colorsRight": "Reds",
+        "title": "Systemic Arterial Pressures"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.0,
+        "round": 5,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper left"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_1_1_HeartPressures":{
+      "row": 1,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["P_Hl","P_Hr"],
+        "right": ["P_Hl","P_Hr"],
+        "title": "Heart Pressures",
+        "colorsLeft": "Reds",
+        "colorsRight": "Reds"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper left"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_2_0_PulmPressures":{
+      "row": 2,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["P_Ap","avg_P_Ap"],
+        "right": ["P_Ap","avg_P_Ap"],
+        "colorsLeft": "Reds",
+        "colorsRight": "Reds",
+        "title": "Pulmonary Arterial Pressures"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": false,
+          "left": "upper left",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_2_1_HeartVolumes":{
+      "row": 2,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["V_Hl","V_Hr"],
+        "right": ["V_Hl","V_Hr"],
+        "title": "Heart Volumes",
+        "colorsLeft": "Reds",
+        "colorsRight": "Reds"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper left"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_3_0_VenousPressure":{
+      "row": 3,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["P_Vt"],
+        "title": "Thoracic Venous Pressure",
+        "colorsLeft": "Reds",
+        "right": ["V_Vs"],
+        "colorsRight": "Blues"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_3_1_baroreceptor":{
+      "row": 3,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["avg_P_As_Original","inflectionPoint_baroreceptor"],
+        "right": ["avg_P_As_Original","inflectionPoint_baroreceptor"],
+        "title": "avg_P_As",
+        "colorsLeft": "Reds",
+        "colorsRight": "Reds"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": false,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_4_0_P_As":{
+      "row": 4,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["C_As"],
+        "right": ["amp_P_As"],
+        "title": "Pulse Pressure in Aorta",
+        "colorsLeft": "Purples",
+        "colorsRight": "Greys"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "center left",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_4_1_L":{
+      "row": 4,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["L_Hl_As","L_Hr_Ap","L_Vp_Hl","L_Vt_Hr"],
+        "right": ["L_Hl_As","L_Hr_Ap","L_Vp_Hl","L_Vt_Hr"],
+        "title": "Inductances Heart",
+        "colorsLeft": "jet",
+        "colorsRight": "jet"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper left"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_5_0_AortaParameters":{
+      "row": 5,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["avg_V_As"],
+        "right": ["V0_As"],
+        "title": "Aorta Parameters",
+        "colorsLeft": "Purples",
+        "colorsRight": "Greys"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_5_1_R":{
+      "row": 5,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["R_Hl_As","R_Hr_Ap","R_Vp_Hl","R_Vt_Hr"],
+        "right": ["R_Hl_As","R_Hr_Ap","R_Vp_Hl","R_Vt_Hr"],
+        "title": "Resistances Heart",
+        "colorsLeft": "jet",
+        "colorsRight": "jet"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper left"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_6_0_P_Vt":{
+      "row": 6,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["P_Vp"],
+        "right": ["P_Vt"],
+        "title": "P_Vp and P_Vt",
+        "colorsLeft": "Purples",
+        "colorsRight": "Greys"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_6_1_Flows":{
+      "row": 6,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Q_Hl_As","Q_Hr_Ap","Q_Vp_Hl","Q_Vt_Hr"],
+        "right": ["Q_Hl_As","Q_Hr_Ap","Q_Vp_Hl","Q_Vt_Hr"],
+        "title": "Flows Heart",
+        "colorsLeft": "jet",
+        "colorsRight": "jet"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper left"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_7_0_HC":{
+      "row": 7,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Tim_HC"],
+        "right": ["Trig_HC"],
+        "title": "",
+        "colorsLeft": "Reds",
+        "colorsRight": "Blues"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_7_1_RCLA":{
+      "row": 7,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Tim_RCLa"],
+        "right": ["Trig_RCLa"],
+        "title": "",
+        "colorsLeft": "Reds",
+        "colorsRight": "Blues"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper left"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_8_0_HC":{
+      "row": 8,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["elastance_Hl"],
+        "right": ["elastance_Hl"],
+        "title": "",
+        "colorsLeft": "Reds",
+        "colorsRight": "Blues"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_8_1_RCLA":{
+      "row": 8,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["V0_ThoraxMuscle"],
+        "right": ["V0_ThoraxMuscle"],
+        "title": "",
+        "colorsLeft": "Reds",
+        "colorsRight": "Blues"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    }
+
+
+    
+
+
+  },
+  "saved":{
+    "ax_1_1_RER":{
+      "row": 1,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["RER","RER_Alv"],
+        "title": "Respiratory Exchange Ratio (Trachea & Alveoli)",
+        "colorsLeft": "Blues",
+        "right": ["RER","RER_Alv"],
+        "colorsRight": "Blues"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_3_1_StrokeVolumesLegsHead":{
+      "row": 3,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["keep_SV_Ah","keep_SV_Cl","keep_SV_Ca"],
+        "title": "Stroke Volumes (Head, Leg, and Abdomen)",
+        "colorsLeft": "gist_rainbow",
+        "right": ["keep_SV_Ah","keep_SV_Cl","keep_SV_Ca"],
+        "colorsRight": "gist_rainbow"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_6_0_Lactalysis_Leg":{
+      "row": 6,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Lactalysis_Leg"],
+        "right": ["Lactalysis_Leg"],
+        "title": "Lactalysis Leg (reaction Rate)",
+        "colorsLeft": "Reds",
+        "colorsRight": "Reds"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    }
+
+  }
+}
+

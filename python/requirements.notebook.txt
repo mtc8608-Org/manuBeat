@@ -1,0 +1,34 @@
+# [MEDICAL] Intent file for the jupyter image (python/Dockerfile.notebook) — the
+# debugging surface over python/library. The API image never installs this.
+#
+# requirements.notebook.lock is the enforced pip freeze; regeneration procedure is
+# the same as requirements.lock's, in .claude/rules/python-compute.md, pointed at
+# this file. Both are user-run.
+#
+# Scope: exactly what python/run_*/ and python/library/ import. Deliberately absent —
+#   cma, blackjax  the source repo's mcmc_cmaes / mcmc_smc notebooks are not ported
+#   SALib          named in schema_pop's docstring only; the notebooks sample with
+#                  scipy.stats.qmc
+#   tensorflow     library/hdf5/schema_calib imports it lazily for the NN-calibration
+#                  path; no ported notebook exercises it, and it costs ~600 MB
+# Add them here if a notebook that needs one is brought across.
+
+# Everything the API service runs — the notebooks drive the same library.
+-r requirements.txt
+
+# Notebook runtime
+jupyterlab
+ipykernel
+
+# library/viz/plots.py
+matplotlib
+seaborn
+
+# run_convergence/{gd,mcmc_emcee}, run_test/calibration_compare — posterior corner plots
+corner
+
+# run_convergence/mcmc_emcee — affine-invariant ensemble sampler
+emcee
+
+# library/hdf5/schema_calib — rebuilds a StandardScaler from stored mean/scale arrays
+scikit-learn

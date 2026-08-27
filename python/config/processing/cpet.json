@@ -1,0 +1,2398 @@
+{
+  "Calculate Total Lung Flows and Volumes": {
+    "Q_Comp0_Lt": {
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "Q_C2_Comp0_Lt",
+          "Q_O2_Comp0_Lt",
+          "Q_N2_Comp0_Lt"
+        ]
+      }
+    },
+    "TotalResistance": {
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "R_As_Cl",
+          "R_As_Ca",
+          "R_Cl_Vs",
+          "R_Ca_Vs"
+        ]
+      }
+    },
+    "Q_Lt_Lb": {
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "Q_C2_Lt_Lb",
+          "Q_O2_Lt_Lb",
+          "Q_N2_Lt_Lb"
+        ]
+      }
+    },
+    "Q_Lb_La": {
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "Q_C2_Lb_La",
+          "Q_O2_Lb_La",
+          "Q_N2_Lb_La"
+        ]
+      }
+    },
+    "V_Lb": {
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "V_C2_Lb",
+          "V_O2_Lb",
+          "V_N2_Lb"
+        ]
+      }
+    },
+    "V_Lt": {
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "V_C2_Lt",
+          "V_O2_Lt",
+          "V_N2_Lt"
+        ]
+      }
+    },
+    "V_Comp0": {
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "V_C2_Comp0",
+          "V_O2_Comp0",
+          "V_N2_Comp0"
+        ]
+      }
+    }
+  },
+  "Calculate various sum of Arrays": {
+    "V_Plr": {
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "V_C2_Lb",
+          "V_O2_Lb",
+          "V_N2_Lb",
+          "V_C2_La",
+          "V_O2_La",
+          "V_N2_La",
+          "V_Cp"
+        ]
+      }
+    },
+    "V_Thx": {
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "V_C2_Lb",
+          "V_O2_Lb",
+          "V_N2_Lb",
+          "V_C2_La",
+          "V_O2_La",
+          "V_N2_La",
+          "V_Ap",
+          "V_Cp",
+          "V_Vp",
+          "V_Hr",
+          "V_Hl",
+          "V_Vt"
+        ]
+      }
+    },
+    "V_Total_Air": {
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "V_Comp0",
+          "V_Lt",
+          "V_Lb",
+          "V_La"
+        ]
+      }
+    },
+    "V_Total_Blood": {
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "V_As",
+          "V_Ch",
+          "V_Vh",
+          "V_Ca",
+          "V_Cl",
+          "V_Vs",
+          "V_Vt",
+          "V_Ap",
+          "V_Cp",
+          "V_Vp",
+          "V_Hr",
+          "V_Hl"
+        ]
+      }
+    },
+    "V_Air_O2": {
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "V_O2_La",
+          "V_O2_Lb",
+          "V_O2_Lt",
+          "V_O2_Comp0"
+        ]
+      }
+    },
+    "V_Air_N2": {
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "V_N2_La",
+          "V_N2_Lb",
+          "V_N2_Lt",
+          "V_N2_Comp0"
+        ]
+      }
+    },
+    "V_Air_C2": {
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "V_C2_La",
+          "V_C2_Lb",
+          "V_C2_Lt",
+          "V_C2_Comp0"
+        ]
+      }
+    },
+    "Y_Hb": {
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "Y_Hb_Hr",
+          "Y_Hb_Ap",
+          "Y_Hb_Cp",
+          "Y_Hb_Vp",
+          "Y_Hb_Hl",
+          "Y_Hb_As",
+          "Y_Hb_Ch",
+          "Y_Hb_Vh",
+          "Y_Hb_Ca",
+          "Y_Hb_Cl",
+          "Y_Hb_Vs",
+          "Y_Hb_Vt",
+          "Y_HbO2_Hr",
+          "Y_HbO2_Ap",
+          "Y_HbO2_Cp",
+          "Y_HbO2_Vp",
+          "Y_HbO2_Hl",
+          "Y_HbO2_As",
+          "Y_HbO2_Ch",
+          "Y_HbO2_Vh",
+          "Y_HbO2_Ca",
+          "Y_HbO2_Cl",
+          "Y_HbO2_Vs",
+          "Y_HbO2_Vt"
+        ]
+      }
+    },
+    "Y_NAD": {
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "Y_NAD+_TissueLeg",
+          "Y_NAD+_TissueHead",
+          "Y_NAD+_TissueAbdomen",
+          "Y_NADH_TissueHead",
+          "Y_NADH_TissueLeg",
+          "Y_NADH_TissueAbdomen"
+        ]
+      }
+    },
+    "Q_C2_Tissues":{
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "Q_C2_Cl_TissueLeg",
+          "Q_C2_Ch_TissueHead",
+          "Q_C2_Ca_TissueAbdomen"
+        ]
+      }
+    },
+    "Q_O2_Tissues":{
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "Q_O2_Cl_TissueLeg",
+          "Q_O2_Ch_TissueHead",
+          "Q_O2_Ca_TissueAbdomen"
+        ]
+      }
+    }
+  },
+  "Calculate Partial Pressures": {
+    "P_C2_Comp0": {
+      "operation": "proportion",
+      "params": {
+        "multiplier": "P_Comp0",
+        "numerator": "V_C2_Comp0",
+        "denominator": "V_Comp0"
+      }
+    },
+    "P_O2_Comp0": {
+      "operation": "proportion",
+      "params": {
+        "multiplier": "P_Comp0",
+        "numerator": "V_O2_Comp0",
+        "denominator": "V_Comp0"
+      }
+    },
+    "P_N2_Comp0": {
+      "operation": "proportion",
+      "params": {
+        "multiplier": "P_Comp0",
+        "numerator": "V_N2_Comp0",
+        "denominator": "V_Comp0"
+      }
+    },
+    "P_C2_Lt": {
+      "operation": "proportion",
+      "params": {
+        "multiplier": "P_Lt",
+        "numerator": "V_C2_Lt",
+        "denominator": "V_Lt"
+      }
+    },
+    "P_O2_Lt": {
+      "operation": "proportion",
+      "params": {
+        "multiplier": "P_Lt",
+        "numerator": "V_O2_Lt",
+        "denominator": "V_Lt"
+      }
+    },
+    "P_N2_Lt": {
+      "operation": "proportion",
+      "params": {
+        "multiplier": "P_Lt",
+        "numerator": "V_N2_Lt",
+        "denominator": "V_Lt"
+      }
+    },
+    "P_C2_Lb": {
+      "operation": "proportion",
+      "params": {
+        "multiplier": "P_Lb",
+        "numerator": "V_C2_Lb",
+        "denominator": "V_Lb"
+      }
+    },
+    "P_O2_Lb": {
+      "operation": "proportion",
+      "params": {
+        "multiplier": "P_Lb",
+        "numerator": "V_O2_Lb",
+        "denominator": "V_Lb"
+      }
+    },
+    "P_N2_Lb": {
+      "operation": "proportion",
+      "params": {
+        "multiplier": "P_Lb",
+        "numerator": "V_N2_Lb",
+        "denominator": "V_Lb"
+      }
+    },
+    "P_C2_La": {
+      "operation": "proportion",
+      "params": {
+        "multiplier": "P_La",
+        "numerator": "V_C2_La",
+        "denominator": "V_La"
+      }
+    },
+    "P_O2_La": {
+      "operation": "proportion",
+      "params": {
+        "multiplier": "P_La",
+        "numerator": "V_O2_La",
+        "denominator": "V_La"
+      }
+    },
+    "P_N2_La": {
+      "operation": "proportion",
+      "params": {
+        "multiplier": "P_La",
+        "numerator": "V_N2_La",
+        "denominator": "V_La"
+      }
+    }
+  },
+  "Substract Atmospheric Pressure": {
+    "inflectionPoint_baroreceptor": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 0.0,
+        "resultName": "inflectionPoint_baroreceptor"
+      }
+    },
+    "P_As_Original": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 0.0,
+        "resultName": "P_As"
+      }
+    },
+    "avg_P_As_Original": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 0.0,
+        "resultName": "avg_P_As"
+      }
+    },
+    "P_La_Original": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 0.0,
+        "resultName": "P_La"
+      }
+    },
+    "P_Atm_Original": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 0.0,
+        "resultName": "P_Atm"
+      }
+    },
+    "P_Comp0_Original": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 0.0,
+        "resultName": "P_Comp0"
+      }
+    },
+    "P_Atm": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 760.0,
+        "resultName": "P_Atm"
+      }
+    },
+    "P_Comp0": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 760.0,
+        "resultName": "P_Comp0"
+      }
+    },
+    "P_La": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 760.0,
+        "resultName": "P_La"
+      }
+    },
+    "P_Lb": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 760.0,
+        "resultName": "P_Lb"
+      }
+    },
+    "P_Lt": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 760.0,
+        "resultName": "P_Lt"
+      }
+    },
+    "P_Plr": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 760.0,
+        "resultName": "P_Plr"
+      }
+    },
+    "P_Thx": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 760.0,
+        "resultName": "P_Thx"
+      }
+    },
+    "P_Ap": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 760.0,
+        "resultName": "P_Ap"
+      }
+    },
+    "P_Cp": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 760.0,
+        "resultName": "P_Cp"
+      }
+    },
+    "P_Vp": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 760.0,
+        "resultName": "P_Vp"
+      }
+    },
+    "P_Hl": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 760.0,
+        "resultName": "P_Hl"
+      }
+    },
+    "P_Hr": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 760.0,
+        "resultName": "P_Hr"
+      }
+    },
+    "P_As": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 760.0,
+        "resultName": "P_As"
+      }
+    },
+    "P_Ch": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 760.0,
+        "resultName": "P_Ch"
+      }
+    },
+    "P_Ca": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 760.0,
+        "resultName": "P_Ca"
+      }
+    },
+    "P_Cl": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 760.0,
+        "resultName": "P_Cl"
+      }
+    },
+    "P_Vh": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 760.0,
+        "resultName": "P_Vh"
+      }
+    },
+    "P_Vt": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 760.0,
+        "resultName": "P_Vt"
+      }
+    },
+    "P_Vs": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 760.0,
+        "resultName": "P_Vs"
+      }
+    },
+    "avg_P_Ap": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 760.0,
+        "resultName": "avg_P_Ap"
+      }
+    },
+    "keep_max_P_Ap": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 760.0,
+        "resultName": "keep_max_P_Ap"
+      }
+    },
+    "keep_max_P_As": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 760.0,
+        "resultName": "keep_max_P_As"
+      }
+    },
+    "avg_P_Cp": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 760.0,
+        "resultName": "avg_P_Cp"
+      }
+    }
+  },
+
+
+
+  "Production of Gas in Metabolism": {
+    "Prod_Head_Oxy_C2": {
+      "operation": "molToVolume",
+      "params": {
+        "nmol": "pdY_C2_TissueHead_Head_C3H6O3_O2",
+        "pressure": 760.0,
+        "temperature": 310.15,
+        "volume":"V_TissueHead"
+      }
+    },
+    "Prod_Leg_Oxy_C2": {
+      "operation": "molToVolume",
+      "params": {
+        "nmol": "pdY_C2_TissueLeg_C3H6O3_O2",
+        "pressure": 760.0,
+        "temperature": 310.15,
+        "volume":"V_TissueLeg"
+      }
+    },
+    "Prod_Abdomen_Oxy_C2": {
+      "operation": "molToVolume",
+      "params": {
+        "nmol": "pdY_C2_TissueAbdomen_Physio_C3H6O3_O2",
+        "pressure": 760.0,
+        "temperature": 310.15,
+        "volume":"V_TissueAbdomen"
+      }
+    },
+    "Prod_Head_Oxy_O2": {
+      "operation": "molToVolume",
+      "params": {
+        "nmol": "pdY_O2_TissueHead_Head_C3H6O3_O2",
+        "pressure": 760.0,
+        "temperature": 310.15,
+        "volume":"V_TissueHead"
+      }
+    },
+    "Prod_Leg_Oxy_O2": {
+      "operation": "molToVolume",
+      "params": {
+        "nmol": "pdY_O2_TissueLeg_C3H6O3_O2",
+        "pressure": 760.0,
+        "temperature": 310.15,
+        "volume":"V_TissueLeg"
+      }
+    },
+    "Prod_Abdomen_Oxy_O2": {
+      "operation": "molToVolume",
+      "params": {
+        "nmol": "pdY_O2_TissueAbdomen_Physio_C3H6O3_O2",
+        "pressure": 760.0,
+        "temperature": 310.15,
+        "volume":"V_TissueAbdomen"
+      }
+    },
+    "Prod_Head_Fat_C2": {
+      "operation": "molToVolume",
+      "params": {
+        "nmol": "pdY_C2_TissueHead_Head_PSOG_O2",
+        "pressure": 760.0,
+        "temperature": 310.15,
+        "volume":"V_TissueHead"
+      }
+    },
+    "Prod_Leg_Fat_C2": {
+      "operation": "molToVolume",
+      "params": {
+        "nmol": "pdY_C2_TissueLeg_PSOG_O2",
+        "pressure": 760.0,
+        "temperature": 310.15,
+        "volume":"V_TissueLeg"
+      }
+    },
+    "Prod_Abdomen_Fat_C2": {
+      "operation": "molToVolume",
+      "params": {
+        "nmol": "pdY_C2_TissueAbdomen_Physio_PSOG_O2",
+        "pressure": 760.0,
+        "temperature": 310.15,
+        "volume":"V_TissueAbdomen"
+      }
+    },
+    "Prod_Head_Fat_O2": {
+      "operation": "molToVolume",
+      "params": {
+        "nmol": "pdY_O2_TissueHead_Head_PSOG_O2",
+        "pressure": 760.0,
+        "temperature": 310.15,
+        "volume":"V_TissueHead"
+      }
+    },
+    "Prod_Leg_Fat_O2": {
+      "operation": "molToVolume",
+      "params": {
+        "nmol": "pdY_O2_TissueLeg_PSOG_O2",
+        "pressure": 760.0,
+        "temperature": 310.15,
+        "volume":"V_TissueLeg"
+      }
+    },
+    "Prod_Abdomen_Fat_O2": {
+      "operation": "molToVolume",
+      "params": {
+        "nmol": "pdY_O2_TissueAbdomen_Physio_PSOG_O2",
+        "pressure": 760.0,
+        "temperature": 310.15,
+        "volume":"V_TissueAbdomen"
+      }
+    },
+    "Prod_Head_Ferm_C2": {
+      "operation": "molToVolume",
+      "params": {
+        "nmol": "pdY_C2_TissueHead_Head_C3H5O3H_CO2",
+        "pressure": 760.0,
+        "temperature": 310.15,
+        "volume":"V_TissueHead"
+      }
+    },
+    "Prod_Leg_Ferm_C2": {
+      "operation": "molToVolume",
+      "params": {
+        "nmol": "pdY_C2_TissueLeg_C3H5O3H_CO2",
+        "pressure": 760.0,
+        "temperature": 310.15,
+        "volume":"V_TissueLeg"
+      }
+    },
+    "Prod_Abdomen_Ferm_C2": {
+      "operation": "molToVolume",
+      "params": {
+        "nmol": "pdY_C2_TissueAbdomen_Physio_C3H5O3H_CO2",
+        "pressure": 760.0,
+        "temperature": 310.15,
+        "volume":"V_TissueAbdomen"
+      }
+    },
+
+
+    "V_Prod_Head_Oxy_C2": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Prod_Head_Oxy_C2",
+        "step": 0.01
+      }
+    },
+    "V_Prod_Leg_Oxy_C2": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Prod_Leg_Oxy_C2",
+        "step": 0.01
+      }
+    },
+    "V_Prod_Abdomen_Oxy_C2": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Prod_Abdomen_Oxy_C2",
+        "step": 0.01
+      }
+    },
+    "V_Prod_Head_Oxy_O2": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Prod_Head_Oxy_O2",
+        "step": 0.01
+      }
+    },
+    "V_Prod_Leg_Oxy_O2": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Prod_Leg_Oxy_O2",
+        "step": 0.01
+      }
+    },
+    "V_Prod_Abdomen_Oxy_O2": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Prod_Abdomen_Oxy_O2",
+        "step": 0.01
+      }
+    },
+    "V_Prod_Head_Fat_C2": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Prod_Head_Fat_C2",
+        "step": 0.01
+      }
+    },
+    "V_Prod_Leg_Fat_C2": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Prod_Leg_Fat_C2",
+        "step": 0.01
+      }
+    },
+    "V_Prod_Abdomen_Fat_C2": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Prod_Abdomen_Fat_C2",
+        "step": 0.01
+      }
+    },
+    "V_Prod_Head_Fat_O2": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Prod_Head_Fat_O2",
+        "step": 0.01
+      }
+    },
+    "V_Prod_Leg_Fat_O2": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Prod_Leg_Fat_O2",
+        "step": 0.01
+      }
+    },
+    "V_Prod_Abdomen_Fat_O2": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Prod_Abdomen_Fat_O2",
+        "step": 0.01
+      }
+    },
+    "V_Prod_Head_Ferm_C2": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Prod_Head_Ferm_C2",
+        "step": 0.01
+      }
+    },
+    "V_Prod_Leg_Ferm_C2": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Prod_Leg_Ferm_C2",
+        "step": 0.01
+      }
+    },
+    "V_Prod_Abdomen_Ferm_C2": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Prod_Abdomen_Ferm_C2",
+        "step": 0.01
+      }
+    }
+  },
+
+  "Volume of gases in the Blood":{
+    "V_O2_As": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_As",
+        "concentration": "Y_O2_As"
+      }
+    },
+    "V_O2_Ch": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Ch",
+        "concentration": "Y_O2_Ch"
+      }
+    },
+    "V_O2_Ca": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Ca",
+        "concentration": "Y_O2_Ca"
+      }
+    },
+    "V_O2_Cl": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Cl",
+        "concentration": "Y_O2_Cl"
+      }
+    },
+    "V_O2_Vh": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Vh",
+        "concentration": "Y_O2_Vh"
+      }
+    },
+    "V_O2_Vs": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Vs",
+        "concentration": "Y_O2_Vs"
+      }
+    },
+    "V_O2_Vt": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Vt",
+        "concentration": "Y_O2_Vt"
+      }
+    },
+    "V_O2_Ap": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Ap",
+        "concentration": "Y_O2_Ap"
+      }
+    },
+    "V_O2_Cp": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Cp",
+        "concentration": "Y_O2_Cp"
+      }
+    },
+    "V_O2_Vp": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Vp",
+        "concentration": "Y_O2_Vp"
+      }
+    },
+    "V_O2_Hr": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Hr",
+        "concentration": "Y_O2_Hr"
+      }
+    },
+    "V_O2_Hl": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Hl",
+        "concentration": "Y_O2_Hl"
+      }
+    },
+    "V_O2_TissueHead": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_TissueHead",
+        "concentration": "Y_O2_TissueHead"
+      }
+    },
+    "V_O2_TissueLeg": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_TissueLeg",
+        "concentration": "Y_O2_TissueLeg"
+      }
+    },
+    "V_O2_TissueAbdomen": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_TissueAbdomen",
+        "concentration": "Y_O2_TissueAbdomen"
+      }
+    },
+
+
+    "V_C2_As": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_As",
+        "concentration": "Y_C2_As"
+      }
+    },
+    "V_C2_Ch": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Ch",
+        "concentration": "Y_C2_Ch"
+      }
+    },
+    "V_C2_Ca": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Ca",
+        "concentration": "Y_C2_Ca"
+      }
+    },
+    "V_C2_Cl": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Cl",
+        "concentration": "Y_C2_Cl"
+      }
+    },
+    "V_C2_Vh": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Vh",
+        "concentration": "Y_C2_Vh"
+      }
+    },
+    "V_C2_Vs": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Vs",
+        "concentration": "Y_C2_Vs"
+      }
+    },
+    "V_C2_Vt": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Vt",
+        "concentration": "Y_C2_Vt"
+      }
+    },
+    "V_C2_Ap": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Ap",
+        "concentration": "Y_C2_Ap"
+      }
+    },
+    "V_C2_Cp": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Cp",
+        "concentration": "Y_C2_Cp"
+      }
+    },
+    "V_C2_Vp": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Vp",
+        "concentration": "Y_C2_Vp"
+      }
+    },
+    "V_C2_Hr": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Hr",
+        "concentration": "Y_C2_Hr"
+      }
+    },
+    "V_C2_Hl": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Hl",
+        "concentration": "Y_C2_Hl"
+      }
+    },
+    "V_C2_TissueHead": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_TissueHead",
+        "concentration": "Y_C2_TissueHead"
+      }
+    },
+    "V_C2_TissueLeg": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_TissueLeg",
+        "concentration": "Y_C2_TissueLeg"
+      }
+    },
+    "V_C2_TissueAbdomen": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_TissueAbdomen",
+        "concentration": "Y_C2_TissueAbdomen"
+      }
+    },
+
+
+    "V_HCO3-_As": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_As",
+        "concentration": "Y_HCO3-_As"
+      }
+    },
+    "V_HCO3-_Ch": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Ch",
+        "concentration": "Y_HCO3-_Ch"
+      }
+    },
+    "V_HCO3-_Ca": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Ca",
+        "concentration": "Y_HCO3-_Ca"
+      }
+    },
+    "V_HCO3-_Cl": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Cl",
+        "concentration": "Y_HCO3-_Cl"
+      }
+    },
+    "V_HCO3-_Vh": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Vh",
+        "concentration": "Y_HCO3-_Vh"
+      }
+    },
+    "V_HCO3-_Vs": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Vs",
+        "concentration": "Y_HCO3-_Vs"
+      }
+    },
+    "V_HCO3-_Vt": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Vt",
+        "concentration": "Y_HCO3-_Vt"
+      }
+    },
+    "V_HCO3-_Ap": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Ap",
+        "concentration": "Y_HCO3-_Ap"
+      }
+    },
+    "V_HCO3-_Cp": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Cp",
+        "concentration": "Y_HCO3-_Cp"
+      }
+    },
+    "V_HCO3-_Vp": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Vp",
+        "concentration": "Y_HCO3-_Vp"
+      }
+    },
+    "V_HCO3-_Hr": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Hr",
+        "concentration": "Y_HCO3-_Hr"
+      }
+    },
+    "V_HCO3-_Hl": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Hl",
+        "concentration": "Y_HCO3-_Hl"
+      }
+    },
+    "V_HCO3-_TissueHead": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_TissueHead",
+        "concentration": "Y_HCO3-_TissueHead"
+      }
+    },
+    "V_HCO3-_TissueLeg": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_TissueLeg",
+        "concentration": "Y_HCO3-_TissueLeg"
+      }
+    },
+    "V_HCO3-_TissueAbdomen": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_TissueAbdomen",
+        "concentration": "Y_HCO3-_TissueAbdomen"
+      }
+    },
+
+    "V_HbO2_As": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_As",
+        "concentration": "Y_HbO2_As"
+      }
+    },
+    "V_HbO2_Ch": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Ch",
+        "concentration": "Y_HbO2_Ch"
+      }
+    },
+    "V_HbO2_Ca": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Ca",
+        "concentration": "Y_HbO2_Ca"
+      }
+    },
+    "V_HbO2_Cl": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Cl",
+        "concentration": "Y_HbO2_Cl"
+      }
+    },
+    "V_HbO2_Vh": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Vh",
+        "concentration": "Y_HbO2_Vh"
+      }
+    },
+    "V_HbO2_Vs": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Vs",
+        "concentration": "Y_HbO2_Vs"
+      }
+    },
+    "V_HbO2_Vt": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Vt",
+        "concentration": "Y_HbO2_Vt"
+      }
+    },
+    "V_HbO2_Ap": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Ap",
+        "concentration": "Y_HbO2_Ap"
+      }
+    },
+    "V_HbO2_Cp": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Cp",
+        "concentration": "Y_HbO2_Cp"
+      }
+    },
+    "V_HbO2_Vp": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Vp",
+        "concentration": "Y_HbO2_Vp"
+      }
+    },
+    "V_HbO2_Hr": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Hr",
+        "concentration": "Y_HbO2_Hr"
+      }
+    },
+    "V_HbO2_Hl": {
+      "operation": "concentrationToVolume",
+      "params": {
+        "volume": "V_Hl",
+        "concentration": "Y_HbO2_Hl"
+      }
+    }
+    
+  },
+
+  "Totals Volume of gases in blood and metabolism":{
+    "Total_VBlood_O2":{
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "V_O2_As",
+          "V_O2_Ch",
+          "V_O2_Ca",
+          "V_O2_Cl",
+          "V_O2_Vh",
+          "V_O2_Vs",
+          "V_O2_Vt",
+          "V_O2_Ap",
+          "V_O2_Cp",
+          "V_O2_Vp",
+          "V_O2_Hr",
+          "V_O2_Hl",
+          "V_O2_TissueHead",
+          "V_O2_TissueLeg",
+          "V_O2_TissueAbdomen",
+          "V_HbO2_As",
+          "V_HbO2_Ch",
+          "V_HbO2_Ca",
+          "V_HbO2_Cl",
+          "V_HbO2_Vh",
+          "V_HbO2_Vs",
+          "V_HbO2_Vt",
+          "V_HbO2_Ap",
+          "V_HbO2_Cp",
+          "V_HbO2_Vp",
+          "V_HbO2_Hr",
+          "V_HbO2_Hl"
+        ]
+      }
+    },
+    "Total_VBlood_C2":{
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "V_C2_As",
+          "V_C2_Ch",
+          "V_C2_Ca",
+          "V_C2_Cl",
+          "V_C2_Vh",
+          "V_C2_Vs",
+          "V_C2_Vt",
+          "V_C2_Ap",
+          "V_C2_Cp",
+          "V_C2_Vp",
+          "V_C2_Hr",
+          "V_C2_Hl",
+          "V_C2_TissueHead",
+          "V_C2_TissueLeg",
+          "V_C2_TissueAbdomen",
+          "V_HCO3-_As",
+          "V_HCO3-_Ch",
+          "V_HCO3-_Ca",
+          "V_HCO3-_Cl",
+          "V_HCO3-_Vh",
+          "V_HCO3-_Vs",
+          "V_HCO3-_Vt",
+          "V_HCO3-_Ap",
+          "V_HCO3-_Cp",
+          "V_HCO3-_Vp",
+          "V_HCO3-_Hr",
+          "V_HCO3-_Hl",
+          "V_HCO3-_TissueHead",
+          "V_HCO3-_TissueLeg",
+          "V_HCO3-_TissueAbdomen"
+        ]
+      }
+    },
+    "Total_VBlood_Diff":{
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "Total_VBlood_O2",
+          "Total_VBlood_C2"
+        ]
+      }
+    },
+    "Total_VMet_O2": {
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "V_Prod_Head_Oxy_O2",
+          "V_Prod_Leg_Oxy_O2",
+          "V_Prod_Abdomen_Oxy_O2",
+          "V_Prod_Head_Fat_O2",
+          "V_Prod_Leg_Fat_O2",
+          "V_Prod_Abdomen_Fat_O2"
+        ]
+      }
+    },
+    "Total_VMet_C2": {
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "V_Prod_Head_Oxy_C2",
+          "V_Prod_Leg_Oxy_C2",
+          "V_Prod_Abdomen_Oxy_C2",
+          "V_Prod_Head_Fat_C2",
+          "V_Prod_Leg_Fat_C2",
+          "V_Prod_Abdomen_Fat_C2",
+          "V_Prod_Head_Ferm_C2",
+          "V_Prod_Leg_Ferm_C2",
+          "V_Prod_Abdomen_Ferm_C2"
+        ]
+      }
+    }
+  },
+
+  "Leg Flows":{
+    "Total_ProdLeg_O2": {
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "V_Prod_Leg_Oxy_O2",
+          "V_Prod_Leg_Fat_O2"
+        ]
+      }
+    },
+    "Total_ProdLeg_C2": {
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "V_Prod_Leg_Oxy_C2",
+          "V_Prod_Leg_Fat_C2",
+          "V_Prod_Leg_Ferm_C2"
+        ]
+      }
+    },
+    "vFlowLeg_C2": {
+      "operation": "volumetricFlow",
+      "params": {
+        "pressure": "P_Atm_Original",
+        "flow": "Q_C2_Cl_TissueLeg"
+      }
+    },
+    "Flow_ClLeg_C2": {
+      "operation": "integral",
+      "params": {
+        "resultName": "vFlowLeg_C2",
+        "step": 0.01
+      }
+    },
+    "vFlowLeg_O2": {
+      "operation": "volumetricFlow",
+      "params": {
+        "pressure": "P_Atm_Original",
+        "flow": "Q_O2_Cl_TissueLeg"
+      }
+    },
+    "Flow_ClLeg_O2": {
+      "operation": "integral",
+      "params": {
+        "resultName": "vFlowLeg_O2",
+        "step": 0.01
+      }
+    },
+    "V_C2_Leg":{
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "V_C2_TissueLeg"
+        ]
+      }
+
+    },
+    "dv_C2_Leg": {
+      "operation": "minusY0",
+      "params": {
+        "resultName": "V_C2_Leg"
+      }
+    },
+    "dv_O2_Leg": {
+      "operation": "minusY0",
+      "params": {
+        "resultName": "V_O2_TissueLeg"
+      }
+    },
+    "dvCalc_C2_Leg":{
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "Total_ProdLeg_C2",
+          "Flow_ClLeg_C2"
+        ]
+      }
+    },
+    "dvCalc_O2_Leg":{
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "Total_ProdLeg_O2",
+          "Flow_ClLeg_O2"
+        ]
+      }
+    }
+  },
+
+  "Alveolar Flows": {
+    "volumetricFlow_C2": {
+      "operation": "volumetricFlow",
+      "params": {
+        "pressure": "P_Atm_Original",
+        "flow": "Q_C2_La_Cp"
+      }
+    },
+    "volumetricFlow_O2": {
+      "operation": "volumetricFlow",
+      "params": {
+        "pressure": "P_Atm_Original",
+        "flow": "Q_O2_La_Cp"
+      }
+    },
+    "Flow_CpLa_O2": {
+      "operation": "integral",
+      "params": {
+        "resultName": "volumetricFlow_O2",
+        "step": 0.01
+      }
+    },
+    "Flow_CpLa_C2": {
+      "operation": "integral",
+      "params": {
+        "resultName": "volumetricFlow_C2",
+        "step": 0.01
+      }
+    }
+  },
+
+
+
+  "Subtract Initial Value (d...)": {
+    "dvC2_blood": {
+      "operation": "minusY0",
+      "params": {
+        "resultName": "Total_VBlood_C2"
+      }
+    },
+    "dvO2_blood": {
+      "operation": "minusY0",
+      "params": {
+        "resultName": "Total_VBlood_O2"
+      }
+    },
+    "dv_Air": {
+      "operation": "minusY0",
+      "params": {
+        "resultName": "V_Total_Air"
+      }
+    },
+    "dv_Blood": {
+      "operation": "minusY0",
+      "params": {
+        "resultName": "V_Total_Blood"
+      }
+    },
+    "dv_Air_O2": {
+      "operation": "minusY0",
+      "params": {
+        "resultName": "V_Air_O2"
+      }
+    },
+    "dv_Air_N2": {
+      "operation": "minusY0",
+      "params": {
+        "resultName": "V_Air_N2"
+      }
+    },
+    "dv_Air_C2": {
+      "operation": "minusY0",
+      "params": {
+        "resultName": "V_Air_C2"
+      }
+    },
+    "dy_Hb": {
+      "operation": "minusY0",
+      "params": {
+        "resultName": "Y_Hb"
+      }
+    },
+    "dy_NAD": {
+      "operation": "minusY0",
+      "params": {
+        "resultName": "Y_NAD"
+      }
+    }
+  },
+  "errors":{
+    "error_C2_Alveoli":{
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "Flow_CpLa_C2",
+          "dv_Air_C2"
+        ]
+      }
+    },
+    "error_O2_Alveoli":{
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "Flow_CpLa_O2",
+          "dv_Air_O2"
+        ]
+      }
+    },
+
+
+    "dvCalc_C2_Leg1": {
+      "operation": "constantMultiplication",
+      "params": {
+        "resultName": "dvCalc_C2_Leg",
+        "constant": -1.0
+      }
+    },
+    "dvCalc_O2_Leg1": {
+      "operation": "constantMultiplication",
+      "params": {
+        "resultName": "dvCalc_O2_Leg",
+        "constant": -1.0
+      }
+    },
+    "error_C2_Leg":{
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "dvCalc_C2_Leg1",
+          "dv_C2_Leg"
+        ]
+      }
+    },
+    "error_O2_Leg":{
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "dvCalc_O2_Leg1",
+          "dv_O2_Leg"
+        ]
+      }
+    }
+  },
+
+  "Multiply Variable by -1 (to invert negative flows)": {
+    "Flow_ClLeg_C2": {
+      "operation": "constantMultiplication",
+      "params": {
+        "resultName": "Flow_ClLeg_C2",
+        "constant": -1.0
+      }
+    },
+    "Flow_CpLa_C2": {
+      "operation": "constantMultiplication",
+      "params": {
+        "resultName": "Flow_CpLa_C2",
+        "constant": -1.0
+      }
+    },
+    "Total_ProdLeg_O2": {
+      "operation": "constantMultiplication",
+      "params": {
+        "resultName": "Total_ProdLeg_O2",
+        "constant": -1.0
+      }
+    }, 
+    "dv_Air_O2": {
+      "operation": "constantMultiplication",
+      "params": {
+        "resultName": "dv_Air_O2",
+        "constant": -1.0
+      }
+    },
+    "V_MetO2": {
+      "operation": "constantMultiplication",
+      "params": {
+        "resultName": "Total_VMet_O2",
+        "constant": -1.0
+      }
+    },
+    "V_MetCO2": {
+      "operation": "constantMultiplication",
+      "params": {
+        "resultName": "Total_VMet_C2",
+        "constant": 1.0
+      }
+    }
+    
+  },
+
+
+
+
+
+
+
+  "LungFlows#": {
+    "int_Q_N2_Comp0_Lt": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Q_N2_Comp0_Lt",
+        "step": 0.01
+      }
+    },
+    "int_Q_N2_Lt_Lb": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Q_N2_Lt_Lb",
+        "step": 0.01
+      }
+    },
+    "int_Q_N2_Lb_La": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Q_N2_Lb_La",
+        "step": 0.01
+      }
+    },
+    "int_Q_O2_Comp0_Lt": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Q_O2_Comp0_Lt",
+        "step": 0.01
+      }
+    },
+    "int_Q_O2_Lt_Lb": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Q_O2_Lt_Lb",
+        "step": 0.01
+      }
+    },
+    "int_Q_O2_Lb_La": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Q_O2_Lb_La",
+        "step": 0.01
+      }
+    },
+    "int_Q_C2_Comp0_Lt": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Q_C2_Comp0_Lt",
+        "step": 0.01
+      }
+    },
+    "int_Q_C2_Lt_Lb": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Q_C2_Lt_Lb",
+        "step": 0.01
+      }
+    },
+    "int_Q_C2_Lb_La": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Q_C2_Lb_La",
+        "step": 0.01
+      }
+    },
+
+    
+    "TotalFlowLt":{
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "int_Q_N2_Comp0_Lt",
+          "int_Q_O2_Comp0_Lt",
+          "int_Q_C2_Comp0_Lt"
+        ]
+      }
+    },
+    "TotalFlowLb":{
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "int_Q_N2_Lt_Lb",
+          "int_Q_O2_Lt_Lb",
+          "int_Q_C2_Lt_Lb"
+        ]
+      }
+    },
+    "TotalFlowLa":{
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "int_Q_N2_Lb_La",
+          "int_Q_O2_Lb_La",
+          "int_Q_C2_Lb_La"
+        ]
+      }
+    },
+
+    "int_int_Q_O2_Comp0_Lt": {
+      "operation": "integralOverCycle",
+      "params": {
+        "resultName": "Q_O2_Comp0_Lt",
+        "cycle": "Tim_RCLa",
+        "step": 0.01
+      }
+    },
+    "int_int_Q_O2_Lt_Lb": {
+      "operation": "integralOverCycle",
+      "params": {
+        "resultName": "Q_O2_Lt_Lb",
+        "cycle": "Tim_RCLa",
+        "step": 0.01
+      }
+    },
+    "int_int_Q_O2_Lb_La": {
+      "operation": "integralOverCycle",
+      "params": {
+        "resultName": "Q_O2_Lb_La",
+        "cycle": "Tim_RCLa",
+        "step": 0.01
+      }
+    },
+    "int_int_Q_C2_Comp0_Lt": {
+      "operation": "integralOverCycle",
+      "params": {
+        "resultName": "Q_C2_Comp0_Lt",
+        "cycle": "Tim_RCLa",
+        "step": 0.01
+      }
+    },
+    "int_int_Q_C2_Lt_Lb": {
+      "operation": "integralOverCycle",
+      "params": {
+        "resultName": "Q_C2_Lt_Lb",
+        "cycle": "Tim_RCLa",
+        "step": 0.01
+      }
+    },
+    "int_int_Q_C2_Lb_La": {
+      "operation": "integralOverCycle",
+      "params": {
+        "resultName": "Q_C2_Lb_La",
+        "cycle": "Tim_RCLa",
+        "step": 0.01
+      }
+    },
+    "int_int_Q_N2_Comp0_Lt": {
+      "operation": "integralOverCycle",
+      "params": {
+        "resultName": "Q_N2_Comp0_Lt",
+        "cycle": "Tim_RCLa",
+        "step": 0.01
+      }
+    },
+    "int_int_Q_N2_Lt_Lb": {
+      "operation": "integralOverCycle",
+      "params": {
+        "resultName": "Q_N2_Lt_Lb",
+        "cycle": "Tim_RCLa",
+        "step": 0.01
+      }
+    },
+    "int_int_Q_N2_Lb_La": {
+      "operation": "integralOverCycle",
+      "params": {
+        "resultName": "Q_N2_Lb_La",
+        "cycle": "Tim_RCLa",
+        "step": 0.01
+      }
+    }
+
+
+  },
+  "gasDiffs#":{
+    "Diff_AtmFlow": {
+      "operation": "sumOfArrays",
+      "params": {
+        "resultNames": [
+          "dv_Air",
+          "TotalFlow"
+        ]
+      }
+    },
+    "Diff_AtmFlow_int": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Diff_AtmFlow",
+        "step": 0.01
+      }
+    }
+  },
+  "tidalVolumes#": {
+    "Q_C2_Comp0_Lt_-1": {
+      "operation": "constantMultiplication",
+      "params": {
+        "resultName": "Q_C2_Comp0_Lt",
+        "constant": -1.0
+      }
+    },
+    "volumetricFlow_C2-1": {
+      "operation": "constantMultiplication",
+      "params": {
+        "resultName": "volumetricFlow_C2",
+        "constant": -1.0
+      }
+    },
+    "V'CO2_Alv": {
+      "operation": "integralOverCycle",
+      "params": {
+        "resultName": "volumetricFlow_C2-1",
+        "cycle": "Tim_RCLa",
+        "step": 0.01
+      }
+    },
+    "V'O2_Alv": {
+      "operation": "integralOverCycle",
+      "params": {
+        "resultName": "volumetricFlow_O2",
+        "cycle": "Tim_RCLa",
+        "step": 0.01
+      }
+    },
+    "int_dv_Air_O2":{
+      "operation":"integralOverCycle",
+      "params":{
+          "resultName": "Q_O2_La_Cp",
+          "cycle": "Tim_RCLa",
+          "step": 0.01
+      }
+    },
+    "Q_C2_La_Cp_1": {
+      "operation": "constantMultiplication",
+      "params": {
+        "resultName": "Q_C2_La_Cp",
+        "constant": -1.0
+      }
+    },
+    "int_dv_Air_C2":{
+      "operation":"integralOverCycle",
+      "params":{
+        "resultName": "Q_C2_La_Cp_1",
+        "cycle": "Tim_RCLa",
+        "step": 0.01
+      }
+    }
+  },
+
+  
+
+
+
+
+  "minuteVariables": {
+    "Q_O2": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Q_O2_Comp0_Lt",
+        "step": 0.01
+      }
+    },
+    "Q_C2": {
+      "operation": "integral",
+      "params": {
+        "resultName": "Q_C2_Comp0_Lt",
+        "step": 0.01
+      }
+    },
+    "HeartRate": {
+      "operation": "heartRate",
+      "params": {
+        "cycle": "Cyc_HC",
+        "time": 60.0
+      }
+    },
+    "RespiratoryRate": {
+      "operation": "heartRate",
+      "params": {
+        "cycle": "Cyc_RCLa",
+        "time": 60.0
+      }
+    },
+    "V_O2_Tidal": {
+      "operation": "variationOfValueOverCycle",
+      "params": {
+        "resultName": "dv_Air_O2",
+        "cycle": "Tim_RCLa",
+        "step": 0.01
+      }
+    },
+    "V_C2_Tidal": {
+      "operation": "variationOfValueOverCycle",
+      "params": {
+        "resultName": "dv_Air_C2",
+        "cycle": "Tim_RCLa",
+        "step": 0.01
+      }
+    },
+    "V'CO2": {
+      "operation": "cardiacOutput",
+      "params": {
+        "SV": "V_C2_Tidal",
+        "HR": "RespiratoryRate"
+      }
+    },
+    "V'O2": {
+      "operation": "cardiacOutput",
+      "params": {
+        "SV": "V_O2_Tidal",
+        "HR": "RespiratoryRate"
+      }
+    },
+    "V'CO2_Alv": {
+      "operation": "cardiacOutput",
+      "params": {
+        "SV": "V'CO2_Alv",
+        "HR": "RespiratoryRate"
+      }
+    },
+    "V'O2_Alv": {
+      "operation": "cardiacOutput",
+      "params": {
+        "SV": "V'O2_Alv",
+        "HR": "RespiratoryRate"
+      }
+    },
+    "RER": {
+      "operation": "division",
+      "params": {
+        "numerator": "V'CO2",
+        "denominator": "V'O2"
+      }
+    },
+    
+
+    "V_tidalVolume": {
+      "operation": "variationOfIntegalValueOverCycle",
+      "params": {
+        "resultName": "Q_Comp0_Lt",
+        "cycle": "Tim_RCLa",
+        "step": 0.01
+      }
+    },
+    "V_strokeVolumeL": {
+      "operation": "variationOfIntegalValueOverCycle",
+      "params": {
+        "resultName": "Q_Hl_As",
+        "cycle": "Tim_HC",
+        "step": 0.01
+      }
+    },
+    "CardiacOutput": {
+      "operation": "cardiacOutput",
+      "params": {
+        "SV": "keep_SV_Hl",
+        "HR": "HeartRate"
+      }
+    },
+    "MinuteVentilation": {
+      "operation": "cardiacOutput",
+      "params": {
+        "SV": "V_tidalVolume",
+        "HR": "RespiratoryRate"
+      }
+    }
+  },
+  "last":{
+    "V'CO2_int": {
+      "operation": "cardiacOutput",
+      "params": {
+        "SV": "int_dv_Air_C2",
+        "HR": "RespiratoryRate"
+      }
+    },
+    "V'O2_int": {
+      "operation": "cardiacOutput",
+      "params": {
+        "SV": "int_dv_Air_O2",
+        "HR": "RespiratoryRate"
+      }
+    }
+
+  },
+
+
+
+
+
+  "control_sigmoids": {
+    "efferent_Pressure_Range": {
+      "operation": "calculateSigmoidRange",
+      "params": {
+        "resultName": "baroreceptor",
+        "start": 800.0,
+        "end": 908.0
+      }
+    },
+    "P_range": {
+      "operation": "range",
+      "params": {
+        "start": 800.0,
+        "end": 908.0
+      }
+    },
+    "headFlowRange": {
+      "operation": "calculateSigmoidRange",
+      "params": {
+        "resultName": "baroHead",
+        "start": 7.0,
+        "end": 17.0
+      }
+    },
+    "Sv_range": {
+      "operation": "range",
+      "params": {
+        "start": 7.0,
+        "end": 17.0
+      }
+    },
+    "efferent_Chemo_Range": {
+      "operation": "calculateSigmoidRange",
+      "params": {
+        "resultName": "chemoreceptor",
+        "start": 0.85,
+        "end": 1.45
+      }
+    },
+    "Y_range": {
+      "operation": "range",
+      "params": {
+        "start": 0.85,
+        "end": 1.45
+      }
+    }
+  },
+  "metabolism": {
+    "ATP_OxidationLeg": {
+      "operation": "constantMultiplication",
+      "params": {
+        "resultName": "pdY_C2_TissueLeg_C3H6O3_O2",
+        "constant": 5.0
+      }
+    },
+    "ATP_FatLeg": {
+      "operation": "constantMultiplication",
+      "params": {
+        "resultName": "pdY_O2_TissueLeg_PSOG_O2",
+        "constant": -4.0
+      }
+    },
+    "ATP_GycolisisLeg": {
+      "operation": "constantMultiplication",
+      "params": {
+        "resultName": "pdY_C3H6O3_TissueLeg_C6H12O6_C3H6O3",
+        "constant": 1.0
+      }
+    },
+    "ATP_OxidationHead": {
+      "operation": "constantMultiplication",
+      "params": {
+        "resultName": "pdY_C2_TissueHead_Head_C3H6O3_O2",
+        "constant": 5.0
+      }
+    },
+    "ATP_FatHead": {
+      "operation": "constantMultiplication",
+      "params": {
+        "resultName": "pdY_O2_TissueHead_Head_PSOG_O2",
+        "constant": -4.0
+      }
+    },
+    "ATP_GycolisisHead": {
+      "operation": "constantMultiplication",
+      "params": {
+        "resultName": "pdY_C3H6O3_TissueHead_Head_C6H12O6_C3H6O3",
+        "constant": 1.0
+      }
+    },
+    "ATP_GycolisisAbdomen": {
+      "operation": "constantMultiplication",
+      "params": {
+        "resultName": "pdY_C3H6O3_TissueAbdomen_Physio_C6H12O6_C3H6O3",
+        "constant": 1.0
+      }
+    },
+    "ATP_OxidationAbdomen": {
+      "operation": "constantMultiplication",
+      "params": {
+        "resultName": "pdY_C2_TissueAbdomen_Physio_C3H6O3_O2",
+        "constant": 5.0
+      }
+    },
+    "ATP_FatAbdomen": {
+      "operation": "constantMultiplication",
+      "params": {
+        "resultName": "pdY_O2_TissueAbdomen_Physio_PSOG_O2",
+        "constant": -4.0
+      }
+    },
+    "SPO2_Ap": {
+      "operation": "oxygenSaturation",
+      "params": {
+        "resultName": "SPO2_Ap",
+        "compartment": "Ap"
+      }
+    },
+    "SPO2_As": {
+      "operation": "oxygenSaturation",
+      "params": {
+        "resultName": "SPO2_As",
+        "compartment": "As"
+      }
+    },
+    "SPO2_Cp": {
+      "operation": "oxygenSaturation",
+      "params": {
+        "resultName": "SPO2_Cp",
+        "compartment": "Cp"
+      }
+    },
+    "SPO2_Ch": {
+      "operation": "oxygenSaturation",
+      "params": {
+        "resultName": "SPO2_Ch",
+        "compartment": "Ch"
+      }
+    },
+    "SPO2_Vh": {
+      "operation": "oxygenSaturation",
+      "params": {
+        "resultName": "SPO2_Vh",
+        "compartment": "Vh"
+      }
+    },
+    "SPO2_Ca": {
+      "operation": "oxygenSaturation",
+      "params": {
+        "resultName": "SPO2_Ca",
+        "compartment": "Ca"
+      }
+    },
+    "SPO2_Cl": {
+      "operation": "oxygenSaturation",
+      "params": {
+        "resultName": "SPO2_Cl",
+        "compartment": "Cl"
+      }
+    },
+    "SPO2_Hl": {
+      "operation": "oxygenSaturation",
+      "params": {
+        "resultName": "SPO2_Hl",
+        "compartment": "Hl"
+      }
+    },
+    "SPO2_Hr": {
+      "operation": "oxygenSaturation",
+      "params": {
+        "resultName": "SPO2_Hr",
+        "compartment": "Hr"
+      }
+    },
+    "SPO2_Vp": {
+      "operation": "oxygenSaturation",
+      "params": {
+        "resultName": "SPO2_Vp",
+        "compartment": "Vp"
+      }
+    },
+    "SPO2_Vs": {
+      "operation": "oxygenSaturation",
+      "params": {
+        "resultName": "SPO2_Vs",
+        "compartment": "Vs"
+      }
+    },
+    "SPO2_Vt": {
+      "operation": "oxygenSaturation",
+      "params": {
+        "resultName": "SPO2_Vt",
+        "compartment": "Vt"
+      }
+    },
+    "WorkRate": {
+      "operation": "constantMultiplication",
+      "params": {
+        "resultName": "Upt_TissuesLeg",
+        "constant": 1.0
+      }
+    },
+    "Lactalysis_Leg": {
+      "operation": "constantMultiplication",
+      "params": {
+        "resultName": "k_C3H6O3_C3H5O3H",
+        "constant": 1.0
+      }
+    }
+  },
+
+
+  "Avgs":{
+    "RER": {
+      "operation": "movingAverage",
+      "params": {
+        "resultName": "RER",
+        "window": 1000.0
+      }
+    },
+    "Mean Arterial Pressure": {
+      "operation": "movingAverage",
+      "params": {
+        "window": 1000.0,
+        "resultName": "avg_P_As"
+      }
+    },
+
+    "Lactate k": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 0.0,
+        "resultName": "k_C6H12O6_C3H6O3"
+      }
+    },
+    "SPO2 Arterial": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 0.0,
+        "resultName": "SPO2_As"
+      }
+    },
+    "SPO2 Venous": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 0.0,
+        "resultName": "SPO2_Vs"
+      }
+    },
+    "Lactate in Blood": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 0.0,
+        "resultName": "Y_C3H5O3-_As"
+      }
+    },
+    "Arterial Pulse Pressure": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 0.0,
+        "resultName": "amp_P_As"
+      }
+    },
+    "CO2 in Blood": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 0.0,
+        "resultName": "Y_C2_As"
+      }
+    },
+    "Tidal Volume": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 0.0,
+        "resultName": "V_tidalVolume"
+      }
+    },
+    "Respiratory Rate": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 0.0,
+        "resultName": "RespiratoryRate"
+      }
+    },
+    "Heart Rate": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 0.0,
+        "resultName": "HeartRate"
+      }
+    },
+    "ATP Production Leg": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 0.0,
+        "resultName": "ATP_ProductionLeg"
+      }
+    },
+    "Total Resistance": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 0.0,
+        "resultName": "TotalResistance"
+      }
+    },
+    "Minute Ventilation": {
+      "operation": "constantSubstraction",
+      "params": {
+        "constant": 0.0,
+        "resultName": "MinuteVentilation"
+      }
+    },
+    
+    "AvgHeartRate":{
+      "operation": "movingAverage",
+      "params": {
+        "resultName": "HeartRate",
+        "window": 1000.0
+      }
+    },
+    "Cardiac Output":{
+      "operation": "movingAverage",
+      "params": {
+        "resultName": "CardiacOutput",
+        "window": 1000.0
+      }
+    },
+    "AvgRespiratoryRate":{
+      "operation": "movingAverage",
+      "params": {
+        "resultName": "RespiratoryRate",
+        "window": 1000.0
+      }
+    },
+    "AvgMinuteVentilation":{
+      "operation": "movingAverage",
+      "params": {
+        "resultName": "MinuteVentilation",
+        "window": 1000.0
+      }
+    },
+    "V'O2":{
+      "operation": "movingAverage",
+      "params": {
+        "resultName": "V'O2",
+        "window": 1000.0
+      }
+    },
+    "V'CO2":{
+      "operation": "movingAverage",
+      "params": {
+        "resultName": "V'CO2",
+        "window": 1000.0
+      }
+    },
+    "Avgk_C3H6O3_C3H5O3H":{
+      "operation": "movingAverage",
+      "params": {
+        "resultName": "k_C3H6O3_C3H5O3H",
+        "window": 1000.0
+      }
+    },
+    "Avgk_Physio_C3H6O3_C3H5O3H":{
+      "operation": "movingAverage",
+      "params": {
+        "resultName": "k_Physio_C3H6O3_C3H5O3H",
+        "window": 1000.0
+      }
+    },
+    "AvgSPO2_Ap":{
+      "operation": "movingAverage",
+      "params": {
+        "resultName": "SPO2_Ap",
+        "window": 1000.0
+      }
+    },
+    "area_Cp":{
+      "operation": "movingAverage",
+      "params": {
+        "resultName": "area_R_La_Cp",
+        "window": 2000.0
+      }
+    },
+    "area_Cl":{
+      "operation": "movingAverage",
+      "params": {
+        "resultName": "area_R_Cl_TissueLeg",
+        "window": 2000.0
+      }
+    },
+    "area_Ca":{
+      "operation": "movingAverage",
+      "params": {
+        "resultName": "area_R_Ca_TissueAbdomen",
+        "window": 2000.0
+      }
+    },
+    "area_Ch":{
+      "operation": "movingAverage",
+      "params": {
+        "resultName": "area_R_Ch_TissueHead",
+        "window": 2000.0
+      }
+    },
+    "P_O2_La":{
+      "operation": "movingAverage",
+      "params": {
+        "resultName": "P_O2_La",
+        "window": 2000.0
+      }
+    },
+    "P_C2_La":{
+      "operation": "movingAverage",
+      "params": {
+        "resultName": "P_C2_La",
+        "window": 2000.0
+      }
+    }
+  }
+}

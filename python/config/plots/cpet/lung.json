@@ -1,0 +1,724 @@
+{
+  "formatOptions": {
+    "nbins": 6,
+    "fonts": {
+      "title": 15,
+      "xlabel": 10,
+      "ylabel": 12,
+      "legend": 10,
+      "ticks": 9
+    },
+    "gases": {
+      "O2": {
+        "color": "tab:blue",
+        "label": "O2",
+        "name": "Oxygen"
+      },
+      "C2": {
+        "color": "tab:red",
+        "label": "C2",
+        "name": "Carbon Dioxide"
+      },
+      "N2": {
+        "color": "tab:green",
+        "label": "N2",
+        "name": "Nitrogen"
+      }
+    }
+  },
+  "simulationParams": {
+    "runTime": 5,
+    "runsToIgnore": 1,
+    "runsToSave": 40,
+    "sampPeriod": 0.01,
+    "atmPressure": 760.0,
+    "control": false,
+    "calibration": false,
+    "modelFileName": "gasExchangeTest.json",
+    "project_folder": "/home/cabsman/Documents/projects/CardioRespiratoryModelV2"
+  },
+  "figSize": {
+    "width": 15,
+    "height": 18
+  },
+  "grid": {
+    "rows": 9,
+    "cols": 2
+  },
+  "axes": {
+    
+  
+    "ax_0_0_BreathingCycle":{
+      "row": 0,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Cyc_RCLa"],
+        "right": ["RespiratoryRate"],
+        "title": "Breathing Cycle",
+        "colorsLeft": "Reds",
+        "colorsRight": "Blues"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_0_1_TidalVolume":{
+      "row": 0,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["V_tidalVolume"],
+        "right": ["MinuteVentilation"],
+        "title": "Tidal Volume",
+        "colorsLeft": "Reds",
+        "colorsRight": "Blues"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper left",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+
+
+    "ax_1_0_LungN2Pressure":{
+      "row": 1,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["P_N2_Comp0", "P_N2_Lt", "P_N2_Lb", "P_N2_La"],
+        "title": "All Lung Nitrogen Partial Pressures",
+        "colorsLeft": "Greens",
+        "right": ["P_N2_Comp0", "P_N2_Lt", "P_N2_Lb", "P_N2_La"],
+        "colorsRight": "Greens"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_2_0_LungC2Pressure":{
+      "row": 2,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["P_C2_Comp0", "P_C2_Lt", "P_C2_Lb", "P_C2_La"],
+        "title": "All Lung Carbon Dioxide Partial Pressures",
+        "colorsLeft": "Reds",
+        "right": ["P_C2_Comp0", "P_C2_Lt", "P_C2_Lb", "P_C2_La"],
+        "colorsRight": "Reds"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_3_0_LungO2Pressure":{
+      "row": 3,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["P_O2_Comp0","P_O2_Lt", "P_O2_Lb", "P_O2_La"],
+        "title": "All Lung Oxygen Partial Pressures",
+        "colorsLeft": "Blues",
+        "right": ["P_O2_Comp0","P_O2_Lt", "P_O2_Lb", "P_O2_La"],
+        "colorsRight": "Blues"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+
+    "ax_1_1_N2Flow":{
+      "row": 1,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Q_N2_Comp0_Lt","Q_N2_Lt_Lb","Q_N2_Lb_La"],
+        "title": "N2 Flow",
+        "colorsLeft": "jet",
+        "right": ["Q_N2_Comp0_Lt","Q_N2_Lt_Lb","Q_N2_Lb_La"],
+        "colorsRight": "jet"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "lower right",
+          "right": "lower right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_2_1_C2Flow":{
+      "row": 2,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Q_C2_Comp0_Lt","Q_C2_Lt_Lb","Q_C2_Lb_La"],
+        "title": "C2 Flow",
+        "colorsLeft": "jet",
+        "right": ["Q_C2_Comp0_Lt","Q_C2_Lt_Lb","Q_C2_Lb_La"],
+        "colorsRight": "jet"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "lower right",
+          "right": "lower right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_3_1_O2Flow":{
+      "row": 3,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["Q_O2_Comp0_Lt","Q_O2_Lt_Lb","Q_O2_Lb_La"],
+        "title": "O2 Flow",
+        "colorsLeft": "jet",
+        "right": ["Q_O2_Comp0_Lt","Q_O2_Lt_Lb","Q_O2_Lb_La"],
+        "colorsRight": "jet"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+
+    "ax_4_0_":{
+      "row": 4,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["int_Q_N2_Comp0_Lt","int_Q_N2_Lt_Lb","int_Q_N2_Lb_La"],
+        "title": "N2 Flow integrated",
+        "colorsLeft": "jet",
+        "right": ["int_Q_N2_Comp0_Lt","int_Q_N2_Lt_Lb","int_Q_N2_Lb_La"],
+        "colorsRight": "jet"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_5_0_":{
+      "row": 5,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["int_Q_C2_Comp0_Lt","int_Q_C2_Lt_Lb","int_Q_C2_Lb_La"],
+        "title": "C2 Flow integrated",
+        "colorsLeft": "jet",
+        "right": ["int_Q_C2_Comp0_Lt","int_Q_C2_Lt_Lb","int_Q_C2_Lb_La"],
+        "colorsRight": "jet"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_6_0_":{
+      "row": 6,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["int_Q_O2_Comp0_Lt","int_Q_O2_Lt_Lb","int_Q_O2_Lb_La"],
+        "title": "O2 Flow integrated",
+        "colorsLeft": "jet",
+        "right": ["int_Q_O2_Comp0_Lt","int_Q_O2_Lt_Lb","int_Q_O2_Lb_La"],
+        "colorsRight": "jet"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+
+    "ax_4_1_LungPressures":{
+      "row": 4,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["P_Lt","P_Lb","P_La"],
+        "title": "Lung Pressures",
+        "colorsLeft": "magma",
+        "right": ["P_Lt","P_Lb","P_La"],
+        "colorsRight": "magma"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_5_1_Dead-SpaceVolumes":{
+      "row": 5,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["V_Lt", "V_Lb"],
+        "title": "Trachea and Bronchi Volumes",
+        "colorsLeft": "magma",
+        "right": ["V_Lt", "V_Lb"],
+        "colorsRight": "magma"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_6_1_AlveoliVolumes":{
+      "row": 6,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["V_La", "V_Plr", "V_Thx","V0_ThoraxMuscle"],
+        "title": "Alveoli & Thoracic Volumes",
+        "colorsLeft": "magma",
+        "right": ["V_La", "V_Plr", "V_Thx","V0_ThoraxMuscle"],
+        "colorsRight": "magma"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+
+    "ax_7_0_BreathingReflex":{
+      "row": 7,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["int_int_Q_C2_Comp0_Lt","int_int_Q_C2_Lt_Lb","int_int_Q_C2_Lb_La"],
+        "title": "C2 Flow integrated",
+        "colorsLeft": "jet",
+        "right": ["int_int_Q_C2_Comp0_Lt","int_int_Q_C2_Lt_Lb","int_int_Q_C2_Lb_La"],
+        "colorsRight": "jet"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 2,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": false,
+          "params": {
+            "averageLeft": false,
+            "minLeft": false,
+            "averageRight": false,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_8_0_Thickness_Alveoli":{
+      "row": 8,
+      "rowSpan": 1,
+      "col": 0,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["int_int_Q_O2_Comp0_Lt","int_int_Q_O2_Lt_Lb","int_int_Q_O2_Lb_La"],
+        "title": "O2 Flow integrated",
+        "colorsLeft": "jet",
+        "right": ["int_int_Q_O2_Comp0_Lt","int_int_Q_O2_Lt_Lb","int_int_Q_O2_Lb_La"],
+        "colorsRight": "jet"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "lower right",
+          "right": "lower right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+
+
+
+    "ax_7_1_LungPressures":{
+      "row": 7,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["P_Plr", "P_Thx"],
+        "title": "Thoracic Pressures",
+        "colorsLeft": "magma",
+        "right": ["P_Plr", "P_Thx"],
+        "colorsRight": "magma"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "upper right",
+          "right": "upper right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    },
+    "ax_8_1_Area_Alveoli":{
+      "row": 8,
+      "rowSpan": 1,
+      "col": 1,
+      "colSpan": 1,
+      "type": "multiSideBySide",
+      "params": {
+        "left": ["int_int_Q_N2_Comp0_Lt","int_int_Q_N2_Lt_Lb","int_int_Q_N2_Lb_La"],
+        "title": "N2 Flow integrated",
+        "colorsLeft": "jet",
+        "right": ["int_int_Q_N2_Comp0_Lt","int_int_Q_N2_Lt_Lb","int_int_Q_N2_Lb_La"],
+        "colorsRight": "jet"
+      },
+      "options": {
+        "zeroTime": true,
+        "toIgnore": 0,
+        "offset": 0.05,
+        "round": 2,
+        "legend": {
+          "show": true,
+          "left": "lower right",
+          "right": "lower right"
+        },
+        "ticks": {
+          "useCustomTicks": true,
+          "dependentScales": true,
+          "params": {
+            "averageLeft": true,
+            "maxLeft": true,
+            "minLeft": true,
+            "averageRight": true,
+            "maxRight": true,
+            "minRight": true
+          }
+        }
+      }
+    }
+  },
+  "axes_Saved":{
+  }
+}
+

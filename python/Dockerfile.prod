@@ -2,9 +2,14 @@
 # Built on the laptop by deploy/ship-app.sh (never on the box) and shipped
 # via docker save | ssh docker load. Dev uses ./Dockerfile instead
 # (bind-mounted source + uvicorn --reload).
-# No hdf5-tools here: it is a dev-image convenience CLI — nothing under api/
-# uses it. Forks with real compute needs extend this file themselves.
 FROM python:3.13-slim
+
+# [MEDICAL] hdf5-tools carries h5repack, which library/hdf5/engine.py shells out to
+# in repack() — reached from the admin-only POST /cardio/hdf5/repack/{run_id}. It is
+# a runtime dependency of this app, not the dev-image convenience CLI upstream's
+# comment here described. Upstream ships no compute that needs it and omits it.
+RUN apt-get update && apt-get install -y --no-install-recommends hdf5-tools \
+    && rm -rf /var/lib/apt/lists/*
 
 # requirements.lock is the enforced pip freeze (requirements.txt states intent,
 # unpinned). Regeneration procedure: .claude/rules/python-compute.md.
@@ -13,6 +18,12 @@ RUN pip install --no-cache-dir -r requirements.lock
 
 WORKDIR /src
 COPY api ./api
+# [MEDICAL] the cardiopulmonary model and its config JSONs. library/utils.py derives
+# PROJECT_ROOT as the parent of the package, so config/ must land beside library/ —
+# do not move either without moving both. The notebooks (python/run_*/) are a dev
+# tool and are deliberately not baked in.
+COPY library ./library
+COPY config ./config
 
 # Non-root: the service only computes — it owns no files and writes nothing.
 RUN useradd --create-home app

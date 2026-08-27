@@ -1,0 +1,527 @@
+{
+  "shared": {
+    "twin": {
+      "twinTargets": {
+        "TotalBloodVolume": 5000.0,
+        "Sys_P_As": 120.0,
+        "Dia_P_As": 80.0,
+        "Sys_P_Ap": 30.0,
+        "Dia_P_Ap": 15.0,
+        "CVP": 5.0,
+        "HR": 70.0,
+        "CO": 5000.0,
+        "RR": 12.0,
+        "TV": 750.0,
+        "P_Ch": 17.0,
+        "P_Ca": 17.0,
+        "P_Cl": 17.0,
+        "avg_P_Cp": 17.0,
+        "Q_Ch_Vh": 12.5,
+        "Q_Ca_Vs": 37.5,
+        "Q_Cl_Vs": 33.3
+      },
+      "volumeDistribution": {
+        "As": 0.13,
+        "Ch": 0.01,
+        "Ca": 0.02,
+        "Cl": 0.02,
+        "Vs": 0.6,
+        "Vh": 0.03,
+        "Vt": 0.04,
+        "Hr": 0.02,
+        "Ap": 0.035,
+        "Cp": 0.03,
+        "Vp": 0.035,
+        "Hl": 0.02
+      },
+      "flowDistribution": {
+        "R_As_Ch": 0.15,
+        "R_As_Ca": 0.45,
+        "R_As_Cl": 0.4
+      }
+    },
+    "integration": {
+      "dt": 0.00025,
+      "dtDense": 0.01,
+      "runTime": 10,
+      "gasExchange": true,
+      "useEquilibriumStates": true
+    }
+  },
+  "baseline": {
+    "runs": {
+      "ignore": 1,
+      "save": 20
+    }
+  },
+  "calibration": {
+    "strategy": "staged",
+    "stages": [
+      {
+        "description": "Initial run to allow the system to settle",
+        "runsToIgnore": 1,
+        "runsToSave": 10,
+        "multiplier": 0.0,
+        "multiplierC": 0.0,
+        "parameters": [
+          "C_Vs",
+          "Vv0_elastance_Hl",
+          "Vv0_elastance_Hr",
+          "R_As_Ch",
+          "R_As_Ca",
+          "R_As_Cl",
+          "R_Ch_Vh",
+          "R_Ca_Vs",
+          "R_Cl_Vs",
+          "C_As",
+          "C_Ap",
+          "R_Ap_Cp",
+          "VV0_elastance_Hl",
+          "VV0_elastance_Hr",
+          "C_Ch",
+          "C_Ca",
+          "C_Cl",
+          "C_Vt",
+          "C_Vh",
+          "C_Cp",
+          "C_Vp",
+          "V0_As",
+          "V0_Ap",
+          "k_C6H12O6_C3H6O3",
+          "k_Head_C6H12O6_C3H6O3",
+          "k_Physio_C6H12O6_C3H6O3",
+          "k_PSOG_O2",
+          "k_Head_PSOG_O2",
+          "k_Physio_PSOG_O2",
+          "Vv0_V0_ThoraxMuscle"
+        ],
+        "targets": {},
+        "states": {}
+      },
+      {
+        "description": "CO Balancing",
+        "runsToIgnore": 0,
+        "runsToSave": 10,
+        "multiplier": 0.0,
+        "multiplierC": 0.1,
+        "parameters": [
+          "C_Vs",
+          "Vv0_elastance_Hl",
+          "Vv0_elastance_Hr",
+          "R_As_Ch",
+          "R_As_Ca",
+          "R_As_Cl",
+          "R_Ch_Vh",
+          "R_Ca_Vs",
+          "R_Cl_Vs",
+          "C_As",
+          "C_Ap",
+          "R_Ap_Cp",
+          "VV0_elastance_Hl",
+          "VV0_elastance_Hr",
+          "C_Ch",
+          "C_Ca",
+          "C_Cl",
+          "C_Vt",
+          "C_Vh",
+          "C_Cp",
+          "C_Vp",
+          "V0_As",
+          "V0_Ap",
+          "k_C6H12O6_C3H6O3",
+          "k_Head_C6H12O6_C3H6O3",
+          "k_Physio_C6H12O6_C3H6O3",
+          "k_PSOG_O2",
+          "k_Head_PSOG_O2",
+          "k_Physio_PSOG_O2",
+          "Vv0_V0_ThoraxMuscle"
+        ],
+        "targets": {},
+        "states": {}
+      },
+      {
+        "description": "Final run to allow the system to recover the metabolism",
+        "runsToIgnore": 0,
+        "runsToSave": 60,
+        "multiplier": 0.0,
+        "multiplierC": 1.0,
+        "parameters": [
+          "C_Vs",
+          "Vv0_elastance_Hl",
+          "Vv0_elastance_Hr",
+          "R_As_Ch",
+          "R_As_Ca",
+          "R_As_Cl",
+          "R_Ch_Vh",
+          "R_Ca_Vs",
+          "R_Cl_Vs",
+          "C_As",
+          "C_Ap",
+          "R_Ap_Cp",
+          "VV0_elastance_Hl",
+          "VV0_elastance_Hr",
+          "C_Ch",
+          "C_Ca",
+          "C_Cl",
+          "C_Vt",
+          "C_Vh",
+          "C_Cp",
+          "C_Vp",
+          "V0_As",
+          "V0_Ap",
+          "area_R_La_Cp",
+          "area_R_Cl_TissueLeg",
+          "area_R_Ch_TissueHead",
+          "area_R_Ca_TissueAbdomen",
+          "k_C6H12O6_C3H6O3",
+          "k_Head_C6H12O6_C3H6O3",
+          "k_Physio_C6H12O6_C3H6O3",
+          "k_PSOG_O2",
+          "k_Head_PSOG_O2",
+          "k_Physio_PSOG_O2"
+        ],
+        "targets": {},
+        "states": {}
+      },
+      {
+        "description": "Final run to allow the system to recover the metabolism",
+        "runsToIgnore": 0,
+        "runsToSave": 100,
+        "multiplier": 0.0,
+        "multiplierC": 10.0,
+        "parameters": [
+          "C_Vs",
+          "Vv0_elastance_Hl",
+          "Vv0_elastance_Hr",
+          "R_As_Ch",
+          "R_As_Ca",
+          "R_As_Cl",
+          "R_Ch_Vh",
+          "R_Ca_Vs",
+          "R_Cl_Vs",
+          "C_As",
+          "C_Ap",
+          "R_Ap_Cp",
+          "VV0_elastance_Hl",
+          "VV0_elastance_Hr",
+          "C_Ch",
+          "C_Ca",
+          "C_Cl",
+          "C_Vt",
+          "C_Vh",
+          "C_Cp",
+          "C_Vp",
+          "V0_As",
+          "V0_Ap",
+          "area_R_La_Cp",
+          "area_R_Cl_TissueLeg",
+          "area_R_Ch_TissueHead",
+          "area_R_Ca_TissueAbdomen",
+          "k_C6H12O6_C3H6O3",
+          "k_Head_C6H12O6_C3H6O3",
+          "k_Physio_C6H12O6_C3H6O3",
+          "k_PSOG_O2",
+          "k_Head_PSOG_O2",
+          "k_Physio_PSOG_O2"
+        ],
+        "targets": {},
+        "states": {}
+      },
+      {
+        "description": "Final run to allow the system to recover the metabolism",
+        "runsToIgnore": 0,
+        "runsToSave": 20,
+        "multiplier": 0.0,
+        "multiplierC": 0.0,
+        "parameters": [
+          "C_Vs",
+          "Vv0_elastance_Hl",
+          "Vv0_elastance_Hr",
+          "R_As_Ch",
+          "R_As_Ca",
+          "R_As_Cl",
+          "R_Ch_Vh",
+          "R_Ca_Vs",
+          "R_Cl_Vs",
+          "C_As",
+          "C_Ap",
+          "R_Ap_Cp",
+          "VV0_elastance_Hl",
+          "VV0_elastance_Hr",
+          "C_Ch",
+          "C_Ca",
+          "C_Cl",
+          "C_Vt",
+          "C_Vh",
+          "C_Cp",
+          "C_Vp",
+          "V0_As",
+          "V0_Ap",
+          "area_R_La_Cp",
+          "area_R_Cl_TissueLeg",
+          "area_R_Ch_TissueHead",
+          "area_R_Ca_TissueAbdomen",
+          "k_C6H12O6_C3H6O3",
+          "k_Head_C6H12O6_C3H6O3",
+          "k_Physio_C6H12O6_C3H6O3",
+          "k_PSOG_O2",
+          "k_Head_PSOG_O2",
+          "k_Physio_PSOG_O2"
+        ],
+        "targets": {},
+        "states": {}
+      }
+    ]
+  },
+  "control": {
+    "params": {
+      "L_": {
+        "max": 0.003,
+        "min": 1e-05,
+        "rate": 0.0
+      },
+      "V0_As": {
+        "max": 500.0,
+        "min": 10.0,
+        "rate": 0.0
+      },
+      "C_As": {
+        "max": 9.0,
+        "min": 0.01,
+        "rate": 0.0
+      },
+      "updateNAD": true,
+      "Y_NAD+_": 0.005,
+      "k_C3H6O3_O2": 10000.0,
+      "k_Physio_C3H6O3_O2": 10000.0,
+      "updateArea": true,
+      "lungArea": 1.0,
+      "tissueArea": 1.0,
+      "updateHb": false,
+      "Y_HbO2_": 9.0,
+      "baroreceptor": {
+        "slope": -0.6,
+        "max": 1.0,
+        "min": -1.0
+      },
+      "chemoreceptor": {
+        "slope": 30.0,
+        "max": 1.0,
+        "min": -1.0
+      },
+      "Cyc_RCLa": {
+        "max": 6.0,
+        "min": 1.25,
+        "chemoSensitivity": -0.01,
+        "baroSensitivity": 0.0
+      },
+      "Cyc_HC": {
+        "max": 1.5,
+        "min": 0.34,
+        "chemoSensitivity": -0.005,
+        "baroSensitivity": -0.01
+      },
+      "Vv0_V0_ThoraxMuscle": {
+        "max": 4000.0,
+        "min": 400.0,
+        "chemoSensitivity": 0.05,
+        "baroSensitivity": 0.0
+      },
+      "Vv0_elastance_Hl": {
+        "max": 30.0,
+        "min": 0.2,
+        "chemoSensitivity": 0.01,
+        "baroSensitivity": 0.15
+      },
+      "VV0_elastance_Hl": {
+        "max": 0.3,
+        "min": 0.01,
+        "chemoSensitivity": 0.0,
+        "baroSensitivity": -0.05
+      },
+      "C_Vs": {
+        "max": 800.0,
+        "min": 100.0,
+        "chemoSensitivity": 0.0,
+        "baroSensitivity": -0.05
+      },
+      "R_Ah": {
+        "max": 8.0,
+        "min": 1.0,
+        "chemoSensitivity": 0.0,
+        "baroSensitivity": -0.1,
+        "localSensitivity": 0.1
+      },
+      "R_Aa": {
+        "max": 5.0,
+        "min": 0.1,
+        "chemoSensitivity": -0.025,
+        "baroSensitivity": 0.05,
+        "localSensitivity": 0.1
+      },
+      "R_Al": {
+        "max": 5.0,
+        "min": 0.1,
+        "chemoSensitivity": -0.025,
+        "baroSensitivity": 0.05,
+        "localSensitivity": 0.1
+      },
+      "R_Ap": {
+        "max": 0.03,
+        "min": 0.005,
+        "chemoSensitivity": -0.01,
+        "baroSensitivity": 0.05,
+        "localSensitivity": 0.05
+      },
+      "R_Ch": {
+        "max": 5.0,
+        "min": 0.5,
+        "chemoSensitivity": -0.005,
+        "baroSensitivity": -0.025,
+        "localSensitivity": 0.1
+      },
+      "R_C": {
+        "max": 3.0,
+        "min": 0.1,
+        "chemoSensitivity": -0.005,
+        "baroSensitivity": 0.025,
+        "localSensitivity": 0.1
+      },
+      "C_C": {
+        "max": 25.0,
+        "min": 1.0,
+        "chemoSensitivity": 0.05,
+        "baroSensitivity": 0.0,
+        "localSensitivity": -0.2
+      },
+      "C_Vp": {
+        "max": 25.0,
+        "min": 1.0,
+        "chemoSensitivity": 0.05,
+        "baroSensitivity": 0.0,
+        "localSensitivity": 0.0
+      },
+      "C_P": {
+        "max": 20.0,
+        "min": 3.0,
+        "chemoSensitivity": 0.0,
+        "baroSensitivity": 0.0,
+        "localSensitivity": -0.1
+      },
+      "R_L": {
+        "max": 0.01,
+        "min": 0.0005,
+        "chemoSensitivity": -0.02,
+        "baroSensitivity": 0.0,
+        "localSensitivity": 0.0
+      },
+      "Vv0_elastance_Hr": {
+        "dc": 0.0,
+        "linear": 0.0,
+        "quadratic": 0.0
+      },
+      "C_Ap": {
+        "dc": 0.0,
+        "linear": 0.0,
+        "quadratic": 0.0
+      },
+      "t_Sys_HC": {
+        "dc": 0.688,
+        "linear": -0.278,
+        "quadratic": 0.0
+      },
+      "inflectionPoint_baroreceptor": {
+        "dc": 835.0,
+        "linear": 101.0,
+        "quadratic": 0.0
+      },
+      "inflectionPoint_chemoreceptor": {
+        "dc": 0.75,
+        "linear": 0.0,
+        "quadratic": 0.0
+      }
+    },
+    "stages": [
+      {
+        "description": "Baseline",
+        "runsToIgnore": 3,
+        "runsToSave": 1,
+        "controlSensitivities": {
+          "Upt_TissuesLeg": {
+            "rate": 0.0
+          },
+          "Upt_TissuesHead": {
+            "rate": 0.0
+          },
+          "Upt_TissuesAbdomen": {
+            "rate": 0.0
+          },
+          "area_R_La_Cp": {
+            "rate": 0.0
+          },
+          "area_R_Cl_TissueLeg": {
+            "rate": 0.0
+          },
+          "area_R_Ch_TissueHead": {
+            "rate": 0.0
+          },
+          "area_R_Ca_TissueAbdomen": {
+            "rate": 0.0
+          },
+          "Cyc_HC": {
+            "rate": 0.0
+          },
+          "Cyc_RCLa": {
+            "rate": 0.0
+          }
+        },
+        "states": {}
+      },
+      {
+        "description": "Exercise Up",
+        "runsToIgnore": 0,
+        "runsToSave": 3,
+        "controlSensitivities": {
+          "Upt_TissuesLeg": {
+            "rate": 0.0003
+          },
+          "Upt_TissuesAbdomen": {
+            "rate": 0.00015
+          }
+        },
+        "states": {}
+      },
+      {
+        "description": "Exercise Down",
+        "runsToIgnore": 0,
+        "runsToSave": 0,
+        "controlSensitivities": {
+          "Upt_TissuesLeg": {
+            "rate": -0.003
+          },
+          "Upt_TissuesAbdomen": {
+            "rate": -0.0015
+          }
+        },
+        "states": {}
+      },
+      {
+        "description": "Rest/Recovery Phase",
+        "runsToIgnore": 0,
+        "runsToSave": 0,
+        "controlSensitivities": {
+          "Upt_TissuesLeg": {
+            "rate": 0.0
+          },
+          "Upt_TissuesHead": {
+            "rate": 0.0
+          },
+          "Upt_TissuesAbdomen": {
+            "rate": 0.0
+          }
+        },
+        "states": {}
+      }
+    ]
+  }
+}
