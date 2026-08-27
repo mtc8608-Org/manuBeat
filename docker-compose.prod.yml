@@ -1,0 +1,115 @@
+# Production stack — one full app stack behind the shared Caddy front door.
+#
+# Differences from dev (docker-compose.yml), all deliberate:
+#   - no pwa service: the static vite build is served by Caddy from
+#     /srv/caddy/www/<app> (no dev server in prod);
+#   - no build: blocks — images are prebuilt on the laptop by
+#     deploy/ship-app.sh and arrive via docker save | ssh docker load;
+#   - no published ports: Caddy reaches nodejs by container name over the
+#     external `edge` network; everything else stays internal;
+#   - named volumes instead of .persist/ binds (disposable-box discipline:
+#     dump procedure is pg_dump + minio dir copy);
+#   - restart: unless-stopped everywhere — the stack survives reboots.
+#
+# This file is code: deploy/ship-app.sh refreshes it on the box at
+# /srv/apps/<app>/docker-compose.yml on every ship. The relative mounts
+# (./init-scripts, ./public) resolve against that on-box directory, which
+# the ship script also populates. Config lives next to it in .env
+# (created once from .env.prod.example, filled by hand, chmod 600).
+
+name: ${COMPOSE_PROJECT_NAME}
+
+services:
+
+  python:
+    image: ${COMPOSE_PROJECT_NAME}_python:prod
+    container_name: ${COMPOSE_PROJECT_NAME}_python
+    # No env_file: the compute service is unauthenticated — don't hand it the
+    # secrets. [MEDICAL] manuBeat's deviation is these five variables only; see
+    # the long note on the same service in docker-compose.yml.
+    environment:
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_PORT: ${MINIO_PORT}
+      MINIO_USER: ${MINIO_USER}
+      MINIO_PASSWORD: ${MINIO_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+    restart: unless-stopped
+    networks:
+      - internal
+
+  nodejs:
+    image: ${COMPOSE_PROJECT_NAME}_nodejs:prod
+    container_name: ${COMPOSE_PROJECT_NAME}_nodejs  # Caddy proxies to <app>_nodejs:3000 — name is load-bearing
+    env_file: .env
+    restart: unless-stopped
+    volumes:
+      # Seed PNGs (content images): shipped content, not baked into the image,
+      # so forks' differing screenshots deploy without an image rebuild.
+      - ./public:/public:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      python:
+        condition: service_started
+    networks:
+      - edge      # the only service Caddy can reach
+      - internal
+      - db
+
+  minio:
+    # Pinned release (not :latest): local smoke test and box pull must run
+    # the exact same image. Bump deliberately, laptop-first.
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    container_name: ${COMPOSE_PROJECT_NAME}_minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    volumes:
+      - minio-data:/data
+    networks:
+      - internal
+
+  postgres:
+    image: postgres:16.2
+    container_name: ${COMPOSE_PROJECT_NAME}_db
+    stop_grace_period: 60s
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      # Runs only on a fresh (empty) volume — post-launch seed changes need a
+      # deliberate wipe or manual SQL, never happen on a routine ship.
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro
+    networks:
+      - db
+
+volumes:
+  pg-data:
+  minio-data:
+
+networks:
+  # Created once per host by deploy/provision.sh; shared with Caddy.
+  edge:
+    external: true
+  internal:
+    name: ${COMPOSE_PROJECT_NAME}-internal
+  db:
+    name: ${COMPOSE_PROJECT_NAME}-db

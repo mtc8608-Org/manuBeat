@@ -1,0 +1,21 @@
+# Production image — slim base, source baked in, no reload watcher.
+# Built on the laptop by deploy/ship-app.sh (never on the box) and shipped
+# via docker save | ssh docker load. Dev uses ./Dockerfile instead
+# (bind-mounted source + uvicorn --reload).
+# No hdf5-tools here: it is a dev-image convenience CLI — nothing under api/
+# uses it. Forks with real compute needs extend this file themselves.
+FROM python:3.13-slim
+
+# requirements.lock is the enforced pip freeze (requirements.txt states intent,
+# unpinned). Regeneration procedure: .claude/rules/python-compute.md.
+COPY requirements.lock .
+RUN pip install --no-cache-dir -r requirements.lock
+
+WORKDIR /src
+COPY api ./api
+
+# Non-root: the service only computes — it owns no files and writes nothing.
+RUN useradd --create-home app
+USER app
+EXPOSE 5000
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "5000"]

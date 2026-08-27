@@ -1,7 +1,5 @@
 {
-  "name": "sidemenu",
-  "integrations": {
-    "capacitor": {}
-  },
+  "name": "manubeat",
+  "integrations": {},
   "type": "react-vite"
 }

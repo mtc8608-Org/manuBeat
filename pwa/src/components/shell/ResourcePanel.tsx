@@ -15,6 +15,8 @@ import { addOutline, chevronDownOutline, chevronUpOutline } from 'ionicons/icons
 import EmptyState from './EmptyState';
 import { PanelConfig } from '../../interfaces/types';
 
+export interface ResourceBadge { label: string; color?: string }
+
 export interface ResourcePanelFilter {
   text?:            string;
   onTextChange?:    (v: string) => void;
@@ -22,6 +24,7 @@ export interface ResourcePanelFilter {
   types?:           readonly string[];
   typeValue?:       string;
   onTypeChange?:    (v: string) => void;
+  typeAllLabel?:    string;   // label for the empty ("all") option, default 'All types'
 }
 
 interface ResourcePanelBase<T extends { id: string }> {
@@ -29,8 +32,8 @@ interface ResourcePanelBase<T extends { id: string }> {
   selectedId?: string | null;
 
   getLabel:     (item: T) => string;
-  getSubLabel?: (item: T) => string;
-  getBadge?:    (item: T) => { label: string; color?: string } | null;
+  getSubLabel?: (item: T) => string | undefined;
+  getBadge?:    (item: T) => ResourceBadge | ResourceBadge[] | null;
   getIcon?:     (item: T) => string | undefined;
 
   onSelect:  (item: T) => void;
@@ -112,6 +115,9 @@ function ResourcePanel<T extends { id: string }>({
     ...(config?.filter?.type?.options?.length
       ? { types: config.filter.type.options as string[] }
       : {}),
+    ...(config?.filter?.type?.allLabel
+      ? { typeAllLabel: config.filter.type.allLabel }
+      : {}),
   } : filter;
 
   return (
@@ -149,7 +155,7 @@ function ResourcePanel<T extends { id: string }>({
               value={effectiveFilter.typeValue ?? ''}
               onIonChange={e => effectiveFilter.onTypeChange?.(e.detail.value ?? '')}
             >
-              <IonSelectOption value="">All types</IonSelectOption>
+              <IonSelectOption value="">{effectiveFilter.typeAllLabel ?? 'All types'}</IonSelectOption>
               {effectiveFilter.types.map(t => (
                 <IonSelectOption key={t} value={t}>{t}</IonSelectOption>
               ))}
@@ -184,20 +190,31 @@ function ResourcePanel<T extends { id: string }>({
               >
                 {getIcon?.(item) && <IonIcon slot="start" icon={getIcon!(item)} />}
                 <IonLabel>
-                  {getSubLabel ? (
-                    <>
-                      <p style={{ margin: 0 }}>{getLabel(item)}</p>
-                      <p style={{ margin: 0, fontSize: 12, color: 'var(--ion-color-medium)' }}>
-                        {getSubLabel(item)}
-                      </p>
-                    </>
-                  ) : getLabel(item)}
+                  {(() => {
+                    const sub = getSubLabel?.(item);
+                    return sub ? (
+                      <>
+                        <p style={{ margin: 0 }}>{getLabel(item)}</p>
+                        <p style={{ margin: 0, fontSize: 12, color: 'var(--ion-color-medium)' }}>{sub}</p>
+                      </>
+                    ) : getLabel(item);
+                  })()}
                 </IonLabel>
                 {getBadge?.(item) && (() => {
                   const badge = getBadge!(item);
-                  return badge ? (
-                    <IonBadge slot="end" color={badge.color ?? 'medium'}>{badge.label}</IonBadge>
-                  ) : null;
+                  if (!badge) return null;
+                  if (!Array.isArray(badge)) {
+                    return <IonBadge slot="end" color={badge.color ?? 'medium'}>{badge.label}</IonBadge>;
+                  }
+                  // Stacked vertically and smaller — side by side they starve the
+                  // label of width in the narrow left column (it collapses to 0).
+                  return (
+                    <div slot="end" style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-end' }}>
+                      {badge.map((b, i) => (
+                        <IonBadge key={i} color={b.color ?? 'medium'} style={{ fontSize: 10 }}>{b.label}</IonBadge>
+                      ))}
+                    </div>
+                  );
                 })()}
                 {onDelete && (
                   <IonButton

@@ -1,15 +1,39 @@
 version: "3.9"
+
+# DEV stack. Every published port binds to 127.0.0.1 on purpose: this file runs
+# with example secrets (JWT_SECRET=replace-this…, ADMIN_PASSWORD=…), and on
+# 0.0.0.0 any machine on the same network — café wifi, a shared office LAN —
+# reaches the admin API, the unauthenticated python service and the MinIO
+# console. To test the PWA from a phone, change only the pwa port back to
+# 0.0.0.0 and only while you need it. Production uses docker-compose.prod.yml,
+# which publishes nothing at all (Caddy reaches nodejs over the edge network).
 services:
   # Python container
   python:
     build: ./python
     image: ${COMPOSE_PROJECT_NAME}_python
     container_name: ${COMPOSE_PROJECT_NAME}_python
-    env_file: .env
+    # No env_file: the compute service is unauthenticated, and handing it .env
+    # put JWT_SECRET, SECRETS_MASTER_KEY, ADMIN_PASSWORD and the DB password one
+    # file-read away from any endpoint it exposes.
+    #
+    # [MEDICAL] manuBeat deviates from upstream's fully credential-free compute
+    # service by exactly these five variables: the cardio routes read and write
+    # patient HDF5 files in MinIO directly (python/api/domains/medical/
+    # cardio_routes.py). Listing them explicitly rather than restoring env_file
+    # keeps every other secret out of the container. Moving that storage access
+    # into the Node caller — the framework rule — would drop this block; until
+    # then, never widen it.
+    environment:
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_PORT: ${MINIO_PORT}
+      MINIO_USER: ${MINIO_USER}
+      MINIO_PASSWORD: ${MINIO_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET}
     volumes:
       - ./python:/src
     ports:
-      - 0.0.0.0:${PYTHON_PORT}:5000
+      - 127.0.0.1:${PYTHON_PORT}:5000
     networks:
       - default
     command: ./api/watch
@@ -23,7 +47,7 @@ services:
       - ./nodejs:/src
       - ./pwa/public:/public:ro
     ports:
-      - 0.0.0.0:${NODE_PORT}:3000
+      - 127.0.0.1:${NODE_PORT}:3000
     depends_on:
       postgres:
         condition: service_healthy
@@ -35,7 +59,7 @@ services:
       - default
       - db
     command: backend
-  # Ionic Client container
+  # PWA client container
   pwa:
     build: ./pwa
     tty: true
@@ -47,9 +71,9 @@ services:
     networks:
       - default
     ports:
-      - 0.0.0.0:${PWA_PORT}:8100 # pwa
-      - 0.0.0.0:35729:35729 # livereload
-      - 0.0.0.0:53703:53703 # websocket
+      - 127.0.0.1:${PWA_PORT}:8100 # pwa
+      - 127.0.0.1:35729:35729 # livereload
+      - 127.0.0.1:53703:53703 # websocket
     command: serve --external
   # MinIO object storage
   minio:
@@ -60,8 +84,8 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
     command: server /data --console-address ":9001"
     ports:
-      - 0.0.0.0:9000:9000
-      - 0.0.0.0:9001:9001
+      - 127.0.0.1:9000:9000
+      - 127.0.0.1:9001:9001
     volumes:
       - .persist/minio:/data
     networks:

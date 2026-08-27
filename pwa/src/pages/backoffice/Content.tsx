@@ -111,8 +111,6 @@ const Content: React.FC = () => {
   const [pageLoading, setPageLoading]       = useState(false);
   const [rightTab, setRightTab]              = useState(0);
 
-  const [genApiKey, setGenApiKey]       = useState(() => localStorage.getItem('gen_api_key') ?? '');
-
   const [genHistory, setGenHistory]     = useState<{ role: 'user'|'assistant'; content: string; display: string; nodes?: GenNode[] }[]>(() => {
     try { return JSON.parse(localStorage.getItem('gen_history') ?? '[]'); } catch { return []; }
   });
@@ -149,10 +147,6 @@ const Content: React.FC = () => {
   useEffect(() => {
     ApiService.getComponentByName(FORM_ID.NEW_PAGE).then(f => setNewPageForm(f ?? null));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    localStorage.setItem('gen_api_key', genApiKey);
-  }, [genApiKey]);
 
   useEffect(() => {
     localStorage.setItem('gen_history', JSON.stringify(genHistory));
@@ -293,7 +287,6 @@ const Content: React.FC = () => {
         genFiles, apiHistory, genInput.trim(),
         (text) => setGenStream(prev => prev + text),
         (node) => { receivedNodes.push(node); setGenDraftNodes(prev => [...prev, node]); },
-        genApiKey,
       );
       setGenHistory(prev => [
         ...prev,
@@ -562,39 +555,8 @@ const Content: React.FC = () => {
                     save them as a new page in one click.
                     <br />
                     <span style={{ color: 'var(--ion-color-medium)', fontSize: 12 }}>
-                      Requires an Anthropic API key — enter yours below to get started.
+                      Requires an Anthropic API key — add yours in Account → Integrations.
                     </span>
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: 12, color: 'var(--ion-color-medium)', marginBottom: 4 }}>
-                      Anthropic API key
-                    </label>
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                      <input
-                        type="password"
-                        placeholder="sk-ant-…"
-                        value={genApiKey}
-                        onChange={e => setGenApiKey(e.target.value)}
-                        style={{
-                          flex: 1, borderRadius: 8, padding: '8px 10px', fontSize: 14,
-                          border: '1px solid var(--ion-color-medium)', background: 'var(--ion-background-color)',
-                          color: 'var(--ion-text-color)', boxSizing: 'border-box',
-                        }}
-                      />
-                      {genApiKey && (
-                        <button
-                          onClick={() => { setGenApiKey(''); localStorage.removeItem('gen_api_key'); }}
-                          title="Clear API key"
-                          style={{
-                            padding: '6px 10px', borderRadius: 8, border: '1px solid var(--ion-color-medium)',
-                            background: 'transparent', color: 'var(--ion-color-medium)', cursor: 'pointer',
-                            fontSize: 13, whiteSpace: 'nowrap',
-                          }}
-                        >
-                          Clear
-                        </button>
-                      )}
-                    </div>
                   </div>
                   {(genHistory.length > 0 || genLoading) && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

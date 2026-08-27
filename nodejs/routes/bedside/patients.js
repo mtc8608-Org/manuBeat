@@ -22,8 +22,9 @@ const PATIENT_COLUMNS = [
 ];
 const DATE_COLUMNS = new Set(['date_of_birth']);
 
+// Tier, never the role name — see backend-api.md and the resolver's twin guard.
 const requireAdmin = (req, res) => {
-  if (req.user?.role !== 'admin') {
+  if (req.user?.tier !== 'admin') {
     res.status(req.user ? 403 : 401).json({ error: req.user ? 'Admin access required' : 'Authentication required' });
     return false;
   }

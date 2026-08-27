@@ -1,8 +1,12 @@
 // Menu — the hamburger slide-out drawer.
 // - Links to every major section of the app
 // - Shows the logged-in user's name and email
-// - Dark / light mode toggle
-// - Logout button
+// - Logout button (dark mode toggle lives in Settings)
+//
+// The area groups are rendered from NAV_AREAS (constants.ts), the single nav
+// source shared with AppHeader and AreaShell — adding an area needs no edit
+// here. Only the Navigation header and Logout are hand-written, because
+// neither belongs to an area.
 import {
   IonContent,
   IonIcon,
@@ -13,27 +17,18 @@ import {
   IonMenu,
   IonMenuToggle,
   IonNote,
-  IonToggle,
 } from '@ionic/react';
 
 import { useLocation } from 'react-router-dom';
-import {
-  clipboardOutline,
-  documentTextOutline,
-  constructOutline, folderOutline,
-  personOutline, logOutOutline,
-  moonOutline, homeOutline,
-  pulseOutline, gitNetworkOutline, statsChartOutline, optionsOutline, layersOutline,
-} from 'ionicons/icons';
-import { useTheme } from '../../contexts/ThemeContext';
+import { logOutOutline, homeOutline } from 'ionicons/icons';
 import { useAuth } from '../../contexts/AuthContext';
-import { ROUTE } from '../../constants';
+import { ROUTE, NAV_AREAS } from '../../constants';
+import { ICON_MAP } from './icons';
 import './Menu.css';
 
 const Menu: React.FC = () => {
   const location = useLocation();
-  const { theme, toggleTheme } = useTheme();
-  const { user, isAdmin, logout } = useAuth();
+  const { user, hasTier, logout } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -54,6 +49,12 @@ const Menu: React.FC = () => {
     </IonMenuToggle>
   );
 
+  // Each area declares the minimum rung that may see it; hasTier compares the
+  // caller's rung against it, so all three tiers are expressible here.
+  const visibleAreas = user
+    ? NAV_AREAS.filter(area => hasTier(area.tier))
+    : [];
+
   return (
     <IonMenu contentId="main" type="overlay">
       <IonContent>
@@ -64,46 +65,20 @@ const Menu: React.FC = () => {
           {navItem(ROUTE.LANDING, homeOutline, 'Home')}
         </IonList>
 
-        <IonList>
-          <IonListHeader>Surveys</IonListHeader>
-          {navItem(ROUTE.SURVEYS, clipboardOutline, 'Surveys')}
-        </IonList>
+        {visibleAreas.map(area => (
+          <IonList key={area.key} id={area.key === 'USER' ? 'labels-list' : undefined}>
+            <IonListHeader>{area.title}</IonListHeader>
+            {area.items.map(item => navItem(item.route, ICON_MAP[item.icon], item.label))}
 
-        <IonList>
-          <IonListHeader>Physiology Simulator</IonListHeader>
-          {navItem(ROUTE.SIMULATOR,     pulseOutline,       'Simulator')}
-          {navItem(ROUTE.MODEL_SANDBOX, gitNetworkOutline,  'Model Sandbox')}
-          {navItem(ROUTE.PLOT_SANDBOX,  statsChartOutline,  'Plot Sandbox')}
-          {navItem(ROUTE.PROC_SANDBOX,  optionsOutline,     'Processing Sandbox')}
-          {navItem(ROUTE.HDF_INSPECTOR, layersOutline,      'HDF Inspector')}
-        </IonList>
-
-        {isAdmin && (
-          <IonList>
-            <IonListHeader>Backoffice</IonListHeader>
-            {navItem(ROUTE.CONTENT,       documentTextOutline, 'Content')}
-            {navItem(ROUTE.FILES,         folderOutline,       'Files')}
-            {navItem(ROUTE.CONFIGURATION, constructOutline,    'Configuration')}
+            {/* Logout closes the account group — it is not a navigable area item. */}
+            {area.key === 'USER' && (
+              <IonItem lines="none" button detail={false} onClick={handleLogout}>
+                <IonIcon aria-hidden="true" slot="start" icon={logOutOutline} />
+                <IonLabel>Logout</IonLabel>
+              </IonItem>
+            )}
           </IonList>
-        )}
-
-        <IonList id="labels-list">
-          <IonListHeader>Account</IonListHeader>
-          {navItem(ROUTE.ACCOUNT, personOutline, 'My Account')}
-
-          {user && (
-            <IonItem lines="none" button detail={false} onClick={handleLogout}>
-              <IonIcon aria-hidden="true" slot="start" icon={logOutOutline} />
-              <IonLabel>Logout</IonLabel>
-            </IonItem>
-          )}
-
-          <IonItem lines="none">
-            <IonIcon aria-hidden="true" slot="start" icon={moonOutline} />
-            <IonLabel>Dark Mode</IonLabel>
-            <IonToggle slot="end" checked={theme === 'dark'} onIonChange={toggleTheme} />
-          </IonItem>
-        </IonList>
+        ))}
 
       </IonContent>
     </IonMenu>

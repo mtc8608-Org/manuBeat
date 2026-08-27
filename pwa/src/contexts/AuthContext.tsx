@@ -1,20 +1,26 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AuthUser } from '../interfaces/types';
+import { API_BASE, RoleTier, tierRank } from '../constants';
 
 interface AuthContextValue {
   user:     AuthUser | null;
   token:    string | null;
+  /** True when the caller's tier is at or above `min` on the ROLE_TIERS ladder. */
+  hasTier:  (min: RoleTier) => boolean;
   isAdmin:  boolean;
   login:    (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string) => Promise<void>;
   logout:   () => void;
 }
 
 const AuthContext = createContext<AuthContextValue>({
-  user:    null,
-  token:   null,
-  isAdmin: false,
-  login:   async () => {},
-  logout:  () => {},
+  user:     null,
+  token:    null,
+  hasTier:  () => false,
+  isAdmin:  false,
+  login:    async () => {},
+  register: async () => {},
+  logout:   () => {},
 });
 
 const TOKEN_KEY = 'auth_token';
@@ -29,7 +35,7 @@ const loadStoredToken = (): { token: string; user: AuthUser } | null => {
       localStorage.removeItem(TOKEN_KEY);
       return null;
     }
-    return { token: raw, user: { id: payload.id, email: payload.email, role: payload.role } };
+    return { token: raw, user: { id: payload.id, email: payload.email, role: payload.role, tier: payload.tier ?? payload.role } };
   } catch {
     return null;
   }
@@ -44,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Verify stored token against the server on startup
   useEffect(() => {
     if (!stored) return;
-    fetch('http://localhost:3000/api/me', {
+    fetch(`${API_BASE}/me`, {
       headers: { Authorization: `Bearer ${stored.token}` },
     }).then(res => {
       if (!res.ok) {
@@ -69,7 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   if (!ready) return null;
 
   const login = async (email: string, password: string) => {
-    const res = await fetch(`http://localhost:3000/api/login`, {
+    const res = await fetch(`${API_BASE}/login`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ email, password }),
@@ -83,13 +89,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(data.user);
   };
 
+  const register = async (email: string, password: string) => {
+    const res = await fetch(`${API_BASE}/register`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email, password }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error ?? 'Registration failed');
+    }
+    const data = await res.json();
+    setToken(data.token);
+    setUser(data.user);
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
   };
 
+  // Gate on the role's *tier* (roles-table ladder), so custom roles aliased
+  // onto a tier pass its rung. Pre-tier tokens carry only the role name —
+  // for the three system roles name === tier.
+  const tier = user ? (user.tier ?? user.role) : null;
+
+  // The one tier comparison in the frontend. It is a ladder check, not equality,
+  // so a higher rung always passes a lower requirement (an admin sees the 'user'
+  // areas). Signed-out and unrecognised tiers rank -1 and pass nothing.
+  //
+  // This mirrors permissions.js but does NOT enforce it: hiding a link is
+  // presentation. Every operation behind it is gated server-side, and must stay
+  // so — nav is never the thing keeping a caller out.
+  const hasTier = (min: RoleTier) => tierRank(tier) >= tierRank(min);
+
   return (
-    <AuthContext.Provider value={{ user, token, isAdmin: user?.role === 'admin', login, logout }}>
+    <AuthContext.Provider value={{
+      user, token,
+      hasTier,
+      isAdmin: hasTier('admin'),
+      login, register, logout,
+    }}>
       {children}
     </AuthContext.Provider>
   );

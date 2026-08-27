@@ -1,5 +1,6 @@
 // Page: Surveys — survey builder, form filler, and answer viewer.
-// Reads/writes: surveys + survey_components tables (GraphQL). Answers stored per survey.
+// Reads/writes: surveys + survey_components tables (GraphQL). Answers are owner-stamped:
+// users see/edit their own submissions, admins see all (with submitter column + delete).
 // Authenticated. Build tab visible to all; admin controls gated via isAdmin where needed.
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -20,8 +21,9 @@ import EmptyState from '../../components/shell/EmptyState';
 import DataTable, { flattenObject } from '../../components/shell/DataTable';
 import TreeEditor, { TreeEditorHandle } from '../../components/shell/TreeEditor';
 import { Survey, SurveyAnswer, ComponentResults } from '../../interfaces/types';
-import { SURVEY_QUESTION_TYPES, SURVEY_TYPE, AREA_NAV, FORM_ID, PANEL_CONFIG, SURVEY_EDITOR_ID, SURVEY_ADDABLE_TYPES, API_BASE, ENDPOINT } from '../../constants';
+import { SURVEY_QUESTION_TYPES, SURVEY_TYPE, AREA_NAV, FORM_ID, PANEL_CONFIG, SURVEY_EDITOR_ID, SURVEY_ADDABLE_TYPES } from '../../constants';
 import { useAuth } from '../../contexts/AuthContext';
+import { downloadBlob } from '../../utils/download';
 
 
 /*
@@ -138,8 +140,10 @@ const Surveys: React.FC = () => {
   const [qTypeFilter, setQTypeFilter]         = useState('');
   const [qTextFilter, setQTextFilter]         = useState('');
 
-  const [stats, setStats]             = useState<any | null>(null);
+  // [SURVEYS] Stats tab — manuBeat-only, computed by the fork's surveys domain.
+  const [stats, setStats]               = useState<any | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
+  const [exporting, setExporting]       = useState(false);
 
 
 /*
@@ -155,6 +159,9 @@ const Surveys: React.FC = () => {
     ApiService.getComponentByName(FORM_ID.NEW_SURVEY).then(f => setNewSurveyForm(f ?? null));
   }, []);
 
+  // [SURVEYS] Stats are computed on demand (Node → Python), so only fetch while
+  // the tab is actually open. Index 3 because the tab only exists for admins,
+  // where it is appended after Fill Form / Answers / Build.
   const STATS_TAB = 3;
   useEffect(() => {
     if (!isAdmin || rightTab !== STATS_TAB || !selectedSurvey) return;
@@ -166,6 +173,21 @@ const Surveys: React.FC = () => {
     });
     return () => { cancelled = true; };
   }, [selectedSurvey?.id, rightTab]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // The export route is admin-guarded, so it cannot be a plain <a href> — the
+  // browser would send no Authorization header. Fetch the bytes, then save.
+  const handleExportCsv = async () => {
+    if (!selectedSurvey) return;
+    setExporting(true);
+    try {
+      const blob = await ApiService.fetchSurveyExportBlob(selectedSurvey.id);
+      downloadBlob(blob, `${selectedSurvey.title}_answers.csv`);
+    } catch (e) {
+      console.error('Survey export failed:', e);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const reloadTree = async (componentId: string) => {
     const tree = await ApiService.getSurveyComponent(componentId);
@@ -404,12 +426,15 @@ const Surveys: React.FC = () => {
                   title="Answers"
                   fetcher={filter => ApiService.getSurveyAnswers(selectedSurvey.id, filter)}
                   flattenRow={a => flattenObject(a.answers)}
-                  leadingCols={[{ label: 'Submitted', format: a => formatDate(a.submitted_at) }]}
+                  leadingCols={[
+                    { label: 'Submitted', format: a => formatDate(a.submitted_at) },
+                    ...(isAdmin ? [{ label: 'By', format: (a: SurveyAnswer) => a.owner_email ?? '—' }] : []),
+                  ]}
                   labelMap={labelMap}
                   exportFilename={`${selectedSurvey.title}_answers`}
                   refreshToken={answerRefreshToken}
                   onEdit={openAnswerEdit}
-                  onDelete={handleAnswerDelete}
+                  onDelete={isAdmin ? handleAnswerDelete : undefined}
                 />
               ),
             },
@@ -453,15 +478,13 @@ const Surveys: React.FC = () => {
                 />
               ),
             },
+            // [SURVEYS] Stats — manuBeat-only. Admin-only because it aggregates
+            // across every respondent, unlike the owner-scoped Answers tab.
             ...(isAdmin ? [{
               label: 'Stats',
               actions: selectedSurvey && (
-                <IonButton
-                  size="small" fill="outline"
-                  href={`${API_BASE}${ENDPOINT.SURVEY_EXPORT}/${selectedSurvey.id}/stats/export`}
-                  target="_blank"
-                >
-                  Export CSV
+                <IonButton size="small" fill="outline" onClick={handleExportCsv} disabled={exporting}>
+                  {exporting ? 'Exporting…' : 'Export CSV'}
                 </IonButton>
               ),
               content: !selectedSurvey ? (

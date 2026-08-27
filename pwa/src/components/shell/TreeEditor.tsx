@@ -56,6 +56,7 @@ export interface TreeEditorProps {
   emptyMessage?:    string;
   title?:           string;
   readOnly?:        boolean;
+  rootEditable?:    boolean;   // show an Edit button on the root header (opens openEdit(root))
 }
 
 const TreeEditor = forwardRef<TreeEditorHandle, TreeEditorProps>(({
@@ -67,7 +68,7 @@ const TreeEditor = forwardRef<TreeEditorHandle, TreeEditorProps>(({
   onCreateNode, onLinkNode, onSaveNode, onUnlink, onMoveNode,
   editExtra, headerActions,
   addLabel = 'Add', emptyMessage = 'Nothing here yet.',
-  title, readOnly = false,
+  title, readOnly = false, rootEditable = false,
 }, ref) => {
   const formCache = useRef<Record<string, ComponentResults | null>>({});
 
@@ -309,6 +310,14 @@ const TreeEditor = forwardRef<TreeEditorHandle, TreeEditorProps>(({
             {!readOnly && (
               <IonButtons slot="end">
                 {headerActions}
+                {root && rootEditable && (
+                  <IonButton size="small" fill="outline"
+                    onClick={() => openEdit(root)}
+                  >
+                    <IonIcon slot="start" icon={createOutline} />
+                    Edit
+                  </IonButton>
+                )}
                 {root && (
                   <IonButton size="small" color="success"
                     onClick={() => openAdd(root.id!, root.children?.length ?? 0)}

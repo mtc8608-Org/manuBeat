@@ -22,7 +22,8 @@ import {
   refreshOutline,
   trashOutline,
 } from 'ionicons/icons';
-import ReactECharts from 'echarts-for-react';
+import EChart from '../../components/charts/EChart';
+import type { EChartsOption } from 'echarts';
 import ApiService from '../../services/Api';
 import SplitPageLayout from '../../components/shell/SplitPageLayout';
 import TabPanel from '../../components/shell/TabPanel';
@@ -199,7 +200,7 @@ const DataView: React.FC<DataViewProps> = ({ path, dataset, isDark }) => {
     n:    flat.length,
   };
 
-  const option = {
+  const option: EChartsOption = {
     backgroundColor: 'transparent',
     textStyle: { color: textColor },
     tooltip: { trigger: 'axis' as const },
@@ -223,7 +224,7 @@ const DataView: React.FC<DataViewProps> = ({ path, dataset, isDark }) => {
         <span><strong>mean:</strong> {stats.mean}</span>
         {flat.length > MAX_CHART_POINTS && <span>(chart shows 1 in {Math.ceil(flat.length / MAX_CHART_POINTS)} points)</span>}
       </div>
-      <ReactECharts option={option} style={{ height: 280 }} />
+      <EChart option={option} height={280} />
     </div>
   );
 };

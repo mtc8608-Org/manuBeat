@@ -27,7 +27,9 @@ interface TabPanelProps {
 const TabPanel: React.FC<TabPanelProps> = ({ tabs, defaultTab = 0, activeTab, onTabChange }) => {
   const [internalActive, setInternalActive] = useState(defaultTab);
   const controlled = activeTab !== undefined;
-  const active = controlled ? activeTab : internalActive;
+  // Clamp so a shrinking tabs array (e.g. a mode-gated tab disappearing) never
+  // leaves the active index pointing past the end, which would render nothing.
+  const active = Math.max(0, Math.min(controlled ? activeTab : internalActive, tabs.length - 1));
   const handleChange = (i: number) => { if (controlled) onTabChange?.(i); else setInternalActive(i); };
   const tab = tabs[active] ?? tabs[0];
 

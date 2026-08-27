@@ -15,15 +15,14 @@ RUN uname=node && \
 # Set the working directory in the container
 WORKDIR /src
 
+# Dependency layer first so source edits don't invalidate the npm cache.
+# npm ci installs exactly the committed lockfile and never rewrites it.
+COPY package*.json ./
+RUN npm ci
+
 # Copy the rest of the application code to the container
 COPY . .
-#COPY package.json ./
-#COPY backend.js ./
 
-# Install any dependencies
-RUN npm install
-
-#COPY entrypoint.sh ./
 RUN chmod +x ./entrypoint.sh
 ENTRYPOINT [ "./entrypoint.sh" ]
 

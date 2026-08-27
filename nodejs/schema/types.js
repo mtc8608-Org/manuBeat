@@ -35,6 +35,8 @@ const SurveyAnswerType = new GraphQLObjectType({
   fields: () => ({
     id:           { type: GraphQLID },
     survey_id:    { type: GraphQLID },
+    owner_id:     { type: GraphQLID },
+    owner_email:  { type: GraphQLString },
     answers:      { type: GraphQLJSON },
     submitted_at: { type: GraphQLString },
   }),
@@ -115,6 +117,45 @@ const UserType = new GraphQLObjectType({
   }),
 });
 
+// A role from the roles catalogue: a name aliased onto a permissions tier
+// ('registered' | 'user' | 'admin'). is_system rows are the three seeded
+// roles the code depends on (name/tier immutable, not deletable).
+const RoleType = new GraphQLObjectType({
+  name: 'Role',
+  fields: () => ({
+    id:          { type: GraphQLID },
+    name:        { type: GraphQLString },
+    tier:        { type: GraphQLString },
+    description: { type: GraphQLString },
+    is_system:   { type: GraphQLBoolean },
+    created_at:  { type: GraphQLString },
+    users:       { type: GraphQLString },   // count of users holding the role (string for GraphQL bigint safety)
+  }),
+});
+
+// Per-user display data (user_profile). `data` is form-driven JSONB — the app
+// defines its shape via its seeded `form_user_profile` FormRenderer form.
+const UserProfileType = new GraphQLObjectType({
+  name: 'UserProfile',
+  fields: () => ({
+    owner_id: { type: GraphQLID },
+    data:     { type: GraphQLJSON },
+  }),
+});
+
+// Keychain entry metadata (registry ⋈ user_secrets). The raw secret value is
+// write-only over the API and never appears in any GraphQL type.
+const UserSecretType = new GraphQLObjectType({
+  name: 'UserSecret',
+  fields: () => ({
+    name:       { type: GraphQLString },
+    label:      { type: GraphQLString },
+    isSet:      { type: GraphQLBoolean },
+    last4:      { type: GraphQLString },
+    updated_at: { type: GraphQLString },
+  }),
+});
+
 module.exports = {
   GraphQLJSON,
   SurveyType,
@@ -125,4 +166,7 @@ module.exports = {
   ComponentType,
   ComponentInputType,
   UserType,
+  RoleType,
+  UserProfileType,
+  UserSecretType,
 };

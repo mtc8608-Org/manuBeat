@@ -13,6 +13,7 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+!.env.prod.example
 
 # ── Node.js ──────────────────────────────────────────────────
 node_modules/
@@ -46,6 +47,9 @@ htmlcov/
 
 # ── Database & persistent storage ────────────────────────────
 .persist/
+# Scratch dir for the local prod-compose smoke test (stand-in for the
+# on-box /srv/apps/<app>/public mount) — never committed.
+/public/
 
 # ── Large data files — never commit ──────────────────────────
 *.pdf
@@ -62,3 +66,11 @@ htmlcov/
 !.claude/rules/
 !.claude/skills/
 !.claude/agents/
+# ...except personal notes, personal infra and the brainstorm ledger.
+# pre-deployment-todo.md is NOT excluded here: upstream hides it because a public
+# framework repo should not publish a live list of its own holes, but this fork is
+# private and its audit TODO commits with the repo (see skills/predeploy-audit).
+.claude/memory/user-manuel.md
+.claude/memory/deployment-plan.md
+.claude/memory/production-walkthrough.md
+.claude/memory/idea-ledger.md

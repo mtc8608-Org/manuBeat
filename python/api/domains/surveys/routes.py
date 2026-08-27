@@ -1,5 +1,10 @@
 """
-compute/routes.py — Python analytics engine for ManuSpine surveys.
+surveys/routes.py — Python analytics engine behind the Surveys page Stats tab.
+
+manuBeat-owned. This was the framework's `domains/compute/` until manuSpine
+removed its stats layer (2026-07-04); the Stats tab is one of this app's
+features, so the compute moved into a fork domain instead of being kept in a
+framework path — see CLAUDE.md "Framework upstream".
 
 What this module does (explicitly):
   1. Receives survey questions + raw answers from Node.js.
@@ -22,11 +27,15 @@ from typing import Any
 import pandas as pd
 import io
 
-router = APIRouter(prefix="/compute")
+router = APIRouter(prefix="/surveys")
 
 # ── Clinical reference ranges ─────────────────────────────────────────────────
 # Keyed by the exact question text stored in survey_components.data->>'text'.
 # (low, high) — values strictly outside this range are flagged as abnormal.
+# No currently-seeded survey asks these: they came from the Vital Signs
+# sub-survey, removed once bedside telemetry took over physiological data. Kept
+# because the lookup is a no-op when a question text does not match, and a
+# clinical survey that does ask them gets the range check for free.
 CLINICAL_RANGES: dict[str, tuple[float, float]] = {
     "SpO2 (%)":                       (95.0, 100.0),
     "Heart Rate (bpm)":               (60.0, 100.0),
@@ -108,7 +117,7 @@ def _analyse_numeric(col_name: str, series: pd.Series) -> dict:
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
-@router.post("/survey-stats")
+@router.post("/stats")
 def survey_stats(req: SurveyStatsRequest):
     """
     Main analytics endpoint.
@@ -163,7 +172,7 @@ def survey_stats(req: SurveyStatsRequest):
     }
 
 
-@router.post("/survey-stats/export")
+@router.post("/stats/export")
 def export_csv(req: SurveyStatsRequest):
     """
     CSV export endpoint.

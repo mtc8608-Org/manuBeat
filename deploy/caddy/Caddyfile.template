@@ -1,0 +1,63 @@
+# Caddyfile TEMPLATE — the real file lives only on the box at /srv/caddy/Caddyfile
+# (provision.sh copies this there once, then never overwrites it). The real
+# hostname→app map is deliberately not committed: a public map would undo the
+# CT-log privacy the wildcard cert buys. This template compiles as-is, so
+# bringing Caddy up with zero apps is a clean end-to-end DNS-01 cert test.
+
+{
+	email {$ACME_EMAIL}
+}
+
+*.cabeleira.net, cabeleira.net {
+	# One wildcard cert via DNS-01 against the Hetzner DNS API —
+	# no per-subdomain certs, no subdomain enumeration in CT logs.
+	tls {
+		dns hetzner {$HETZNER_API_TOKEN}
+		propagation_delay 30s
+	}
+
+	# Security headers for every app behind this front door. Set here rather
+	# than in each Express app so a new app inherits them by existing.
+	#
+	# NOTE: provision.sh never overwrites an existing /srv/caddy/Caddyfile, so
+	# adding this block to the template does NOT update a box already
+	# provisioned — copy it into the live file by hand.
+	header {
+		# 1 year HSTS. Only safe because every host here is HTTPS-only; do not
+		# add preload until you are certain no subdomain must ever serve plain HTTP.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		# The file download routes stream user-supplied content — never let the
+		# browser sniff a type the server did not declare.
+		X-Content-Type-Options "nosniff"
+		# The JWT lives in localStorage, so clickjacking an authed page is a real
+		# path to acting as the user.
+		Content-Security-Policy "frame-ancestors 'none'"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Do not advertise the server.
+		-Server
+	}
+
+	# One block per app. API traffic goes to the app's nodejs container over
+	# the `edge` network; everything else is the static PWA build served from
+	# /srv/caddy/www/<app> (mounted at /srv/www) — no pwa container in prod.
+	#
+	# @myapp host myapp.cabeleira.net
+	# handle @myapp {
+	# 	handle /api/* {
+	# 		reverse_proxy myapp_nodejs:3000
+	# 	}
+	# 	handle /graphql {
+	# 		reverse_proxy myapp_nodejs:3000
+	# 	}
+	# 	handle {
+	# 		root * /srv/www/myapp
+	# 		try_files {path} /index.html
+	# 		file_server
+	# 	}
+	# }
+
+	# Wildcard DNS sends every subdomain here; unmapped hostnames get nothing.
+	handle {
+		respond 404
+	}
+}

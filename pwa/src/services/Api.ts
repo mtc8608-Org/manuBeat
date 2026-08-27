@@ -65,6 +65,7 @@ const OPS: Record<Domain, {
   create: string; createInput: string;
   update: string; del: string;
   link: string; unlink: string;
+  swap: string;
 }> = {
   app: {
     getOne:      'component',        getList:     'componentList',
@@ -72,6 +73,7 @@ const OPS: Record<Domain, {
     update:      'updateComponent',  del:         'deleteComponent',
     link:        'createComponentRelation',
     unlink:      'deleteComponentRelation',
+    swap:        'swapComponentPositions',
   },
   survey: {
     getOne:      'surveyComponent',        getList:     'surveyComponentList',
@@ -79,6 +81,7 @@ const OPS: Record<Domain, {
     update:      'updateSurveyComponent',  del:         'deleteSurveyComponent',
     link:        'createSurveyComponentRelation',
     unlink:      'deleteSurveyComponentRelation',
+    swap:        'swapSurveyComponentPositions',
   },
 };
 
@@ -167,7 +170,7 @@ const unlinkNodes = async (domain: Domain, parent_id: string, child_id: string) 
 };
 
 const swapNodes = async (domain: Domain, parent_id: string, child_id_a: string, child_id_b: string) => {
-  const mut = domain === 'app' ? 'swapComponentPositions' : 'swapSurveyComponentPositions';
+  const { swap: mut } = OPS[domain];
   try {
     return await gql(`
       mutation Swap($parent_id: ID!, $child_id_a: ID!, $child_id_b: ID!) {
@@ -249,7 +252,7 @@ const getSurveyAnswers = async (survey_id: string, filter?: Record<string, any>)
     const result = await gql(`
       query SurveyAnswers($survey_id: ID!, $filter: JSON) {
         surveyAnswers(survey_id: $survey_id, filter: $filter) {
-          id survey_id answers submitted_at
+          id survey_id owner_id owner_email answers submitted_at
         }
       }
     `, { survey_id, filter: filter ?? {} });
@@ -262,7 +265,7 @@ const submitAnswer = async (survey_id: string, answers: Record<string, any>) => 
     return await gql(`
       mutation SubmitAnswer($survey_id: ID!, $answers: JSON) {
         submitAnswer(survey_id: $survey_id, answers: $answers) {
-          id survey_id answers submitted_at
+          id survey_id owner_id answers submitted_at
         }
       }
     `, { survey_id, answers });
@@ -274,7 +277,7 @@ const updateAnswer = async (id: string, answers: Record<string, any>) => {
     return await gql(`
       mutation UpdateAnswer($id: ID!, $answers: JSON) {
         updateAnswer(id: $id, answers: $answers) {
-          id survey_id answers submitted_at
+          id survey_id owner_id answers submitted_at
         }
       }
     `, { id, answers });
@@ -289,15 +292,6 @@ const deleteAnswer = async (id: string) => {
   } catch (e) { console.error('Error deleting answer:', e); }
 };
 
-const getSurveyStats = async (survey_id: string): Promise<any | null> => {
-  try {
-    const result = await gql(`
-      query SurveyStats($survey_id: ID!) { surveyStats(survey_id: $survey_id) }
-    `, { survey_id });
-    return result?.data?.surveyStats ?? null;
-  } catch (e) { console.error('Error fetching survey stats:', e); return null; }
-};
-
 const createSurvey = async (component_id: string, title: string) => {
   try {
     return await gql(`
@@ -308,6 +302,32 @@ const createSurvey = async (component_id: string, title: string) => {
       }
     `, { component_id, title });
   } catch (e) { console.error('Error creating survey:', e); }
+};
+
+// ── [SURVEYS] stats + CSV export ──────────────────────────────────────────────
+// manuBeat-owned: upstream removed its stats layer, this app kept the Stats tab.
+// Backend lives in the fork's surveys domain (nodejs/schema/resolvers/surveys/,
+// nodejs/routes/surveys/, python/api/domains/surveys/). Admin-only.
+
+const getSurveyStats = async (survey_id: string): Promise<any | null> => {
+  try {
+    const result = await gql(
+      `query SurveyStats($survey_id: ID!) { surveyStats(survey_id: $survey_id) }`,
+      { survey_id },
+    );
+    return result?.data?.surveyStats ?? null;
+  } catch (e) { console.error('Error fetching survey stats:', e); return null; }
+};
+
+// Returns the CSV bytes. The export route is auth-guarded, so it cannot be a
+// plain <a href> — the browser would send no Authorization header.
+const fetchSurveyExportBlob = async (survey_id: string): Promise<Blob> => {
+  const res = await fetch(
+    `${API_BASE}${ENDPOINT.SURVEY_EXPORT}/${survey_id}/stats/export`,
+    { headers: getAuthHeader() },
+  );
+  if (!res.ok) throw new Error('Export failed');
+  return res.blob();
 };
 
 // ── end survey system ─────────────────────────────────────────────────────────
@@ -358,6 +378,105 @@ const patchUser = async (id: string, updates: { is_active?: boolean; role?: stri
   return res.json();
 };
 
+// ── roles (backoffice Roles page — admin only) ────────────────────────────────
+
+export interface Role {
+  id: string; name: string; tier: string;
+  description: string | null; is_system: boolean;
+  created_at: string; users: string;   // users = count of holders, stringified
+}
+
+const ROLE_FIELDS = 'id name tier description is_system created_at users';
+
+// Server-side guards (system roles, roles in use) produce user-facing
+// messages — surface GraphQL errors instead of swallowing them.
+const throwOnGqlErrors = (result: any) => {
+  if (result?.errors?.length) throw new Error(result.errors[0].message);
+  return result;
+};
+
+const getRoles = async (): Promise<Role[]> => {
+  try {
+    const result = await gql(`query { roleList { ${ROLE_FIELDS} } }`);
+    return result?.data?.roleList ?? [];
+  } catch (e) { console.error('Error fetching roles:', e); return []; }
+};
+
+const createRole = async (name: string, tier: string, description?: string): Promise<Role> => {
+  const result = throwOnGqlErrors(await gql(`
+    mutation CreateRole($name: String!, $tier: String!, $description: String) {
+      createRole(name: $name, tier: $tier, description: $description) { ${ROLE_FIELDS} }
+    }`, { name, tier, description }));
+  return result.data.createRole;
+};
+
+const updateRole = async (id: string, updates: { tier?: string; description?: string }): Promise<Role> => {
+  const result = throwOnGqlErrors(await gql(`
+    mutation UpdateRole($id: ID!, $tier: String, $description: String) {
+      updateRole(id: $id, tier: $tier, description: $description) { ${ROLE_FIELDS} }
+    }`, { id, ...updates }));
+  return result.data.updateRole;
+};
+
+const deleteRole = async (id: string): Promise<boolean> => {
+  const result = throwOnGqlErrors(await gql(`
+    mutation DeleteRole($id: ID!) { deleteRole(id: $id) }`, { id }));
+  return result.data.deleteRole;
+};
+
+// ── account self-service (profile + secrets keychain) ────────────────────────
+
+export interface UserProfile { owner_id: string | null; data: Record<string, any>; }
+
+// The caller's own profile (form-driven display data; shape = form_user_profile).
+const getUserProfile = async (): Promise<UserProfile | null> => {
+  try {
+    const result = await gql(`query { userProfile { owner_id data } }`);
+    return result?.data?.userProfile ?? null;
+  } catch (e) { console.error('Error fetching user profile:', e); return null; }
+};
+
+const upsertUserProfile = async (data: Record<string, any>): Promise<UserProfile | null> => {
+  try {
+    const result = await gql(`
+      mutation UpsertUserProfile($data: JSON) {
+        upsertUserProfile(data: $data) { owner_id data }
+      }`, { data });
+    return result?.data?.upsertUserProfile ?? null;
+  } catch (e) { console.error('Error saving user profile:', e); throw e; }
+};
+
+// User secrets keychain — metadata only, the raw value is write-only.
+export interface UserSecret {
+  name: string; label: string; isSet: boolean;
+  last4: string | null; updated_at: string | null;
+}
+
+const getUserSecrets = async (): Promise<UserSecret[]> => {
+  try {
+    const result = await gql(`query { userSecrets { name label isSet last4 updated_at } }`);
+    return result?.data?.userSecrets ?? [];
+  } catch (e) { console.error('Error fetching user secrets:', e); return []; }
+};
+
+const setUserSecret = async (name: string, value: string): Promise<UserSecret | null> => {
+  try {
+    const result = await gql(`
+      mutation SetUserSecret($name: String!, $value: String!) {
+        setUserSecret(name: $name, value: $value) { name label isSet last4 updated_at }
+      }`, { name, value });
+    return result?.data?.setUserSecret ?? null;
+  } catch (e) { console.error('Error saving user secret:', e); throw e; }
+};
+
+const clearUserSecret = async (name: string): Promise<boolean> => {
+  try {
+    const result = await gql(`
+      mutation ClearUserSecret($name: String!) { clearUserSecret(name: $name) }`, { name });
+    return result?.data?.clearUserSecret ?? false;
+  } catch (e) { console.error('Error clearing user secret:', e); throw e; }
+};
+
 // ── files ─────────────────────────────────────────────────────────────────────
 
 const getFiles = async (): Promise<FileRecord[]> => {
@@ -384,11 +503,13 @@ const uploadFile = async (file: File, description?: string) => {
   return res.json();
 };
 
-const patchFile = async (id: string, description: string) => {
+// Partial update. Only the fields passed are written, so publishing a file as a
+// content asset does not clobber its description (and vice versa).
+const patchFile = async (id: string, patch: { description?: string; is_public?: boolean }) => {
   const res = await fetch(`${API_BASE}${ENDPOINT.FILES}/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-    body: JSON.stringify({ description }),
+    body: JSON.stringify(patch),
   });
   if (!res.ok) throw new Error('Failed to update file');
   return res.json();
@@ -401,6 +522,13 @@ const deleteFile = async (id: string) => {
   });
   if (!res.ok) throw new Error('Failed to delete file');
   return res.json();
+};
+
+// Fetch a stored file's bytes (auth header) for download or preview.
+const fetchFileBlob = async (id: string): Promise<Blob> => {
+  const res = await fetch(`${API_BASE}${ENDPOINT.FILES}/${id}/download`, { headers: getAuthHeader() });
+  if (!res.ok) throw new Error('Download failed');
+  return res.blob();
 };
 
 // ── [MEDICAL] Cardio model configs ───────────────────────────────────────────
@@ -747,9 +875,14 @@ const getNodeHeartbeats = async (node_id: string, limit = 20): Promise<NodeHeart
 };
 
 // Live segment stream over WebSocket. Returns the socket; caller handles messages + close.
+// The token goes in the query string because a browser cannot set headers on a
+// WebSocket handshake; the hub (nodejs/realtime.js) verifies it and requires
+// tier 'admin' before the socket receives anything.
 const subscribeBedside = (nodeKey: string, onMessage: (msg: any) => void, streamId?: string): WebSocket => {
   const params = new URLSearchParams({ node: nodeKey });
   if (streamId) params.set('stream', streamId);
+  const token = localStorage.getItem('auth_token');
+  if (token) params.set('token', token);
   const ws = new WebSocket(`${WS_BASE}/ws/bedside?${params}`);
   ws.onmessage = (ev) => { try { onMessage(JSON.parse(ev.data)); } catch { /* ignore */ } };
   return ws;
@@ -798,12 +931,10 @@ const generateContent = async (
   userText: string,
   onDelta: (text: string) => void,
   onNode:  (node: GenNode) => void,
-  apiKey:  string,
 ): Promise<GenResult> => {
   const form = new FormData();
   form.append('history', JSON.stringify(history));
   form.append('userText', userText);
-  form.append('apiKey', apiKey);
   for (const f of files) form.append('files', f);
   const res = await fetch(`${API_BASE}${ENDPOINT.GENERATE_CONTENT}`, {
     method: 'POST',
@@ -849,11 +980,17 @@ const ApiService = {
   createSurveyComponent, updateSurveyComponent, deleteSurveyComponent,
   createSurveyComponentRelation, deleteSurveyComponentRelation, swapSurveyComponentPositions,
   // surveys
-  getSurveys, getSurveyAnswers, getSurveyStats, submitAnswer, updateAnswer, deleteAnswer, createSurvey,
+  getSurveys, getSurveyAnswers, submitAnswer, updateAnswer, deleteAnswer, createSurvey,
+  // [SURVEYS] stats + export
+  getSurveyStats, fetchSurveyExportBlob,
   // auth & user management
   changePassword, getUsers, createUser, patchUser,
+  // roles
+  getRoles, createRole, updateRole, deleteRole,
+  // account self-service (profile + secrets keychain)
+  getUserProfile, upsertUserProfile, getUserSecrets, setUserSecret, clearUserSecret,
   // files
-  getFiles, uploadFile, patchFile, deleteFile,
+  getFiles, uploadFile, patchFile, deleteFile, fetchFileBlob,
   // AI content generation
   generateContent,
   // [MEDICAL] model configs

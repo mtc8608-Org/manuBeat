@@ -153,12 +153,85 @@ export const SURVEY_EDITOR_ID: Record<string, string> = {
 
 
 ///////////////////////////////////////////////////////////////////////////////
+// #region User & Role Management Forms
+// The user_profile shape this app seeds (01-init-db.sql d050). Rendered on the
+// user Profile page; saved via upsertUserProfile. Apps replace the seeded
+// fields with their own profile form but keep the form name.
+export const USER_PROFILE_FORM = 'form_user_profile';
+
+// Framework user-management forms (backoffice Users page). Source: 01-init-db.sql d000/d010.
+export const USER_FORM = {
+  EDITOR: 'form_user_editor',   // role select + active check (Detail column)
+  CREATE: 'form_user_create',   // email / password / role (New modal)
+} as const;
+
+// Framework role-management forms (backoffice Roles page). Source: 01-init-db.sql d030/d040.
+export const ROLE_FORM = {
+  EDITOR: 'form_role_editor',   // tier select + description (Detail column)
+  CREATE: 'form_role_create',   // name / tier / description (New modal)
+} as const;
+
+// The fixed permissions ladder (nodejs/permissions.js). Roles alias onto one
+// of these tiers; the set is code, never edited at runtime.
+export const ROLE_TIERS = ['registered', 'user', 'admin'] as const;
+export type RoleTier = typeof ROLE_TIERS[number];
+
+// Rung index on the ladder above; -1 for anything unrecognised. Comparisons are
+// `>=` against a required rung, so an unknown tier ranks below every rung and
+// fails closed (nothing shown) rather than open.
+export const tierRank = (tier: string | null | undefined): number =>
+  ROLE_TIERS.indexOf(tier as RoleTier);
+// #endregion
+///////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////
+// #region Form Usage Registry
+// Component-tree name → the app UI it powers. Trees are bound to pages only
+// by fetch-by-name calls in code (the constant groups above), so this registry
+// is the single place that records the binding for display — the Configuration
+// page shows it so admins can tell what each tree drives before touching it.
+// Keep in sync when adding a form constant; forks append entries // [MY DOMAIN]
+export const FORM_USAGE: Record<string, string> = {
+  [EDITOR_ID.DEFAULT]:            'Configuration — component editor modal',
+  [EDITOR_ID.PLOT]:               'Configuration — plot editor modal',
+  [CONTENT_EDITOR_ID.HTML]:       'Content — HTML / LaTeX card editor',
+  [CONTENT_EDITOR_ID.IMAGE]:      'Content — image card editor',
+  [CONTENT_EDITOR_ID.HTML_IMAGE]: 'Content — HTML+image card editor',
+  [FORM_ID.FILE_DETAIL]:          'Files — detail form',
+  [FORM_ID.NEW_SURVEY]:           'Surveys — new survey modal',
+  [FORM_ID.NEW_PAGE]:             'Content — new page modal',
+  form_survey_q_text:             'Surveys — question editor (text / number / textarea)',
+  form_survey_q_scale:            'Surveys — question editor (scale)',
+  form_survey_q_default:          'Surveys — question editor (select / check / date / section)',
+  [USER_PROFILE_FORM]:            'Profile — user profile form',
+  [USER_FORM.EDITOR]:             'Users — detail editor',
+  [USER_FORM.CREATE]:             'Users — new user modal',
+  [ROLE_FORM.EDITOR]:             'Roles — detail editor',
+  [ROLE_FORM.CREATE]:             'Roles — new role modal',
+  // [MEDICAL]
+  [FORM_ID.ADD_MODEL_CONFIG]:     'Model Sandbox — new model config modal',
+  // [BEDSIDE] fetched by UUID (PATIENT_FORM_COMPONENT_ID), registered by name
+  form_patient_demographics:      'Patients — demographics form',
+};
+// #endregion
+///////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////
 // #region API Configuration
-// Node.js backend service address. Change here if the port or host moves.
-// The backend reads its own port from .env (NODE_PORT); keep these in sync.
-export const API_BASE    = 'http://localhost:3000/api';
-export const GQL_URL     = 'http://localhost:3000/graphql';
-export const WS_BASE     = 'ws://localhost:3000';   // [BEDSIDE] live telemetry hub
+// Backend URLs are origin-relative: the app always talks to the origin that
+// served it. In dev the vite proxy (vite.config.ts) forwards /api and
+// /graphql to the nodejs container; in prod Caddy does the same. One build
+// artifact works on any host — never reintroduce an absolute host here.
+export const API_BASE    = '/api';
+export const GQL_URL     = '/graphql';
+// [BEDSIDE] Live telemetry hub. The one absolute host left in this file: the
+// vite proxy above forwards only /api and /graphql, so the browser dials the
+// nodejs container directly. Deployment-blocking — behind Caddy this must
+// become origin-relative (wss:// + window.location.host) and /ws/bedside must
+// be proxied. Fix before the bedside Monitor ships.
+export const WS_BASE     = 'ws://localhost:3000';
 
 // REST endpoint paths (relative to API_BASE)
 export const ENDPOINT = {
@@ -168,6 +241,7 @@ export const ENDPOINT = {
   FILES:            '/files',
   FILES_UPLOAD:     '/files/upload',
   GENERATE_CONTENT: '/generate-content',
+  // [SURVEYS]
   SURVEY_EXPORT:    '/surveys',   // + `/${id}/stats/export`
   // [BEDSIDE]
   BEDSIDE_PATIENTS: '/bedside/patients',
@@ -196,9 +270,9 @@ export const PANEL_CONFIG = {
     },
   },
   CONFIG_COMPONENTS: {
-    title: 'Components', emptyMessage: 'Select a type to load.',
+    title: 'Components', emptyMessage: 'No components yet.',
     add: { enabled: true, label: 'New Component' },
-    filter: { text: { enabled: false }, type: { enabled: true, options: ['form', 'input', 'select', 'check', 'plot', 'plotGrid'] } },
+    filter: { text: { enabled: false }, type: { enabled: true, allLabel: 'Forms', options: ['input', 'select', 'check', 'plot', 'plotGrid'] } },
   },
   FILES_LIST: {
     title: 'Files', emptyMessage: 'No files found.',
@@ -217,6 +291,19 @@ export const PANEL_CONFIG = {
       text: { enabled: true, placeholder: 'Search…' },
       type: { enabled: true, options: ['contentHtml', 'contentImage', 'contentHtmlImage', 'contentLatex'] },
     },
+  },
+  USERS: {
+    title: 'Users', emptyMessage: 'No users found.',
+    add: { enabled: true, label: 'New user' },
+    filter: {
+      text: { enabled: true, placeholder: 'Search by email…' },
+      type: { enabled: true, options: ['user', 'admin', 'registered'] },
+    },
+  },
+  ROLES: {
+    title: 'Roles', emptyMessage: 'No roles found.',
+    add: { enabled: true, label: 'New role' },
+    filter: { text: { enabled: false }, type: { enabled: false } },
   },
   // [MEDICAL]
   MODEL_CONFIGS: {
@@ -296,11 +383,15 @@ export const PANEL_CONFIG = {
 export const ROUTE = {
   LANDING:       '/',
   SIGNIN:        '/signin',
-  ACCOUNT:       '/account',
+  PROFILE:       '/folder/Profile',
+  ACCOUNT:       '/folder/Account',
+  SETTINGS:      '/folder/Settings',
   SURVEYS:       '/folder/Surveys',
   CONFIGURATION: '/folder/Configuration',
   FILES:         '/folder/Files',
   CONTENT:       '/folder/Content',
+  USERS:         '/folder/Users',
+  ROLES:         '/folder/Roles',
   // [MEDICAL]
   SIMULATOR:      '/folder/Simulator',
   MODEL_SANDBOX:  '/folder/ModelSandbox',
@@ -336,6 +427,13 @@ export const AREA_NAV = {
     { label: 'Content',       route: '/folder/Content',       icon: 'document-text' },
     { label: 'Files',         route: '/folder/Files',         icon: 'folder'        },
     { label: 'Configuration', route: '/folder/Configuration', icon: 'construct'     },
+    { label: 'Users',         route: '/folder/Users',         icon: 'people'        },
+    { label: 'Roles',         route: '/folder/Roles',         icon: 'key'           },
+  ],
+  USER: [
+    { label: 'Profile',  route: '/folder/Profile',  icon: 'person'   },
+    { label: 'Account',  route: '/folder/Account',  icon: 'key'      },
+    { label: 'Settings', route: '/folder/Settings', icon: 'settings' },
   ],
   // [BEDSIDE] Data Collection
   DATA_COLLECTION: [
@@ -345,13 +443,45 @@ export const AREA_NAV = {
   ],
 } as const;
 
-// Section groupings — used by AppHeader nav (authenticated users only)
-export const NAV_SECTIONS = [
-  { label: 'Surveys',              routes: ['/folder/Surveys'],                                                                                                              link: '/folder/Surveys',   icon: 'clipboard' },
-  { label: 'Physiology Simulator', routes: ['/folder/Simulator', '/folder/ModelSandbox', '/folder/PlotSandbox', '/folder/ProcessingSandbox', '/folder/HdfInspector'],       link: '/folder/Simulator', icon: 'pulse'     },
-  { label: 'Data Collection',      routes: ['/folder/Patients', '/folder/Devices', '/folder/Monitor'],                                                                       link: '/folder/Patients',  icon: 'bed',       adminOnly: true },
-  { label: 'Backoffice',           routes: ['/folder/Content', '/folder/Files', '/folder/Configuration'],                                                                   link: '/folder/Content',   icon: 'construct', adminOnly: true },
+// ── The single navigation source ──────────────────────────────────────────────
+// One entry per authenticated area, carrying everything the three nav surfaces
+// need: the drawer (Menu), the top-bar sections (AppHeader) and the in-page rail
+// (AreaShell, via the AREA_NAV items above). Adding an area is ONE entry here
+// plus its route in App.tsx — never hand-edit Menu.tsx or NAV_SECTIONS again.
+//
+//   title  — heading in the drawer and label in the top bar
+//   tier   — MINIMUM rung on the ROLE_TIERS ladder that may see the area. Every
+//            nav surface compares the caller's rung with `hasTier(area.tier)`,
+//            so all three rungs are expressible: 'registered' (any account),
+//            'user', 'admin'. Mirror what permissions.js grants the area's
+//            operations — nav is presentation, permissions.js is the gate.
+//   header — whether it gets a top-bar section button. The User area is false:
+//            it is reached via the header person icon instead.
+// Forks append their own areas here with a // [MY DOMAIN] comment.
+export const NAV_AREAS = [
+  { key: 'SURVEYS',    title: 'Surveys',    tier: 'user',       header: true,  items: AREA_NAV.SURVEYS    },
+  // [MEDICAL] 'registered': the model/plot/proc ops sit in that tier in
+  // permissions.js, and the pages are behind PrivateRoute — any signed-in
+  // account reaches them.
+  { key: 'PHYSIOLOGY', title: 'Physiology Simulator', tier: 'registered', header: true, items: AREA_NAV.PHYSIOLOGY },
+  // [BEDSIDE] 'admin': patient data is PHI — the whole domain is admin-only in
+  // permissions.js and every page is behind AdminRoute.
+  { key: 'DATA_COLLECTION', title: 'Data Collection', tier: 'admin', header: true, items: AREA_NAV.DATA_COLLECTION },
+  { key: 'BACKOFFICE', title: 'Backoffice', tier: 'admin',      header: true,  items: AREA_NAV.BACKOFFICE },
+  { key: 'USER',       title: 'Account',    tier: 'registered', header: false, items: AREA_NAV.USER       },
 ] as const;
+
+// Section groupings for AppHeader — derived, never hand-maintained.
+// `link` is where the section button navigates (its first page); `routes` is
+// every path that counts as "inside" the section for active-state matching.
+export const NAV_SECTIONS = NAV_AREAS
+  .filter(a => a.header)
+  .map(a => ({
+    label:  a.title,
+    routes: a.items.map(i => i.route) as readonly string[],
+    link:   a.items[0].route as string,
+    tier:   a.tier as RoleTier,
+  }));
 // #endregion
 ///////////////////////////////////////////////////////////////////////////////
 

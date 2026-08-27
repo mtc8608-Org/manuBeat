@@ -5,6 +5,31 @@ const { pool } = require('../../db');
 const router = express.Router();
 const PYTHON = () => `http://python:${process.env.PYTHON_PORT}`;
 
+// REST enforces its own auth — the GraphQL gate never sees these routes
+// (backend-api.md). Applied as router-level middleware rather than per handler
+// so a new endpoint added to this file cannot ship unguarded: every route below
+// runs after it. The rung mirrors the `registered` tier that this domain's
+// GraphQL ops carry in permissions.js, which in turn mirrors the PrivateRoute
+// the Simulator / Sandbox / HdfInspector pages sit behind.
+//
+// Without this the whole file was tokenless: an anonymous caller could launch
+// unbounded Python simulation jobs, read any run's HDF5 datasets, and delete
+// them. Never remove it; tighten it if the pages ever move behind AdminRoute.
+router.use('/cardio', (req, res, next) => {
+  if (!req.user) return res.status(401).json({ error: 'Authentication required' });
+  next();
+});
+
+// Second rung, applied per handler below. The two destructive HDF5 endpoints
+// mutate or erase another account's run data on a shared, unowned store, so
+// they sit at admin — matching where the medical write mutations live in
+// permissions.js. Everything else (reads, POST /cardio/run) stays at the
+// router-level guard so any signed-in account can still run simulations.
+const requireAdmin = (req, res, next) => {
+  if (req.user?.tier !== 'admin') return res.status(403).json({ error: 'Admin access required' });
+  next();
+};
+
 // POST /api/cardio/run
 // Creates a model_run row, fires the Python job, returns job_id + run_id.
 router.post('/cardio/run', async (req, res) => {
@@ -167,7 +192,7 @@ router.get('/cardio/hdf5/dataset/:runId', async (req, res) => {
 });
 
 // DELETE /api/cardio/hdf5/dataset/:runId  { path }
-router.delete('/cardio/hdf5/dataset/:runId', async (req, res) => {
+router.delete('/cardio/hdf5/dataset/:runId', requireAdmin, async (req, res) => {
   try {
     const pythonRes = await axios.delete(
       `${PYTHON()}/cardio/hdf5/dataset/${req.params.runId}`,
@@ -182,7 +207,7 @@ router.delete('/cardio/hdf5/dataset/:runId', async (req, res) => {
 });
 
 // POST /api/cardio/hdf5/repack/:runId
-router.post('/cardio/hdf5/repack/:runId', async (req, res) => {
+router.post('/cardio/hdf5/repack/:runId', requireAdmin, async (req, res) => {
   try {
     const pythonRes = await axios.post(
       `${PYTHON()}/cardio/hdf5/repack/${req.params.runId}`,

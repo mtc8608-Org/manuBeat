@@ -14,9 +14,8 @@ RUN uname=node && \
 
 RUN npm install -g @ionic/cli@7.0.1
 
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
 WORKDIR /src
 
-ENTRYPOINT ["/entrypoint.sh"]
+# Exec the bind-mounted entrypoint (like nodejs) so script edits take
+# effect on restart — never bake a copy into the image.
+ENTRYPOINT ["./entrypoint.sh"]

@@ -1,0 +1,26 @@
+name: platform
+
+services:
+  caddy:
+    image: manu-caddy:2
+    restart: unless-stopped
+    ports:
+      # The only published ports on the box; apps are reached over `edge`.
+      - "80:80"
+      - "443:443"
+    env_file: .env
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./www:/srv/www:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - edge
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  edge:
+    external: true

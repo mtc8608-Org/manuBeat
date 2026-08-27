@@ -27,6 +27,7 @@ import EmptyState from '../../components/shell/EmptyState';
 import JsonViewer from '../../components/shell/JsonViewer';
 import { CardioPlotConfig } from '../../interfaces/types';
 import { AREA_NAV, PANEL_CONFIG } from '../../constants';
+import { downloadBlob } from '../../utils/download';
 
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -344,10 +345,7 @@ const PlotSandbox: React.FC = () => {
   const handleDownload = () => {
     if (!workingConfig || !selectedConfig) return;
     const blob = new Blob([jsonPreview], { type: 'application/json' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url; a.download = `${selectedConfig.name}.json`; a.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, `${selectedConfig.name}.json`);
   };
 
 

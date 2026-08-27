@@ -34,10 +34,11 @@ internet-facing**. Every ManuLab app targets served multi-user
      streams); the permission gate enforcing every top-level field; file
      upload/download owner-scoping; the `user_secrets` keychain write-only
      invariant. Tell it to cover **every domain present in this repo**, not
-     just the framework — here that means `bedside/` and `medical/`: telemetry
-     ingest and device-token routes, the WebSocket monitor, bed assignments and
-     patient files, and the cardio compute endpoints. Ask for findings marked
-     **BLOCKER / SHOULD-FIX / OK-noted** with `file:line`.
+     just the framework — here that means `bedside/`, `medical/` and `surveys/`:
+     telemetry ingest and device-token routes, the WebSocket monitor, bed
+     assignments and patient files, the cardio compute endpoints, and the survey
+     stats/export pair. Ask for findings marked **BLOCKER / SHOULD-FIX /
+     OK-noted** with `file:line`.
 
    - **Deployment config** — `general-purpose` subagent. Tell it explicitly
      **not** to audit GraphQL/REST auth (the other agent owns it) and to cover:
@@ -73,7 +74,8 @@ internet-facing**. Every ManuLab app targets served multi-user
   upstream in manuSpine so every app gets it, then pull it down (CLAUDE.md
   "Framework upstream"). Patching framework code here creates exactly the drift
   [[fork-verbatim-surface]] exists to prevent. Findings in `bedside/`,
-  `medical/` and the rest of this fork's domain code are ours to fix here.
+  `medical/`, `surveys/` and the rest of this fork's domain code are ours to fix
+  here.
 - This is a **static** audit (reads code). It does not exercise a running
   instance — no live XSS/IDOR/rate-limit reproduction. Dynamic pen-testing
   against a staging URL is a separate, post-deploy tool.

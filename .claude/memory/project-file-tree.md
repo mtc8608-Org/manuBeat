@@ -90,3 +90,40 @@ manuSpine/
 Domain additions (in forks) mirror the framework layout: `init-scripts/02-init-<domain>.sql`,
 `nodejs/routes/<domain>/`, `nodejs/schema/resolvers/<domain>/`,
 `python/api/domains/<domain>/`, `pwa/src/pages/<domain>/`.
+
+## manuBeat's own domains
+
+The tree above is the framework surface, inherited verbatim from manuSpine. This
+fork adds three domains on top of it (as of 2026-08-27):
+
+```
+init-scripts/
+├── 02-init-medical.sql       # [MEDICAL] model_configs / model_runs / plot+proc configs
+├── 03-init-bedside.sql       # [BEDSIDE] bedside_nodes, beds, bed_assignments, patients,
+│                             #   patient_files, bedside_streams/segments/events, heartbeats
+├── seed-physiology.sql       # [MEDICAL] baseline Hr-test circuit model into model_configs
+└── seed-paper-egd.sql        # [MEDICAL] the EGD manuscript as CMS content cards
+nodejs/
+├── realtime.js               # [BEDSIDE] ws hub on /ws/bedside (attached in backend.js)
+├── routes/
+│   ├── bedside/              # ingest.js (device-token auth, 16 MB body cap),
+│   │                         #   patients.js (patient row + HDF5 file mint)
+│   ├── medical/models.js     # cardio run/status/result proxy to Python
+│   └── surveys/stats.js      # CSV export (admin) — the framework's deleted compute.js
+└── schema/resolvers/
+    ├── bedside/patients.js   # roster, fleet, tokens, assignments, telemetry reads
+    ├── medical/models.js     # model / plot / proc config CRUD
+    └── surveys/stats.js      # surveyStats query — the framework's deleted stats layer
+pwa/src/pages/
+├── bedside/                  # Patients, Devices, Monitor (admin)
+└── models/                   # Simulator, ModelSandbox, PlotSandbox,
+                              #   ProcessingSandbox, HdfInspector
+python/api/domains/
+├── medical/                  # cardio_routes.py, hdf5_engine.py, cardio/ (JAX model)
+└── surveys/routes.py         # pandas survey stats + CSV export
+```
+
+Two of these are **recreations of framework code manuSpine deleted** (the survey
+stats layer, 2026-07-04). They live in a fork domain rather than in the framework
+paths so no framework file carries a local patch — see CLAUDE.md
+"Framework upstream" and [[framework-upstream-candidates]].

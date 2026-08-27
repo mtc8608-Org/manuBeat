@@ -10,12 +10,31 @@
 // sides when the record shapes change.
 const express = require('express');
 const bcrypt  = require('bcryptjs');
+const rateLimit = require('express-rate-limit');
 const { pool } = require('../../db');
 const realtime = require('../../realtime');
 
 const router = express.Router();
 
 const SCHEMA_VERSION = '0.1.0';
+
+// Both routes below are reachable without a credential (the Pi presents its
+// device token in the body/header, which is what authNode then checks), and each
+// unauthenticated request costs one bcrypt(cost 10) after the body parser has
+// already buffered up to 16 MB. Unlimited, that is both a CPU/memory
+// amplification vector and an unthrottled brute-force surface against
+// bedside_nodes.token_hash. Same mechanism the framework uses on /login.
+//
+// The ceiling is sized for the fleet, not for one Pi: uplink polls every
+// ~1 s and heartbeats every ~15 s, so a ward of Pis behind one hospital NAT
+// still fits well inside this. Raise it if a site outgrows it — do not remove it.
+const ingestLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 600,                   // requests per IP per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many ingest requests — slow down' },
+});
 
 // Pull the raw Bearer token (the device token is NOT a JWT, so req.user is null).
 const bearer = (req) => {
@@ -44,13 +63,17 @@ const clientIp = (req) =>
   (req.headers['x-forwarded-for']?.split(',')[0]?.trim()) || req.socket?.remoteAddress || null;
 
 // POST /api/bedside/ingest  { schema_version, node_id, records: [segment|event] }
-router.post('/bedside/ingest', async (req, res) => {
+router.post('/bedside/ingest', ingestLimiter, async (req, res) => {
   try {
+    // Authenticate BEFORE the version check: the mismatch message names the
+    // server's SCHEMA_VERSION, and an unauthenticated caller has no business
+    // learning it.
+    const node = await authNode(req, res);
+    if (!node) return;
+
     if (req.body?.schema_version !== SCHEMA_VERSION) {
       return res.status(400).json({ error: `unsupported schema_version (server ${SCHEMA_VERSION})` });
     }
-    const node = await authNode(req, res);
-    if (!node) return;
 
     await pool.query(
       `UPDATE bedside_nodes SET status='online', last_seen=now(), ip_address=$2 WHERE id=$1`,
@@ -120,7 +143,7 @@ router.post('/bedside/ingest', async (req, res) => {
 });
 
 // POST /api/bedside/heartbeat  { node_id, ts_ms, agent_version, cpu_temp_c, ... }
-router.post('/bedside/heartbeat', async (req, res) => {
+router.post('/bedside/heartbeat', ingestLimiter, async (req, res) => {
   try {
     const node = await authNode(req, res);
     if (!node) return;

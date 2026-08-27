@@ -15,7 +15,8 @@ import {
   IonSpinner,
   IonText,
 } from '@ionic/react';
-import ReactECharts from 'echarts-for-react';
+import EChart from '../../components/charts/EChart';
+import type { EChartsOption, LineSeriesOption } from 'echarts';
 import ApiService from '../../services/Api';
 import SplitPageLayout from '../../components/shell/SplitPageLayout';
 import TabPanel from '../../components/shell/TabPanel';
@@ -267,7 +268,7 @@ const Simulator: React.FC = () => {
     return pal[idx % pal.length];
   };
 
-  const buildAxisOption = (ax: any, res: CardioResult) => {
+  const buildAxisOption = (ax: any, res: CardioResult): EChartsOption => {
     const left:  string[] = ax.params?.left  ?? [];
     const right: string[] = ax.params?.right ?? [];
     const tOff  = ax.options?.zeroTime ? res.t[0] : 0;
@@ -276,7 +277,7 @@ const Simulator: React.FC = () => {
     const hasR  = right.length > 0;
     const allYs = { ...res.ys, ...procOutputs };
 
-    const mkSeries = (names: string[], yIdx: number, map: string) =>
+    const mkSeries = (names: string[], yIdx: number, map: string): LineSeriesOption[] =>
       names.map((name, i) => ({
         name,
         type: 'line',
@@ -311,14 +312,16 @@ const Simulator: React.FC = () => {
   const stateColor = (name: string) =>
     ECHARTS_PALETTE[(result?.stateNames.indexOf(name) ?? 0) % ECHARTS_PALETTE.length];
 
-  const chartOption = () => {
+  const chartOption = (): EChartsOption => {
     if (!result || !selectedStates.length) return {};
     return {
       backgroundColor: 'transparent',
       tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
       legend: { data: selectedStates, textStyle: { color: 'inherit' } },
       dataZoom: [{ type: 'inside' }, { type: 'slider', height: 20 }],
-      xAxis: { type: 'value', name: 't (s)', data: result.t, min: result.t[0], max: result.t[result.t.length - 1] },
+      // No `data` here: a value axis takes none (that is a category-axis prop),
+      // and the series already carry [t, v] pairs.
+      xAxis: { type: 'value', name: 't (s)', min: result.t[0], max: result.t[result.t.length - 1] },
       yAxis: { type: 'value' },
       series: selectedStates.map(name => ({
         name,
@@ -418,11 +421,11 @@ const Simulator: React.FC = () => {
                       })
                     }
                   </div>
-                  <ReactECharts
+                  <EChart
                     key={selectedStates.join(',')}
                     option={chartOption()}
                     theme={theme === 'dark' ? 'dark' : undefined}
-                    style={{ height: 400 }}
+                    height={400}
                     notMerge
                   />
                   <IonItem lines="none">
@@ -524,10 +527,10 @@ const Simulator: React.FC = () => {
                                 overflow: 'hidden',
                               }}
                             >
-                              <ReactECharts
+                              <EChart
                                 option={buildAxisOption(a, result)}
                                 theme={theme === 'dark' ? 'dark' : undefined}
-                                style={{ width: '100%', height: '100%' }}
+                                height="100%"
                                 notMerge
                               />
                             </div>

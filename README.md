@@ -7,7 +7,7 @@
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-A cardiovascular modelling and simulation platform demonstrating the **Embedded Gradient Descent (EGD)** calibration framework for mechanistic ODE-based cardiovascular models. Built on the [ManuSpine](https://github.com/mtc8608-Org/ManuSpine) full-stack framework.
+A cardiovascular modelling and simulation platform demonstrating the **Embedded Gradient Descent (EGD)** calibration framework for mechanistic ODE-based cardiovascular models. Built on the [manuSpine](https://github.com/mtc8608-Org/ManuSpine) full-stack framework, which supplies auth with role tiers, a JSONB component-tree engine driving dynamic forms, surveys and a CMS, MinIO file storage, a per-user secrets keychain, and a Python compute service.
 
 ---
 
@@ -28,17 +28,25 @@ The full paper is rendered as content in the running application under **EGD Pap
 
 ## Screenshots
 
-| Sign In | Surveys | Content |
-|---------|---------|---------|
-| ![Sign In](pwa/public/screenshots/app-signin.png) | ![Surveys](pwa/public/screenshots/app-surveys-questions.png) | ![Content](pwa/public/screenshots/app-content-build.png) |
+| Sign In | Content | Files |
+|---------|---------|-------|
+| ![Sign In](pwa/public/screenshots/app-signin.png) | ![Content](pwa/public/screenshots/app-content-build.png) | ![Files](pwa/public/screenshots/app-files.png) |
 
-| Stats | Files | Config |
-|-------|-------|--------|
-| ![Stats](pwa/public/screenshots/app-surveys-stats.png) | ![Files](pwa/public/screenshots/app-files.png) | ![Config](pwa/public/screenshots/app-config.png) |
+| Account | AI Import | Config |
+|---------|-----------|--------|
+| ![Account](pwa/public/screenshots/app-account.png) | ![AI Import](pwa/public/screenshots/app-content-ai.png) | ![Config](pwa/public/screenshots/app-config.png) |
 
 ---
 
-## What's included
+## Stack
+
+```
+pwa (React + Ionic + Vite)
+  → nodejs (Express + GraphQL + REST)
+      → postgres (schema + seeds in init-scripts/)
+      → minio (file storage)
+  → python (FastAPI, computation only — no DB access)
+```
 
 ### Platform stack
 
@@ -50,14 +58,32 @@ The full paper is rendered as content in the running application under **EGD Pap
 | Storage | MinIO | Object storage for files / images |
 | Computation | Python + FastAPI | Cardiovascular simulation engine; Node.js proxies here |
 
-### Framework features
+---
 
-- **Component tree system** — UI structure (forms, inputs, charts) stored as JSONB nodes. Rendered dynamically by `FormRenderer` / `TreeEditor`.
-- **Survey system** — parallel component tree for building and running surveys with answer storage.
-- **Content / CMS** — hierarchical content pages with HTML, Image, HTML+Image, and LaTeX card types. Editable from the Backoffice.
-- **Files** — MinIO-backed file upload, listing, and description management.
-- **Auth** — JWT-based login, roles (`admin` / `user`), change-password.
-- **Shell components** — `SplitPageLayout`, `TabPanel`, `ResourcePanel`, `DataTable`, `ModalShell`, `EmptyState`, `TreeEditor`.
+## Framework features
+
+- **Component tree system** — UI structure (forms, inputs, selects, plots)
+  stored as JSONB nodes in the DB. `FormRenderer` turns a tree into a live
+  form; admins build and edit trees with `TreeEditor` in the backoffice.
+- **Survey system** — a parallel component tree for authoring and running
+  surveys. Answers are keyed by component UUID and owner-scoped: users see
+  their own submissions, admins see all.
+- **Content / CMS** — hierarchical content pages with HTML, Image,
+  HTML+Image and LaTeX card types, edited from the backoffice. Optional AI
+  import turns pasted LaTeX into content cards (Anthropic API).
+- **Files** — MinIO-backed upload, listing and description management.
+  Seeded images survive DB resets via stable object keys.
+- **Auth & roles** — JWT login; roles alias onto four permission tiers
+  (`public` / `registered` / `user` / `admin`). Every GraphQL operation is
+  admin-only unless deliberately opened in `permissions.js`, and roles are
+  managed from the backoffice.
+- **Secrets keychain** — per-user encrypted secrets (AES-256-GCM). Declaring
+  a key name in the registry is the whole change: storage, API and the
+  Account Integrations UI follow from it.
+- **Shell components** — `SplitPageLayout`, `SinglePanelLayout`,
+  `AreaShell`, `ResourcePanel`, `DataTable`, `TabPanel`, `ModalShell`,
+  `TreeEditor`, `EmptyState`, `JsonViewer`, `PdfViewer`, plus `EChart` for
+  charts — the building blocks every page composes.
 
 ### Medical domain
 
@@ -69,79 +95,96 @@ The full paper is rendered as content in the running application under **EGD Pap
 
 ---
 
-## Running
+## Development
 
 ```bash
-cp .env.example .env          # edit credentials
+cp .env.example .env          # set credentials first
 ./run                         # start all services
-./run reset                   # wipe DB + MinIO and restart (re-runs init-scripts)
-./run rebuild <service>       # rebuild after Dockerfile changes
 ./run down                    # stop everything
+./run rebuild [service]       # rebuild after Dockerfile/deps changes (all if omitted), then start
+./run reset                   # wipe DB + MinIO and restart (re-runs init-scripts)
+./run rebuild-reset [service] # wipe DB + MinIO AND rebuild, then start
 ```
 
+Every form ends in a foreground `docker compose up` — Ctrl-C tears the
+stack down. A background poller prints a `STACK READY` banner once all
+three services answer (the pwa dev server lags a rebuild by minutes).
+
 Service URLs:
-- Frontend: http://localhost:8100
+- Frontend: http://localhost:8100 — sign in with `ADMIN_EMAIL` / `ADMIN_PASSWORD`
 - GraphQL: http://localhost:3000/graphql
 - Python: http://localhost:5000
 
 ---
 
-## Adding a domain
+## Building an app
 
-A domain is a vertical slice of functionality. Each domain adds five files in predictable locations — mark every addition with `// [MY DOMAIN]` (or `-- [MY DOMAIN]` in SQL) so domain code can be found by a single grep.
+manuBeat is itself a fork of manuSpine, and the same pattern applies to
+anything built on top of it: the app lives in a fork and keeps pulling
+framework updates.
 
-### 1. DB tables — `init-scripts/02-init-<domain>.sql`
+1. Fork the repo and clone your fork.
+2. Add the framework as a remote: `git remote add upstream <manuSpine url>`.
+3. Build your features as a **domain** (below) — framework files stay
+   untouched, so merges stay clean.
+4. Pull framework updates with `git fetch upstream && git merge
+   upstream/master` — never cherry-pick.
 
-```sql
-CREATE TABLE my_things (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-```
+### Adding a domain
 
-Picked up alphabetically by Postgres on first start. Run `./run reset` to apply.
+A domain is a vertical slice of functionality. It touches five places,
+each mirroring the framework layout — mark every addition with
+`// [MY DOMAIN]` (or `-- [MY DOMAIN]` in SQL) so domain code is one grep away:
 
-### 2. Node.js routes — `nodejs/routes/<domain>/things.js`
+1. **DB** — `init-scripts/02-init-<domain>.sql` (picked up alphabetically
+   on a fresh volume; `./run reset` applies it).
+2. **REST routes** — `nodejs/routes/<domain>/`, registered in `backend.js`.
+3. **GraphQL** — `nodejs/schema/resolvers/<domain>/`, merged in
+   `schema/index.js`; open operations to lower tiers in `permissions.js`.
+4. **Python** (optional) — `python/api/domains/<domain>/routes.py`,
+   included in `main.py`.
+5. **Frontend** — pages in `pwa/src/pages/<domain>/`, constants in
+   `constants.ts`, routes in `App.tsx`, nav in `Menu.tsx`.
 
-```js
-const router = require('express').Router();
-const { pool } = require('../../db');
-// ... REST endpoints
-module.exports = router;
-```
+The seeded **Developer Guide** (Landing page → Developer Guide, after
+signing in) walks through the full slice with code.
 
-Register in `nodejs/backend.js`:
-```js
-server.use('/api', require('./routes/<domain>/things')); // [MY DOMAIN]
-```
+---
 
-### 3. GraphQL resolvers — `nodejs/schema/resolvers/<domain>/things.js`
+## Production
 
-```js
-module.exports = { queries: { /* ... */ }, mutations: { /* ... */ } };
-```
+`docker-compose.prod.yml` runs four services — the PWA is built to static
+files and served by the edge proxy instead of a dev server — on prebuilt
+`:prod` images with no published ports, split across `edge` / `internal` /
+`db` networks.
 
-Register in `nodejs/schema/index.js` by spreading into the `Query` and `Mutation` fields.
+Deployment is three idempotent stages; all images are built off-box (the
+server carries no build tooling):
 
-### 4. Python routes (optional) — `python/api/domains/<domain>/routes.py`
+1. `deploy/provision.sh` — one-time server prep: Docker, log rotation, SSH
+   hardening, unattended upgrades, swap, the shared `edge` network and the
+   Caddy skeleton.
+2. `deploy/ship-caddy.sh` — build and ship the Caddy front door (wildcard
+   TLS via DNS-01).
+3. `deploy/ship-app.sh` — build the prod images and static PWA, ship them
+   to `/srv/apps/<app>`, and start the stack.
 
-```python
-from fastapi import APIRouter
-router = APIRouter()
+Hostnames and secrets live only on the box; `.env.prod.example` is the
+committed template.
 
-@router.get("/<domain>/health")
-def health(): return {"ok": True}
-```
+---
 
-Register in `python/api/main.py`:
-```python
-from .domains.<domain>.routes import router as domain_router
-app.include_router(domain_router)
-```
+## Claude Code tooling
 
-### 5. Frontend — `pwa/src/pages/<domain>/`
+The repo ships a `.claude/` layer for [Claude Code](https://claude.com/claude-code)
+users: skills that automate the common workflows (`new-api`, `new-form`,
+`new-page`, `seed-content`, `pull-upstream`, …), review agents
+(convention-reviewer, exposure-auditor, pattern-scout, …), path-scoped
+coding rules, and a versioned project memory. `CLAUDE.md` is the entry
+point.
 
-- Add page files following the `SplitPageLayout` pattern.
-- Add constants to `pwa/src/constants.ts` marked `// [MY DOMAIN]`.
-- Register routes in `pwa/src/App.tsx` and nav in `pwa/src/components/shell/Menu.tsx`.
+---
+
+## License
+
+[MIT](LICENSE)

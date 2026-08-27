@@ -1,6 +1,7 @@
-// Page: Configuration — component tree builder (backoffice).
+// Page: Configuration — browse and edit the component trees that power the app's forms.
 // Reads/writes: components + components_relationships tables (GraphQL).
-// Admin-only. Edit mode must be explicitly enabled — changes affect live UI forms across the app.
+// Admin-only. Browse-first: forms listed with their app usage (FORM_USAGE) and a live
+// FormRenderer preview. Edit mode must be explicitly enabled — changes affect live UI.
 
 import React, { useRef, useState } from 'react';
 import { IonButton, IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonText, IonToggle } from '@ionic/react';
@@ -15,7 +16,7 @@ import ModalShell from '../../components/shell/ModalShell';
 import TreeEditor, { TreeEditorHandle, LinkableGroup } from '../../components/shell/TreeEditor';
 import FormRenderer from '../../components/forms/FormRenderer';
 import { ComponentResults } from '../../interfaces/types';
-import { APP_COMPONENT_TYPES, AREA_NAV, PANEL_CONFIG, EDITOR_ID, TYPE } from '../../constants';
+import { APP_COMPONENT_TYPES, AREA_NAV, FORM_USAGE, PANEL_CONFIG, EDITOR_ID, TYPE } from '../../constants';
 
 
 /*
@@ -69,6 +70,65 @@ const compLinkFetcher = async (): Promise<ComponentResults[]> => {
   return results.flat().filter((c): c is ComponentResults & { id: string } => !!c.id);
 };
 
+// FormRenderer renders only a root's children, so wrap non-section nodes
+// (leaf inputs, selects) in a synthetic form so a single field previews too.
+const compPreviewTree = (node: ComponentResults): ComponentResults =>
+  [TYPE.FORM, TYPE.PLOT_GRID, TYPE.PLOT].includes(node.type as any)
+    ? node
+    : ({ name: node.name, type: TYPE.FORM, data: { text: node.name }, children: [node] } as ComponentResults);
+
+// List items carry a computed `usage` sublabel: roots are looked up in
+// FORM_USAGE directly; nested nodes inherit the usage of their tree root(s).
+type AnnotatedComponent = ComponentResults & { id: string; usage?: string };
+
+const annotateUsage = (
+  items: (ComponentResults & { id: string })[],
+  rels: any[],
+): AnnotatedComponent[] => {
+  const parentsByChild = new Map<string, { id: string; name: string }[]>();
+  rels.forEach(r => {
+    if (!parentsByChild.has(r.child_id)) parentsByChild.set(r.child_id, []);
+    parentsByChild.get(r.child_id)!.push({ id: r.parent_id, name: r.parent_name });
+  });
+  const rootsOf = (id: string, name: string, seen: Set<string>): { id: string; name: string }[] => {
+    if (seen.has(id)) return [];
+    seen.add(id);
+    const parents = parentsByChild.get(id);
+    if (!parents?.length) return [{ id, name }];
+    return parents.flatMap(p => rootsOf(p.id, p.name, seen));
+  };
+  return items.map(item => {
+    const roots = rootsOf(item.id, item.name, new Set());
+    const usage = [...new Set(
+      roots.map(r => r.id === item.id ? FORM_USAGE[r.name] : (FORM_USAGE[r.name] ?? `in ${r.name}`))
+    )].filter(Boolean).join(' · ');
+    return { ...item, usage: usage || undefined };
+  });
+};
+
+const sortByUsage = (a: AnnotatedComponent, b: AnnotatedComponent) =>
+  (a.usage ? 0 : 1) - (b.usage ? 0 : 1) || a.name.localeCompare(b.name);
+
+// Default browse view ("Forms"): tree roots — the entry points the app fetches
+// by name, whatever their type, so orphans surface too — merged with nested
+// form-type sections. Roots first (known usage leading), then sections.
+const compFormsFetcher = async (): Promise<AnnotatedComponent[]> => {
+  const [all, rels] = await Promise.all([compLinkFetcher(), ApiService.getRelationsList()]);
+  const childIds = new Set(rels.map((r: any) => r.child_id));
+  const items = (all as (ComponentResults & { id: string })[])
+    .filter(c => !childIds.has(c.id) || c.type === TYPE.FORM);
+  return annotateUsage(items, rels).sort((a, b) =>
+    (childIds.has(a.id) ? 1 : 0) - (childIds.has(b.id) ? 1 : 0) || sortByUsage(a, b)
+  );
+};
+
+// Typed drill-down view: every node of that type, annotated the same way.
+const compTypeFetcher = async (type: string): Promise<AnnotatedComponent[]> => {
+  const [list, rels] = await Promise.all([ApiService.getList(type), ApiService.getRelationsList()]);
+  const withId = list.filter((item): item is ComponentResults & { id: string } => !!item.id);
+  return annotateUsage(withId, rels).sort(sortByUsage);
+};
+
 const Configuration: React.FC = () => {
 
 
@@ -95,7 +155,8 @@ const Configuration: React.FC = () => {
 
   const [hasFormData, setHasFormData] = useState(false);
   const [formData, setFormData] = useState({} as ComponentResults);
-  const [listType, setListType] = useState('form');
+  const [usageText, setUsageText] = useState<string | undefined>(undefined);
+  const [listType, setListType] = useState('');   // '' = roots view (default browse mode)
   const [configVersion, setConfigVersion] = useState(0);
   const [relListVersion, setRelListVersion] = useState(0);
 
@@ -244,21 +305,21 @@ const Configuration: React.FC = () => {
           label: 'Components',
           content: (
             <ResourcePanel
-              fetcher={() => ApiService.getList(listType).then(
-                list => list.filter((item): item is ComponentResults & { id: string } => !!item.id)
-              )}
-              refreshToken={`${listType}-${configVersion}`}
+              fetcher={() => listType ? compTypeFetcher(listType) : compFormsFetcher()}
+              refreshToken={`${listType}-${configVersion}-${relListVersion}`}
               config={PANEL_CONFIG.CONFIG_COMPONENTS}
               selectedId={formData?.id}
               getLabel={item => item.name}
-              onSelect={item => useComponent(item.id)}
+              getSubLabel={item => item.usage}
+              getBadge={item => ({ label: item.type, color: compBadgeColor(item) })}
+              onSelect={item => { setUsageText(item.usage); useComponent(item.id); }}
               onDelete={isEditMode ? item => deleteDbComponent(item.id) : undefined}
-              onAdd={isEditMode ? () => openNewComp(listType) : undefined}
+              onAdd={isEditMode ? () => openNewComp(listType || APP_COMPONENT_TYPES[0]) : undefined}
               filter={{ types: APP_COMPONENT_TYPES, typeValue: listType, onTypeChange: setListType }}
             />
           ),
         },
-        {
+        ...(isEditMode ? [{
           label: 'Relations',
           content: (
             <ResourcePanel
@@ -272,16 +333,32 @@ const Configuration: React.FC = () => {
               )}
               refreshToken={`relations-${relListVersion}`}
               title="Component Relations"
-              getLabel={item => item.name}
+              getLabel={(item: any) => item.name}
               onSelect={() => {}}
-              onDelete={isEditMode ? item => deleteDbRelation(item.parent_id, item.child_id) : undefined}
+              onDelete={(item: any) => deleteDbRelation(item.parent_id, item.child_id)}
               emptyMessage="No relations"
             />
           ),
-        },
+        }] : []),
       ]}
       right={
         <TabPanel tabs={[{
+          label: 'Preview',
+          content: !hasFormData ? (
+            <EmptyState message="Select a component to preview the UI it renders" />
+          ) : (
+            <>
+              {/* ═══════════════════════════════════════════════════════════
+                   Preview                                                   */}
+              {(usageText ?? FORM_USAGE[formData.name]) && (
+                <IonItem lines="none">
+                  <IonText color="medium">Used by: {usageText ?? FORM_USAGE[formData.name]}</IonText>
+                </IonItem>
+              )}
+              <FormRenderer key={formData.id} component={compPreviewTree(formData)} />
+            </>
+          ),
+        }, {
           label: 'Tree',
           content: !hasFormData ? (
             <EmptyState message="Select a component to edit" />

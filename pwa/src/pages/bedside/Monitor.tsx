@@ -8,7 +8,8 @@
 // Reuses: SplitPageLayout, ResourcePanel, EmptyState.
 import React, { useEffect, useRef, useState } from 'react';
 import { IonBadge, useIonViewWillEnter } from '@ionic/react';
-import ReactECharts from 'echarts-for-react';
+import EChart from '../../components/charts/EChart';
+import type { EChartsOption } from 'echarts';
 import ApiService from '../../services/Api';
 import SplitPageLayout from '../../components/shell/SplitPageLayout';
 import ResourcePanel from '../../components/shell/ResourcePanel';
@@ -91,7 +92,7 @@ const Monitor: React.FC = () => {
     return () => clearInterval(iv);
   }, []);
 
-  const chartOption = (stream: BedsideStream) => {
+  const chartOption = (stream: BedsideStream): EChartsOption => {
     const buf = buffersRef.current[stream.stream_id] ?? { t: [], v: [] };
     const data = buf.t.map((t, i) => [t, buf.v[i]]);
     return {
@@ -118,7 +119,7 @@ const Monitor: React.FC = () => {
           <EmptyState message="Waiting for streams… (is the agent running and dialling in?)" />
         ) : (
           streams.map(s => (
-            <ReactECharts key={s.id} option={chartOption(s)} notMerge style={{ height: 220, width: '100%' }} />
+            <EChart key={s.id} option={chartOption(s)} notMerge height={220} />
           ))
         )}
       </div>

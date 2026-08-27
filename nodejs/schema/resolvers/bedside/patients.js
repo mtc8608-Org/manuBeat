@@ -15,13 +15,18 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const { pool } = require('../../../db');
 const { GraphQLJSON } = require('../../types');
+const { isAdmin } = require('../../helpers/ownership');
 
 const iso = v => (v ? v.toISOString() : null);
 const ONLINE_WINDOW_MS = 30_000;
 const isOnline = r => !!r.last_seen && (Date.now() - new Date(r.last_seen).getTime() < ONLINE_WINDOW_MS);
 
+// Tier check via the shared primitive (schema/helpers/ownership.js) rather than
+// a local copy — that module is the reference implementation, and it compares
+// the tier, never the role name (backend-api.md). No owner-scoping here on
+// purpose: the whole domain is admin-only, so there is no cross-user surface.
 const requireAdmin = (ctx) => {
-  if (ctx?.user?.role !== 'admin') throw new Error('Admin access required');
+  if (!isAdmin(ctx)) throw new Error('Admin access required');
 };
 
 const newToken = () => crypto.randomBytes(24).toString('hex');

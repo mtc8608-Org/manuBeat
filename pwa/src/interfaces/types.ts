@@ -2,6 +2,7 @@ export interface AuthUser {
   id: string;
   email: string;
   role: string;
+  tier?: string;   // the role's permissions tier from the JWT; equals role on pre-tier tokens
 }
 
 // ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -19,6 +20,8 @@ export interface Survey {
 export interface SurveyAnswer {
   id: string;
   survey_id: string;
+  owner_id: string;
+  owner_email?: string;
   answers: Record<string, any>;
   submitted_at: string;
 }
@@ -35,6 +38,7 @@ export interface FileRecord {
   mime_type: string | null;
   size: number | null;
   description: string | null;
+  is_public: boolean;   // content asset — streams to anonymous visitors
   uploaded_by: string | null;
   created_at: string;
 }
@@ -46,6 +50,7 @@ export interface ComponentResults {
   data: any;
   options: any;
   children?: any;
+  owner_id?: string;   // set on owner-scoped domains; absent elsewhere
 }
 
 export interface Component {
@@ -74,7 +79,7 @@ export interface PanelConfig {
   };
   filter?: {
     text?: { enabled: boolean; placeholder?: string };
-    type?: { enabled: boolean; options?: readonly string[] };
+    type?: { enabled: boolean; options?: readonly string[]; allLabel?: string };
   };
 }
 

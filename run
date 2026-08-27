@@ -11,6 +11,40 @@ down() {
   docker compose down
 }
 
+# Background poller: announces readiness once all three services answer,
+# since pwa's npm ci + vite warmup lags the rest by minutes. Dies with the
+# script (shares its process group, so Ctrl-C kills it) or after 10 min.
+ready_notify() {
+  (
+    urls=(http://localhost:8100 http://localhost:3000/graphql http://localhost:5000)
+    for _ in $(seq 1 300); do
+      ok=1
+      for u in "${urls[@]}"; do
+        curl -s -o /dev/null --max-time 2 "$u" || { ok=0; break; }
+      done
+      if [ "$ok" = 1 ]; then
+        echo ""
+        echo "=========================================="
+        echo "  STACK READY  ->  http://localhost:8100"
+        echo "=========================================="
+        if command -v notify-send >/dev/null; then
+          notify-send "$name" "Stack ready: http://localhost:8100"
+        fi
+        exit 0
+      fi
+      sleep 2
+    done
+  ) &
+}
+
+# Foreground `docker compose up` with the ready banner, identical for every
+# variant: Ctrl-C always tears the stack down, not just stops it.
+up() {
+  trap 'docker compose down' INT TERM
+  ready_notify
+  docker compose up
+}
+
 build() {
   local service="${1:-}"
   if [ -n "$service" ]; then
@@ -34,29 +68,30 @@ case "${args[0]}" in
   "rebuild")
     down
     build "${args[1]}"
-    docker compose up
+    up
     ;;
 
   "reset")
     down
     sudo sh -c "rm -rf $(pwd)/.persist/db/* $(pwd)/.persist/minio/*"
-    docker compose up
+    up
     ;;
 
   "rebuild-reset")
     down
     sudo sh -c "rm -rf $(pwd)/.persist/db/* $(pwd)/.persist/minio/*"
     build "${args[1]}"
-    docker compose up
+    up
     ;;
 
   "")
     down
+    # Build-if-missing keys on the pwa image only — a wipe of a single other
+    # image needs an explicit `./run rebuild [service]`.
     if [ "$(docker images -q $pwa_name:latest 2> /dev/null)" == "" ]; then
       build
     fi
-    trap 'docker compose down' INT TERM
-    docker compose up
+    up
     ;;
 
   *)

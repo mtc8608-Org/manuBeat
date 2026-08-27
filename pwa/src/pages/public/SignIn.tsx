@@ -10,32 +10,46 @@ import { ROUTE } from '../../constants';
 import AppHeader from '../../components/shell/AppHeader';
 
 const SignIn: React.FC = () => {
-  const { login } = useAuth();
-  const history   = useHistory();
+  const { login, register } = useAuth();
+  const history             = useHistory();
 
   const PREFILL_KEY = 'signin_prefill_email';
 
+  const [mode, setMode]         = useState<'signin' | 'register'>('signin');
   const [email, setEmail]       = useState(() => localStorage.getItem(PREFILL_KEY) ?? '');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm]   = useState('');
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
 
-  const handleLogin = async () => {
+  const isRegister = mode === 'register';
+
+  const handleSubmit = async () => {
     setError('');
+    if (isRegister && password !== confirm) {
+      setError('Passwords do not match');
+      return;
+    }
     setLoading(true);
     try {
-      await login(email, password);
+      await (isRegister ? register(email, password) : login(email, password));
       localStorage.setItem(PREFILL_KEY, email);
       history.push(ROUTE.LANDING);
     } catch (e: any) {
-      setError(e.message ?? 'Login failed');
+      setError(e.message ?? (isRegister ? 'Registration failed' : 'Login failed'));
     } finally {
       setLoading(false);
     }
   };
 
+  const toggleMode = () => {
+    setMode(isRegister ? 'signin' : 'register');
+    setConfirm('');
+    setError('');
+  };
+
   const handleKey = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleLogin();
+    if (e.key === 'Enter') handleSubmit();
   };
 
   return (
@@ -48,7 +62,7 @@ const SignIn: React.FC = () => {
         }}>
           <IonCard style={{ width: '100%', maxWidth: 420 }}>
             <IonCardHeader>
-              <IonCardTitle>Sign In</IonCardTitle>
+              <IonCardTitle>{isRegister ? 'Register' : 'Sign In'}</IonCardTitle>
             </IonCardHeader>
             <IonCardContent>
               {error && (
@@ -85,15 +99,29 @@ const SignIn: React.FC = () => {
                   onKeyDown={handleKey}
                 />
               </IonItem>
+              {isRegister && (
+                <IonItem lines="full">
+                  <IonInput
+                    label="Confirm password" labelPlacement="stacked"
+                    type="password" placeholder="••••••••"
+                    value={confirm}
+                    onIonInput={e => setConfirm(e.detail.value ?? '')}
+                    onKeyDown={handleKey}
+                  />
+                </IonItem>
+              )}
               <IonButton
                 expand="block"
                 style={{ marginTop: 16 }}
-                disabled={loading || !email || !password}
-                onClick={handleLogin}
+                disabled={loading || !email || !password || (isRegister && !confirm)}
+                onClick={handleSubmit}
               >
-                {loading ? <IonSpinner name="dots" /> : 'Sign In'}
+                {loading ? <IonSpinner name="dots" /> : (isRegister ? 'Register' : 'Sign In')}
               </IonButton>
               <div style={{ textAlign: 'center', marginTop: 16 }}>
+                <IonButton fill="clear" size="small" onClick={toggleMode}>
+                  {isRegister ? 'Already have an account? Sign in' : 'No account? Register'}
+                </IonButton>
                 <IonButton fill="clear" size="small" routerLink={ROUTE.LANDING}>
                   Browse without signing in
                 </IonButton>

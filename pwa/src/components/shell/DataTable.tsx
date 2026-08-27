@@ -7,8 +7,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   IonCard, IonCardContent, IonCardHeader, IonCardTitle,
   IonItem, IonLabel, IonInput, IonButton, IonButtons, IonIcon, IonSpinner,
+  IonSelect, IonSelectOption,
 } from '@ionic/react';
 import { addOutline, trashOutline, createOutline, downloadOutline } from 'ionicons/icons';
+import { downloadBlob } from '../../utils/download';
 
 export const flattenObject = (obj: Record<string, any>, prefix = ''): Record<string, string> => {
   const result: Record<string, string> = {};
@@ -22,6 +24,9 @@ export const flattenObject = (obj: Record<string, any>, prefix = ''): Record<str
   }
   return result;
 };
+
+type Op = 'contains' | '=' | '≥' | '≤';
+type ColType = 'text' | 'enum' | 'number' | 'date';
 
 export interface DataTableLeadingCol<R> {
   label: string;
@@ -38,6 +43,10 @@ interface DataTableProps<R extends { id: string }> {
   refreshToken?: number;
   onEdit?: (row: R) => void;
   onDelete?: (id: string) => Promise<void>;
+  /** Columns with a fixed value set → the filter value becomes a dropdown (implies enum). */
+  filterOptions?: Record<string, string[]>;
+  /** Per-column type → drives the filter operator (text=contains/=, enum==, number/date=/≥/≤). */
+  columnTypes?: Record<string, 'text' | 'enum' | 'number' | 'date'>;
 }
 
 const thStyle: React.CSSProperties = {
@@ -65,11 +74,36 @@ function DataTable<R extends { id: string }>({
   refreshToken,
   onEdit,
   onDelete,
+  filterOptions,
+  columnTypes,
 }: DataTableProps<R>): React.ReactElement {
   const [rows, setRows]               = useState<R[]>([]);
   const [loading, setLoading]         = useState(false);
-  const [filterRows, setFilterRows]   = useState<{ key: string; value: string }[]>([]);
+  const [filterRows, setFilterRows]   = useState<{ key: string; op: Op; value: string }[]>([]);
   const [visibleCols, setVisibleCols] = useState<Set<string>>(new Set());
+
+  // ── Column-aware filtering (op depends on the column's type) ──────────────────
+  const colTypeOf = (key: string): ColType =>
+    columnTypes?.[key] ?? (filterOptions?.[key] ? 'enum' : 'text');
+  const opsForType = (t: ColType): Op[] =>
+    t === 'enum' ? ['='] : (t === 'number' || t === 'date') ? ['=', '≥', '≤'] : ['contains', '='];
+  const defaultOp = (t: ColType): Op => (t === 'text' ? 'contains' : '=');
+  const matchCell = (cell: string, op: Op, val: string, t: ColType): boolean => {
+    if (!val.trim()) return true;
+    if (op === 'contains') return cell.toLowerCase().includes(val.toLowerCase());
+    if (t === 'number') {
+      const a = parseFloat(cell), b = parseFloat(val);
+      if (isNaN(a) || isNaN(b)) return false;
+      return op === '=' ? a === b : op === '≥' ? a >= b : a <= b;
+    }
+    if (t === 'date') {
+      const a = new Date(cell).getTime(), b = new Date(val).getTime();
+      if (isNaN(a) || isNaN(b)) return false;
+      if (op === '=') return new Date(cell).toDateString() === new Date(val).toDateString();
+      return op === '≥' ? a >= b : a <= b;
+    }
+    return cell.toLowerCase() === val.toLowerCase();   // text '=' / enum
+  };
 
   const flatRows = useMemo(() =>
     rows.map(r => ({ row: r, flat: flattenRow ? flattenRow(r) : (r as unknown as Record<string, string>) })),
@@ -80,9 +114,9 @@ function DataTable<R extends { id: string }>({
     const active = filterRows.filter(f => f.key.trim() && f.value.trim());
     if (active.length === 0) return flatRows;
     return flatRows.filter(({ flat }) =>
-      active.every(f => (flat[f.key.trim()] ?? '').toLowerCase().includes(f.value.trim().toLowerCase()))
+      active.every(f => matchCell(flat[f.key] ?? '', f.op, f.value.trim(), colTypeOf(f.key)))
     );
-  }, [flatRows, filterRows]);
+  }, [flatRows, filterRows]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const allCols = useMemo(() => {
     const keys = new Set<string>();
@@ -99,8 +133,9 @@ function DataTable<R extends { id: string }>({
 
   const load = async () => {
     setLoading(true);
-    const filter = filterRows.reduce((acc, { key, value }) => {
-      if (key.trim() && value.trim()) acc[key.trim()] = value.trim();
+    // Only contains/= go to the server as key→value; ≥/≤ are refined client-side.
+    const filter = filterRows.reduce((acc, { key, op, value }) => {
+      if (key.trim() && value.trim() && (op === 'contains' || op === '=')) acc[key.trim()] = value.trim();
       return acc;
     }, {} as Record<string, string>);
     try { setRows(await fetcher(filter)); }
@@ -113,10 +148,15 @@ function DataTable<R extends { id: string }>({
     if (refreshToken !== undefined && refreshToken > 0) load();
   }, [refreshToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const addFilter    = () => setFilterRows(prev => [...prev, { key: '', value: '' }]);
+  const addFilter    = () => setFilterRows(prev => [...prev, { key: '', op: 'contains', value: '' }]);
   const removeFilter = (i: number) => setFilterRows(prev => prev.filter((_, j) => j !== i));
-  const updateFilter = (i: number, field: 'key' | 'value', val: string) =>
-    setFilterRows(prev => prev.map((r, j) => j === i ? { ...r, [field]: val } : r));
+  const updateFilter = (i: number, field: 'key' | 'op' | 'value', val: string) =>
+    setFilterRows(prev => prev.map((r, j) => {
+      if (j !== i) return r;
+      // Changing the column resets the operator to that type's default and clears the value.
+      if (field === 'key') return { key: val, op: defaultOp(colTypeOf(val)), value: '' };
+      return { ...r, [field]: field === 'op' ? (val as Op) : val };
+    }));
 
   const toggleCol = (col: string) =>
     setVisibleCols(prev => {
@@ -143,10 +183,7 @@ function DataTable<R extends { id: string }>({
       ].join(',')
     );
     const blob = new Blob([[header, ...lines].join('\n')], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${exportFilename}.csv`;
-    link.click();
+    downloadBlob(blob, `${exportFilename}.csv`);
   };
 
   const hasActions = !!(onEdit || onDelete);
@@ -168,20 +205,43 @@ function DataTable<R extends { id: string }>({
       </IonCardHeader>
       <IonCardContent>
 
-        {filterRows.map((row, i) => (
-          <IonItem key={i} lines="none">
-            <IonInput placeholder="Field key" value={row.key}
-              onIonInput={e => updateFilter(i, 'key', e.detail.value ?? '')}
-              style={{ marginRight: 8 }}
-            />
-            <IonInput placeholder="Value" value={row.value}
-              onIonInput={e => updateFilter(i, 'value', e.detail.value ?? '')}
-            />
-            <IonButton slot="end" fill="clear" color="danger" onClick={() => removeFilter(i)}>
-              <IonIcon icon={trashOutline} />
-            </IonButton>
-          </IonItem>
-        ))}
+        {filterRows.map((row, i) => {
+          const t        = colTypeOf(row.key);
+          const ops      = opsForType(t);
+          const enumOpts = filterOptions?.[row.key];
+          return (
+            <IonItem key={i} lines="none">
+              <IonSelect placeholder="Column" value={row.key} interface="popover"
+                onIonChange={e => updateFilter(i, 'key', e.detail.value)}
+                style={{ marginRight: 8, minWidth: 130 }}>
+                {allCols.map(c => <IonSelectOption key={c} value={c}>{colLabel(c)}</IonSelectOption>)}
+              </IonSelect>
+              {ops.length > 1 && (
+                <IonSelect value={row.op} interface="popover"
+                  onIonChange={e => updateFilter(i, 'op', e.detail.value)}
+                  style={{ marginRight: 8, maxWidth: 120 }}>
+                  {ops.map(o => <IonSelectOption key={o} value={o}>{o}</IonSelectOption>)}
+                </IonSelect>
+              )}
+              {enumOpts ? (
+                <IonSelect placeholder="Value" value={row.value} interface="popover"
+                  onIonChange={e => updateFilter(i, 'value', e.detail.value)}>
+                  {enumOpts.map(v => <IonSelectOption key={v} value={v}>{v}</IonSelectOption>)}
+                </IonSelect>
+              ) : t === 'date' ? (
+                <input type="date" value={row.value}
+                  onChange={e => updateFilter(i, 'value', e.target.value)}
+                  style={{ flex: 1, background: 'transparent', color: 'var(--ion-text-color)', border: 'none' }} />
+              ) : (
+                <IonInput placeholder="Value" type={t === 'number' ? 'number' : 'text'} value={row.value}
+                  onIonInput={e => updateFilter(i, 'value', e.detail.value ?? '')} />
+              )}
+              <IonButton slot="end" fill="clear" color="danger" onClick={() => removeFilter(i)}>
+                <IonIcon icon={trashOutline} />
+              </IonButton>
+            </IonItem>
+          );
+        })}
 
         <IonButtons style={{ marginTop: 8 }}>
           <IonButton size="small" onClick={addFilter}>
