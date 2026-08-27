@@ -109,9 +109,17 @@ services:
       MINIO_ROOT_USER: ${MINIO_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
     command: server /data --console-address ":9001"
+    # Host side moved off 9000/9001 — those two are heavily contested on a dev box
+    # (any other MinIO, and plenty of notebook kernels and local servers grab them).
+    # Only the LEFT number changes: inside the docker network MinIO still serves S3
+    # on 9000 and its console on 9001, which is what MINIO_PORT=9000 in .env means
+    # and what the Node and Python clients dial. Never "fix" a collision by editing
+    # MINIO_PORT — that aims the clients at the console, which does not speak S3.
+    # Console is at http://localhost:9101. Production publishes nothing at all
+    # (docker-compose.prod.yml), so this is dev-only and never ships.
     ports:
-      - 127.0.0.1:9000:9000
-      - 127.0.0.1:9001:9001
+      - 127.0.0.1:9100:9000   # S3 API
+      - 127.0.0.1:9101:9001   # web console
     volumes:
       - .persist/minio:/data
     networks:

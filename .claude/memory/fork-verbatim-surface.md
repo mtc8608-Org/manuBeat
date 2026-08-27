@@ -98,10 +98,13 @@ outside these sets that differs is worth the same blob-history check:
   (`library/`, `config/`, `run_*/`, `notebookData/`) with `Dockerfile.notebook`
   and `requirements.notebook.txt`. All [MEDICAL]-commented — see
   [[model-stack-upstream]].
-- **`docker-compose.yml`** — manuBeat's two deviations, both `[MEDICAL]`-commented
-  in the file: the five MinIO variables handed to the `python` service, and the
-  fork-only `jupyter` service. The prod compose has neither. A `pull-upstream`
-  merge must keep both blocks and never widen the first.
+- **`docker-compose.yml`** — manuBeat's three deviations, all commented in the file:
+  the five MinIO variables handed to the `python` service, the fork-only `jupyter`
+  service (both `[MEDICAL]`), and MinIO's host ports moved to `9100`/`9101` because
+  9000/9001 collide constantly on a dev box. Only the host side moved — in-network
+  MinIO is still `minio:9000`, so `MINIO_PORT` stays 9000. The prod compose has none
+  of the three (it publishes no ports at all). A `pull-upstream` merge must keep all
+  three and never widen the first.
 - **`scripts/`** — fork-only; upstream has no such directory.
 - **`init-scripts/`** — `01-init-db.sql` and `seed-landing.sql` (a fork may
   delete a framework seed block that its own richer same-name form replaces, and
