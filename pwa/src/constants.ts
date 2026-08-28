@@ -349,6 +349,26 @@ export const PANEL_CONFIG = {
     add: { enabled: true, label: 'Add' },
     filter: { text: { enabled: false }, type: { enabled: false } },
   },
+  MEMBRANES: {
+    title: 'Membranes', emptyMessage: 'No membranes yet.',
+    add: { enabled: true, label: 'Add' },
+    filter: { text: { enabled: false }, type: { enabled: false } },
+  },
+  REACTIONS: {
+    title: 'Reactions', emptyMessage: 'No reactions yet.',
+    add: { enabled: true, label: 'Add' },
+    filter: { text: { enabled: false }, type: { enabled: false } },
+  },
+  CALIBRATION: {
+    title: 'Calibration', emptyMessage: 'No calibration controllers yet.',
+    add: { enabled: true, label: 'Add' },
+    filter: { text: { enabled: false }, type: { enabled: false } },
+  },
+  CONTROL: {
+    title: 'Control', emptyMessage: 'No control controllers yet.',
+    add: { enabled: true, label: 'Add' },
+    filter: { text: { enabled: false }, type: { enabled: false } },
+  },
   PLOT_CONFIGS: {
     title: 'Plot Configs', emptyMessage: 'No configs yet.',
     add: { enabled: true, label: 'New Config' },

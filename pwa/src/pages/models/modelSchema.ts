@@ -34,6 +34,7 @@ export type FieldKind =
   | 'text'            // free string
   | 'select'          // fixed option list
   | 'stateRef'        // the NAME of another state (e.g. thorax uVol, elastanceInput E)
+  | 'parameterRef'    // the name of a CONTROLLABLE parameter — the only valid controller target
   | 'compartmentRef'  // a compartment name
   | 'cycleRef'        // a key of the top-level `cycles` section
   | 'gasRegionRef'    // a key of metadata.gasRegions
@@ -835,7 +836,7 @@ const REACTION_TYPES: Record<string, TypeSpec> = {
 // something else already declared (the outer `if parameter == key` guard at :1944 silently
 // drops anything else).
 const CONTROLLER_TARGET: FieldDef = {
-  name: 'varToControl', label: 'Parameter To Control', kind: 'stateRef',
+  name: 'varToControl', label: 'Parameter To Control', kind: 'parameterRef',
   note: 'Must equal the entry key and name an existing controllable parameter.',
 };
 const CONTROLLER_OFFSET: FieldDef = {
@@ -1084,6 +1085,30 @@ export function entryParams(section: Section, entry: any): Record<string, any> {
 export const entryType = (section: Section, entry: any): string =>
   (section === 'compartments' ? entry?.capacitor?.type : entry?.type) ?? '';
 
+/** The values an entry's META fields hold, read back off the model — the identity half of
+ *  what a modal prefills, and the inverse of what `applyEntity` writes. Kept next to
+ *  `buildEntry`/`auxFor` so a round-trip cannot lose a field. */
+export function metaValuesFor(
+  model: ModelJson, section: Section, id: string, entry: any,
+): Record<string, any> {
+  switch (section) {
+    case 'compartments': return {
+      name:      id,
+      gasRegion: entry?.gasRegion ?? '',
+      cycle:     model?.connections?.cycles?.[id] ?? '',
+      bias:      model?.connections?.bias?.[id] ?? '',
+    };
+    case 'resistive': return { from: entry?.from ?? '', to: entry?.to ?? '' };
+    case 'membrane':  return { name: id, from: entry?.from ?? '', to: entry?.to ?? '', speciesParams: entry?.params ?? {} };
+    case 'reactions': { const { region, name } = splitReactionId(id); return { region, name }; }
+    default:          return { name: id };
+  }
+}
+
+/** Everything a modal prefills for an entry: identity plus params. */
+export const editValuesFor = (model: ModelJson, section: Section, id: string, entry: any) =>
+  ({ ...metaValuesFor(model, section, id, entry), ...entryParams(section, entry) });
+
 // ── State derivation ──────────────────────────────────────────────────────────
 
 function ctxFor(
@@ -1230,8 +1255,9 @@ function buildEntry(
       return {
         from: String(values.from ?? ''), to: String(values.to ?? ''), type,
         paramsMemb: params,
-        // The per-species diffusion/solubility map is edited separately; carry it over.
-        params: previous?.params ?? {},
+        // The per-species diffusion/solubility map has its own editor (one row per species
+        // both endpoints carry); the modal hands it over whole, else the old one is kept.
+        params: values.speciesParams ?? previous?.params ?? {},
       };
     case 'cycles':
       return { type: 'cycle', params };
@@ -1239,7 +1265,11 @@ function buildEntry(
       return { type, ...params };
     case 'calibration':
     case 'control':
-      return { type, params, description: previous?.description ?? '' };
+      // `description` is a free-text note some entries carry and the library ignores.
+      // Only carry it over when it was there — never invent an empty one.
+      return previous?.description !== undefined
+        ? { type, params, description: previous.description }
+        : { type, params };
     default:
       return { type, params };
   }
@@ -1324,6 +1354,14 @@ export function applyEntity(
 ): ApplyResult {
   const spec = SCHEMA[section].types[type];
   if (!spec) return { model, error: `Unknown ${section} type "${type}"` };
+
+  // A blank required field would otherwise produce a half-formed key (`avg_`, `_As`) or a
+  // param the generator reads as 0 — name the field instead.
+  const blank = [...SCHEMA[section].meta, ...spec.fields]
+    .filter(f => !f.optional && !f.inert)
+    .filter(f => { const v = values[f.name]; return v === undefined || v === null || v === ''; })
+    .map(f => f.label);
+  if (blank.length > 0) return { model, error: `Required: ${blank.join(', ')}` };
 
   const id = entityId(section, type, values);
   if (!id || id.includes('undefined')) return { model, error: 'Required field is empty' };
@@ -1474,9 +1512,9 @@ export function validateModel(model: ModelJson, meta: ModelMetadata | null): Fin
   if (!model) return out;
 
   const compartments = Object.keys(model.compartments ?? {});
-  const bias    = model.connections?.bias    ?? {};
-  const regions = model.connections?.regions ?? {};
-  const cycles  = model.connections?.cycles  ?? {};
+  const bias    = (model.connections?.bias    ?? {}) as Record<string, string>;
+  const regions = (model.connections?.regions ?? {}) as Record<string, string[]>;
+  const cycles  = (model.connections?.cycles  ?? {}) as Record<string, string>;
   const gas     = inferGasExchange(model);
 
   // bias / regions coverage
@@ -1524,8 +1562,19 @@ export function validateModel(model: ModelJson, meta: ModelMetadata | null): Fin
       else if (compartmentsInRegion(model, region).length === 0) out.push({ level: 'warning', message: `Reaction block "${region}" has no compartments, so none of its reactions are built.` });
     }
   }
-  if (!gas && Object.keys(model.reactions ?? {}).length === 0 && Object.keys(model.connections?.membrane ?? {}).length > 0) {
-    out.push({ level: 'warning', message: 'Membranes are only built on the gas-exchange path.' });
+  // A membrane whose species map is empty, or whose endpoints share no species, is built
+  // as nothing at all — the generator's per-gas loop simply never runs.
+  for (const [id, entry] of sectionEntries(model, 'membrane')) {
+    const ctx: EntityCtx = { key: id, params: {}, model, meta, gas, from: entry?.from, to: entry?.to };
+    const shared = membraneSpecies(ctx);
+    if (shared.length === 0) {
+      out.push({ level: 'warning', message: `Membrane "${id}" links two gas regions that share no species — it exchanges nothing.` });
+    } else if (membraneUsesSpeciesMap(entryType('membrane', entry))) {
+      const declared = Object.keys(entry?.params ?? {}).filter(k => !k.startsWith('#'));
+      for (const s of shared) {
+        if (!declared.includes(s)) out.push({ level: 'warning', message: `Membrane "${id}" has no diffusion/solubility for "${s}", so that species is skipped.` });
+      }
+    }
   }
 
   // types the library does not implement

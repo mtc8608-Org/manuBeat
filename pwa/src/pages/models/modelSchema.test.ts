@@ -11,7 +11,7 @@ import {
   SCHEMA, Section, ModelJson,
   applyEntity, removeEntity, referencesTo, entityId,
   canonicalModelJson, compartmentsInRegion,
-  deriveEntityStates, deriveParameterStates, deriveStates,
+  deriveEntityStates, deriveParameterStates, deriveStates, editValuesFor,
   entryParams, entryType, inferGasExchange, sectionEntries, validateModel,
 } from './modelSchema';
 import { ModelMetadata } from '../../interfaces/types';
@@ -41,6 +41,23 @@ const MODEL_FILES = fs.readdirSync(path.join(CONFIG, 'models'))
 const MODELS: Record<string, ModelJson> = Object.fromEntries(
   MODEL_FILES.map(f => [f, readJson(path.join(CONFIG, 'models', f))]),
 );
+
+/** JSON with object keys sorted, for order-insensitive comparison. */
+const stable = (v: any): string => JSON.stringify(v, (_k, val) =>
+  val && typeof val === 'object' && !Array.isArray(val)
+    ? Object.fromEntries(Object.keys(val).sort().map(k => [k, val[k]]))
+    : val);
+
+/** States the generator builds that a shipped config never declares, so the run falls back
+ *  to the generator default. Only one case exists: the two `*_inertial*` configs make
+ *  `Hl_As` a `diode_inertial` — which registers `L_Hl_As` — but park a stale 0.0002 in the
+ *  dead `savedd` block instead of declaring it. The run uses `params.L` (0.01) either way,
+ *  so the sandbox seeding it on the next edit changes nothing. Named here so a NEW
+ *  divergence still fails the suite. */
+const KNOWN_UNDECLARED: Record<string, string[]> = {
+  'cvModel_linear_inertial.json':    ['L_Hl_As'],
+  'cvModel_linear_inertialAlt.json': ['L_Hl_As'],
+};
 
 /** Every editable section, in the order the sandbox lists them. */
 const SECTIONS: Section[] = [
@@ -122,11 +139,6 @@ describe('state derivation against the shipped states blocks', () => {
     const entry = (model.connections?.resistive ?? {})[name.slice(2)];
     return !!entry && !['inertial', 'diode_inertial'].includes(entry.type);
   };
-  const KNOWN_UNDECLARED: Record<string, string[]> = {
-    'cvModel_linear_inertial.json':    ['L_Hl_As'],
-    'cvModel_linear_inertialAlt.json': ['L_Hl_As'],
-  };
-
   it.each(MODEL_FILES)('%s — the derived state set matches the config', file => {
     const model   = MODELS[file];
     const derived = new Set(Object.keys(deriveStates(model, META)));
@@ -344,15 +356,40 @@ describe('applyEntity writes the JSON the library expects', () => {
     expect(model.modelParams).toBeUndefined();
   });
 
-  it('every type in every section can be created from empty values', () => {
+  /** Fill every declared field so only the schema itself can fail the call. */
+  const fillValues = (section: Section, type: string): Record<string, any> => {
+    const identity: Record<string, any> = {
+      name: 'X', from: 'La', to: 'Cp', gasRegion: 'bloodPhysioArt', bias: 'La',
+      region: 'bloodPhysioArt', cycle: 'HC',
+    };
+    const values: Record<string, any> = { ...identity };
+    for (const f of [...SCHEMA[section].meta, ...SCHEMA[section].types[type].fields]) {
+      if (f.name in identity) continue;
+      values[f.name] =
+        f.kind === 'number'         ? 1
+        : f.kind === 'compartmentRef' ? 'La'
+        : f.kind === 'cycleRef'       ? ''
+        : f.kind === 'gasRegionRef'   ? 'bloodPhysioArt'
+        : f.kind === 'ratioList'      ? '1'
+        : f.kind === 'speciesList'    ? 'O2'
+        : f.kind === 'stateList'      ? 'V_La'
+        : f.name === 'newVarName'     ? 'X'
+        : f.name === 'varToControl'   ? 'C_La'
+        : f.name === 'varIn'          ? 'P_La'
+        : 'V_La';
+    }
+    return values;
+  };
+
+  it('every type in every section can be created with its declared fields', () => {
+    // A cycle must exist for the types that reference one (elastance, ventilator, heldt).
+    const base = applyEntity(gasFixture(), META, 'cycles', 'cycle',
+      { name: 'HC', duration: 0.8, triggerOffset: 0, timerOffset: 0 }).model;
+
     for (const section of SECTIONS) {
       for (const type of Object.keys(SCHEMA[section].types)) {
-        const values: Record<string, any> = {
-          name: 'X', from: 'A', to: 'B', gasRegion: 'bloodPlr', bias: 'A',
-          region: 'bloodPhysioArt', varToControl: 'R_A_B', newVarName: 'X', varIn: 'P_A',
-          cycle: '', compartment: 'A',
-        };
-        const { model, error } = applyEntity(gasFixture(), META, section, type, values);
+        const values = fillValues(section, type);
+        const { model, error } = applyEntity(base, META, section, type, values);
         expect(`${section}/${type}: ${error ?? 'ok'}`).toBe(`${section}/${type}: ok`);
 
         // The entry must land under the id the schema says it owns, with the chosen type.
@@ -365,17 +402,51 @@ describe('applyEntity writes the JSON the library expects', () => {
     }
   });
 
-  it('refuses a duplicate key and an empty key', () => {
-    const m = applyEntity(noGasFixture(), META, 'cycles', 'cycle',
-      { name: 'HC', duration: 0.8, triggerOffset: 0, timerOffset: 0 }).model;
-    expect(applyEntity(m, META, 'cycles', 'cycle', { name: 'HC', duration: 1 }).error).toMatch(/already exists/);
-    expect(applyEntity(m, META, 'cycles', 'cycle', { name: '', duration: 1 }).error).toMatch(/Required field/);
+  it('refuses a duplicate key, a blank key and a blank required param', () => {
+    const full = { name: 'HC', duration: 0.8, triggerOffset: 0, timerOffset: 0 };
+    const m = applyEntity(noGasFixture(), META, 'cycles', 'cycle', full).model;
+    expect(applyEntity(m, META, 'cycles', 'cycle', full).error).toMatch(/already exists/);
+    expect(applyEntity(m, META, 'cycles', 'cycle', { ...full, name: '' }).error).toMatch(/Required/);
+    // 0 is a legitimate value — only an absent/empty field counts as blank.
+    expect(applyEntity(m, META, 'cycles', 'cycle', { ...full, name: 'RCLa', duration: 0 }).error).toBeUndefined();
+    expect(applyEntity(m, META, 'cycles', 'cycle', { name: 'RCLa', duration: 5 }).error).toMatch(/Trigger Offset/);
   });
 });
 
 // ── 4. Lossless round-trip on the real configs ───────────────────────────────
 
 describe('editing a shipped config preserves everything else', () => {
+  /** The whole point of the exercise: open ANY entry of ANY shipped model, press Save
+   *  without changing a thing, and get the same JSON back. A schema field the registry is
+   *  missing, a param it coerces wrongly, or a state it seeds differently all surface here. */
+  it.each(MODEL_FILES)('%s — re-applying every entry unchanged is a no-op', file => {
+    const model = MODELS[file];
+    const damage: string[] = [];
+
+    for (const section of SECTIONS) {
+      for (const [id, entry] of sectionEntries(model, section)) {
+        const type   = entryType(section, entry);
+        const values = editValuesFor(model, section, id, entry);
+        const { model: next, error } = applyEntity(model, META, section, type, values, id);
+
+        if (error) { damage.push(`${section}/${id}: ${error}`); continue; }
+
+        const after = Object.fromEntries(sectionEntries(next, section))[id];
+        // Key ORDER inside params carries no meaning — the config lands in a JSONB column,
+        // which does not preserve it either. Compare on content only.
+        if (stable(after) !== stable(entry)) {
+          damage.push(`${section}/${id}: entry changed\n  was ${stable(entry)}\n  now ${stable(after)}`);
+        }
+        const lost = Object.keys(model.states ?? {}).filter(k => !(k in next.states));
+        if (lost.length) damage.push(`${section}/${id}: lost states ${lost.join(', ')}`);
+        const allowed = new Set(['T', 'T0', ...(KNOWN_UNDECLARED[file] ?? [])]);
+        const gained = Object.keys(next.states).filter(k => !(k in (model.states ?? {})) && !allowed.has(k));
+        if (gained.length) damage.push(`${section}/${id}: invented states ${gained.join(', ')}`);
+      }
+    }
+    expect(damage).toEqual([]);
+  });
+
   it.each(MODEL_FILES)('%s — a no-op re-apply changes only the edited entry', file => {
     const model = MODELS[file];
     const [id, entry] = sectionEntries(model, 'compartments')[0];
@@ -469,6 +540,28 @@ describe('validateModel', () => {
       const errors = validateModel(MODELS[file], META).filter(f => f.level === 'error');
       expect(`${file}: ${errors.map(e => e.message).join(' | ') || 'clean'}`).toBe(`${file}: clean`);
     }
+  });
+
+  /** The exact warning profile of the shipped configs. Pinning it keeps the checks panel
+   *  honest: a new false positive shows up here, and so does a real problem we introduce. */
+  it('produces only the known warnings on the shipped configs', () => {
+    const profile = MODEL_FILES.flatMap(file => {
+      const findings = validateModel(MODELS[file], META);
+      const kinds = new Map<string, number>();
+      for (const f of findings) {
+        const kind = `${f.level}: ${f.message.replace(/"[^"]*"/g, '"…"')}`;
+        kinds.set(kind, (kinds.get(kind) ?? 0) + 1);
+      }
+      return [...kinds].map(([kind, n]) => `${file} x${n} ${kind}`);
+    });
+    expect(profile).toEqual([
+      // cpet's connections.regions/cycles keep five keys (Ah, Aa, Al, Va, Vl) from an
+      // older, finer arterial/venous split. Harmless — nothing ever looks them up.
+      'cpet.json x5 warning: connections.regions has an orphan key "…" with no matching compartment.',
+      // The documented L_Hl_As gap in the two inertial variants.
+      'cvModel_linear_inertial.json x1 warning: states is missing "…"; the run falls back to the generator default.',
+      'cvModel_linear_inertialAlt.json x1 warning: states is missing "…"; the run falls back to the generator default.',
+    ]);
   });
 
   it('catches a membrane with no bias entry', () => {
