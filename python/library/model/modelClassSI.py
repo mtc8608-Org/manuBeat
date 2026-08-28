@@ -39,7 +39,6 @@ import os
 import time
 import copy
 import math
-from functools import partial
 
 import numpy as np
 import jax
@@ -712,7 +711,22 @@ def solveModelArray(cpModel, runTime, states, constants, dt0, startTime=0.0, sol
     return _solveAdaptive(cpModel, runTime, states, constants, dt0, startTime, solver)
 
 
-@partial(jax.jit, static_argnames=['cpModel', 'runTime', 'dt0'])
+# eqx.filter_jit, NOT jax.jit(static_argnames=[...]): cpModel is an eqx.Module whose
+# fields are Python lists (the equation buckets, the slot lists), and equinox >= 0.13
+# hashes a Module by its field VALUES —
+#     def __hash__(self): return hash(tuple((k, getattr(self, k)) for k in names_tuple))
+# — so handing it to jax as a static argument raises "TypeError: unhashable type:
+# 'list'" during the compile-cache lookup, before a single step is integrated.
+# (equinox <= 0.12 hashed tuple(tree_leaves(self)), which walks INTO the lists, which
+# is why the same code ran there.)
+#
+# filter_jit partitions instead of hashing fields: hashable_partition flattens to
+# (dynamic leaves, (static leaves, treedef)), so a list is traversed as a container and
+# never hashed. The traced/static split is unchanged — arrays (states, constants) are
+# traced, non-arrays (runTime, dt0, the whole model) are static, so runTime/dt0 stay
+# concrete for the max_steps / nDense arithmetic — and the cache still keys on values,
+# not identity. Valid on equinox 0.12 as well, so the notebooks are unaffected.
+@eqx.filter_jit
 def _solveEuler(cpModel, runTime: float, states, constants, dt0: float, startTime: float = 0.0):
     # SI integrator: fixed-step Euler as a lax.scan. The cycle operators
     # (PeriodicTrigger / CycleIntegrator / Keeper / Max / Min) are step-free SI
@@ -775,7 +789,9 @@ def _solveEuler(cpModel, runTime: float, states, constants, dt0: float, startTim
     return ts, ys, outs, sts
 
 
-@partial(jax.jit, static_argnames=['cpModel', 'runTime', 'dt0'])
+# eqx.filter_jit — see the note on the first jitted solver in this file / modelClass:
+# equinox >= 0.13 hashes an eqx.Module by field values, and cpModel's fields are lists.
+@eqx.filter_jit
 def _solveRK4(cpModel, runTime: float, states, constants, dt0: float, startTime: float = 0.0):
     # Fixed-step classic Runge-Kutta (4th order) as a lax.scan. Same structure as
     # _solveEuler — fully jitted, so it compiles ONCE and is reused across every run
@@ -866,7 +882,9 @@ def _finalOutputsAndCarry(cpModel, yEnd, constants, tEnd):
     return sts, finalOuts
 
 
-@partial(jax.jit, static_argnames=['cpModel', 'runTime', 'dt0'])
+# eqx.filter_jit — see the note on the first jitted solver in this file / modelClass:
+# equinox >= 0.13 hashes an eqx.Module by field values, and cpModel's fields are lists.
+@eqx.filter_jit
 def _solveEulerFinal(cpModel, runTime: float, states, constants, dt0: float, startTime: float = 0.0):
     """Final-only forward Euler. Returns (sts, finalOuts) — see region header."""
     nSteps = int(round(runTime / dt0))
@@ -885,7 +903,9 @@ def _solveEulerFinal(cpModel, runTime: float, states, constants, dt0: float, sta
     return _finalOutputsAndCarry(cpModel, yEnd, constants, tEnd)
 
 
-@partial(jax.jit, static_argnames=['cpModel', 'runTime', 'dt0'])
+# eqx.filter_jit — see the note on the first jitted solver in this file / modelClass:
+# equinox >= 0.13 hashes an eqx.Module by field values, and cpModel's fields are lists.
+@eqx.filter_jit
 def _solveRK4Final(cpModel, runTime: float, states, constants, dt0: float, startTime: float = 0.0):
     """Final-only classic RK4. Returns (sts, finalOuts) — see region header."""
     nSteps = int(round(runTime / dt0))

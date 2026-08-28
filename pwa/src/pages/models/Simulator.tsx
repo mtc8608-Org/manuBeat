@@ -5,6 +5,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   IonButton,
+  IonIcon,
   IonInput,
   IonItem,
   IonLabel,
@@ -15,6 +16,7 @@ import {
   IonSpinner,
   IonText,
 } from '@ionic/react';
+import { chevronDownOutline, chevronForwardOutline } from 'ionicons/icons';
 import EChart from '../../components/charts/EChart';
 import type { EChartsOption, LineSeriesOption } from 'echarts';
 import ApiService from '../../services/Api';
@@ -26,7 +28,7 @@ import ModalShell from '../../components/shell/ModalShell';
 import { useTheme } from '../../contexts/ThemeContext';
 import {
   ModelConfig, ScenarioConfig, RunMode, ModelRun, CardioResult, CardioProgress,
-  CardioPlotConfig, CardioProcConfig,
+  CardioLogLine, CardioPlotConfig, CardioProcConfig,
 } from '../../interfaces/types';
 import { AREA_NAV, ECHARTS_PALETTE, PANEL_CONFIG } from '../../constants';
 
@@ -89,6 +91,14 @@ const Simulator: React.FC = () => {
   const [progress, setProgress]         = useState<CardioProgress[]>([]);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Console — everything the Python service printed for the selected run, plus its
+  // traceback if it failed. Live from the job registry while a run is polling; read
+  // back off model_runs.metadata for a run picked from the list.
+  const [logs, setLogs]                 = useState<CardioLogLine[]>([]);
+  const [consoleError, setConsoleError] = useState<string | null>(null);
+  const [logsOpen, setLogsOpen]         = useState(false);
+  const logEndRef = useRef<HTMLDivElement | null>(null);
+
   // Results
   const [result, setResult]                 = useState<CardioResult | null>(null);
   const [resultError, setResultError]       = useState<string | null>(null);
@@ -129,6 +139,11 @@ const Simulator: React.FC = () => {
       .then(([plots, procs]) => { setPlotConfigs(plots); setProcConfigs(procs); });
   }, []);
 
+  // Tail the console: keep the newest line in view while a run streams into it.
+  useEffect(() => {
+    if (logsOpen) logEndRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [logs, logsOpen]);
+
   const fetchRuns = useCallback(() => ApiService.getModelRuns(), []);
 
 
@@ -155,13 +170,18 @@ const Simulator: React.FC = () => {
         // A calibration reports its convergence trace while it runs (the model
         // stack's ProgressReporter); every other run reports an empty list.
         setProgress(status.progress ?? []);
+        setLogs(status.logs ?? []);
         if (status.status === 'done' || status.status === 'error') {
           if (pollRef.current) clearInterval(pollRef.current);
           pollRef.current = null;
           setPollingJobId(null);
           setRunVersion(v => v + 1);
-          if (status.status === 'done') {
-            setRightTab(0);
+          setRightTab(0);
+          if (status.status === 'error') {
+            // Python stores the whole traceback on the job; showing it is the only
+            // way a caller learns why a solve died.
+            setConsoleError(status.error ?? 'The run failed without reporting a reason.');
+            setLogsOpen(true);
           }
         }
       } catch { /* network hiccup — keep polling */ }
@@ -189,6 +209,9 @@ const Simulator: React.FC = () => {
     setRunning(true);
     setResult(null);
     setProgress([]);
+    setLogs([]);
+    setConsoleError(null);
+    setLogsOpen(false);
     try {
       const modelJson = cfg?.config ?? {};
       const { job_id } = await ApiService.runCardioModel(
@@ -198,7 +221,10 @@ const Simulator: React.FC = () => {
       setRunVersion(v => v + 1);
       startPolling(job_id);
     } catch (err: any) {
-      setResultError(err.response?.data?.error ?? err.message ?? 'Run failed');
+      const message = err.response?.data?.error ?? err.message ?? 'Run failed';
+      setResultError(message);
+      setConsoleError(message);
+      setLogsOpen(true);
       setRightTab(0);
     } finally {
       setRunning(false);
@@ -253,6 +279,11 @@ const Simulator: React.FC = () => {
   const handleSelectRun = async (run: ModelRun) => {
     setSelectedRun(run);
     resetProcState();
+    // Node persists the console tail and the traceback onto the run row when the job
+    // finishes, so a run picked off the list still explains itself after a reload.
+    setLogs((run.metadata?.logs as CardioLogLine[]) ?? []);
+    setConsoleError((run.metadata?.error as string) ?? null);
+    setLogsOpen(run.status === 'error');
     if (run.status === 'done') {
       setRightTab(0);
       await Promise.all([loadResult(run), loadProcGroups(run)]);
@@ -268,12 +299,19 @@ const Simulator: React.FC = () => {
     setProcessingState('running');
     setProcessingError(null);
     try {
-      await ApiService.processRun(selectedRun.id, selectedProcForRun.id, name);
+      const res = await ApiService.processRun(selectedRun.id, selectedProcForRun.id, name);
+      setLogs(prev => [...prev, ...(res.logs ?? [])]);
       setProcessingState('done');
       setProcGroupNames(prev => prev.includes(name) ? prev : [...prev, name]);
     } catch (err: any) {
+      const body = err.response?.data;
       setProcessingState('error');
-      setProcessingError(err.response?.data?.detail ?? err.message ?? 'Processing failed');
+      setProcessingError(body?.error ?? err.message ?? 'Processing failed');
+      setLogs(prev => [...prev, ...((body?.logs as CardioLogLine[]) ?? [])]);
+      if (body?.traceback) {
+        setConsoleError(body.traceback);
+        setLogsOpen(true);
+      }
     }
   };
 
@@ -429,6 +467,60 @@ const Simulator: React.FC = () => {
     </>
   );
 
+  // Console pane — the Python service's captured stdout/stderr for this run, and its
+  // traceback when it failed. Sits under the Results content; collapsed until there
+  // is a reason to look, and opens itself on failure.
+  const consolePanel = (
+    <div style={{ borderTop: '1px solid var(--ion-color-step-150)' }}>
+      <IonItem button detail={false} lines="none" onClick={() => setLogsOpen(o => !o)}>
+        <IonIcon
+          slot="start"
+          size="small"
+          icon={logsOpen ? chevronDownOutline : chevronForwardOutline}
+        />
+        <IonLabel style={{ fontSize: '0.85rem' }}>Console</IonLabel>
+        <IonNote slot="end" color={consoleError ? 'danger' : 'medium'} style={{ fontSize: '0.75rem' }}>
+          {consoleError ? 'failed' : `${logs.length} line${logs.length === 1 ? '' : 's'}`}
+        </IonNote>
+      </IonItem>
+      {logsOpen && (
+        <div
+          style={{
+            maxHeight: 260,
+            overflowY: 'auto',
+            padding: '8px 12px',
+            background: 'var(--ion-color-step-50)',
+            fontFamily: 'monospace',
+            fontSize: '0.72rem',
+            lineHeight: 1.5,
+            whiteSpace: 'pre-wrap',
+          }}
+        >
+          {logs.map((line, i) => (
+            <div key={i} style={{ display: 'flex', gap: 8 }}>
+              <span style={{ opacity: 0.45, flexShrink: 0 }}>
+                {new Date(line.t * 1000).toLocaleTimeString()}
+              </span>
+              <span>{line.text}</span>
+            </div>
+          ))}
+          {consoleError && (
+            <div style={{ color: 'var(--ion-color-danger)', marginTop: logs.length ? 8 : 0 }}>
+              {consoleError}
+            </div>
+          )}
+          {!logs.length && !consoleError && (
+            <IonNote style={{ fontSize: '0.72rem' }}>
+              Nothing captured for this run yet.
+            </IonNote>
+          )}
+          <div ref={logEndRef} />
+        </div>
+      )}
+    </div>
+  );
+
+
   return (
     <SplitPageLayout
       navItems={AREA_NAV.PHYSIOLOGY}
@@ -467,59 +559,65 @@ const Simulator: React.FC = () => {
           tabs={[
             {
               label: 'Results',
-              content: !result ? (
-                resultError ? (
-                  <IonItem lines="none"><IonText color="danger">{resultError}</IonText></IonItem>
-                ) : pollingJobId ? (
-                  progressPanel
-                ) : (
-                  <EmptyState message="Select a completed run or start a new one" />
-                )
-              ) : (
+              content: (
                 <>
-                  <IonSearchbar
-                    autocapitalize="off"
-                    value={stateSearch}
-                    onIonInput={e => setStateSearch(e.detail.value ?? '')}
-                    placeholder="Filter states…"
-                    debounce={150}
-                    style={{ '--box-shadow': 'none', padding: '0 4px' }}
-                  />
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, padding: '4px 8px 8px' }}>
-                    {result.stateNames
-                      .filter(n => !stateSearch || n.toLowerCase().includes(stateSearch.toLowerCase()))
-                      .map(name => {
-                        const active = selectedStates.includes(name);
-                        const color  = stateColor(name);
-                        return (
-                          <IonButton
-                            key={name}
-                            size="small"
-                            fill={active ? 'solid' : 'outline'}
-                            style={{ '--background': active ? color : 'transparent', '--border-color': color, '--color': active ? '#fff' : color } as React.CSSProperties}
-                            onClick={() => setSelectedStates(prev =>
-                              active ? prev.filter(s => s !== name) : [...prev, name]
-                            )}
-                          >
-                            {name}
-                          </IonButton>
-                        );
-                      })
-                    }
-                  </div>
-                  <EChart
-                    key={selectedStates.join(',')}
-                    option={chartOption()}
-                    theme={theme === 'dark' ? 'dark' : undefined}
-                    height={400}
-                    notMerge
-                  />
-                  <IonItem lines="none">
-                    <IonNote style={{ fontSize: '0.75rem' }}>
-                      {result.t.length} time-points · {result.stateNames.length} state variables
-                      {result.metadata?.duration_s != null && ` · ${(result.metadata.duration_s as number).toFixed(2)} s compute`}
-                    </IonNote>
-                  </IonItem>
+                  {!result ? (
+                    resultError ? (
+                      <IonItem lines="none"><IonText color="danger">{resultError}</IonText></IonItem>
+                    ) : pollingJobId ? (
+                      progressPanel
+                    ) : (
+                      <EmptyState message="Select a completed run or start a new one" />
+                    )
+                  ) : (
+                    <>
+                      <IonSearchbar
+                        autocapitalize="off"
+                        value={stateSearch}
+                        onIonInput={e => setStateSearch(e.detail.value ?? '')}
+                        placeholder="Filter states…"
+                        debounce={150}
+                        style={{ '--box-shadow': 'none', padding: '0 4px' }}
+                      />
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, padding: '4px 8px 8px' }}>
+                        {result.stateNames
+                          .filter(n => !stateSearch || n.toLowerCase().includes(stateSearch.toLowerCase()))
+                          .map(name => {
+                            const active = selectedStates.includes(name);
+                            const color  = stateColor(name);
+                            return (
+                              <IonButton
+                                key={name}
+                                size="small"
+                                fill={active ? 'solid' : 'outline'}
+                                style={{ '--background': active ? color : 'transparent', '--border-color': color, '--color': active ? '#fff' : color } as React.CSSProperties}
+                                onClick={() => setSelectedStates(prev =>
+                                  active ? prev.filter(s => s !== name) : [...prev, name]
+                                )}
+                              >
+                                {name}
+                              </IonButton>
+                            );
+                          })
+                        }
+                      </div>
+                      <EChart
+                        key={selectedStates.join(',')}
+                        option={chartOption()}
+                        theme={theme === 'dark' ? 'dark' : undefined}
+                        height={400}
+                        notMerge
+                      />
+                      <IonItem lines="none">
+                        <IonNote style={{ fontSize: '0.75rem' }}>
+                          {result.t.length} time-points · {result.stateNames.length} state variables
+                          {result.metadata?.duration_s != null && ` · ${(result.metadata.duration_s as number).toFixed(2)} s compute`}
+                        </IonNote>
+                      </IonItem>
+                    </>
+                  )}
+                  {/* Console — what Python printed for this run, and why it failed */}
+                  {consolePanel}
                 </>
               ),
             },

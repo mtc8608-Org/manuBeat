@@ -7,8 +7,10 @@ What this module computes, numbered:
                                  overrides) into the library's simulationParams,
                                  solves the 0D lumped-parameter cardiopulmonary ODE
                                  on a worker thread, and writes the run artifact.
-  2. GET  /cardio/status/{id}  — job state, plus the live convergence trace a
-                                 calibration emits while it is still running.
+  2. GET  /cardio/status/{id}  — job state, the live convergence trace a
+                                 calibration emits while it is still running, and
+                                 the run's captured console output (plus the
+                                 traceback, if it failed).
   3. GET  /cardio/result*      — the stored run as a JSON payload for the web app.
   4. POST /cardio/process/{id} — replays a post-processing config over a stored run
                                  through the ResultsEngine DAG and appends the
@@ -30,14 +32,17 @@ why), because run artifacts are streamed to object storage from here.
 import json
 import os
 import resource
+import sys
 import tempfile
+import threading
 import time
 import traceback
 import uuid
+from contextlib import contextmanager
 from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 import library.utils as utils
 from library.hdf5 import engine, schema_sim
@@ -57,13 +62,99 @@ _minio = Minio(
 _BUCKET = os.environ.get("MINIO_BUCKET", "uploads")
 
 # ── In-memory job registry ─────────────────────────────────────────────────────
-# { job_id: { status, run_id, mode, progress[], error?, duration_s?, ... } }
+# { job_id: { status, run_id, mode, progress[], logs[], error?, duration_s?, ... } }
 _jobs: dict[str, dict] = {}
 
 # Cap on retained convergence lines per job. A long staged calibration emits one line
 # every progressEvery simulated seconds; without a cap a runaway run would grow the
 # registry unbounded. The tail is what a progress display wants anyway.
 _MAX_PROGRESS_RECORDS = 500
+
+# ── Console capture ────────────────────────────────────────────────────────────
+# The library narrates through print(): the mode banner, per-run status, solver
+# warnings. From the web that went to the container log only, where the caller who
+# started the run cannot see it — a failed run showed up in the Simulator as a red
+# badge and nothing else. These shims tee the calling thread's stdout/stderr into
+# whatever sink is registered for that thread, so /status can hand the web app the
+# same narration a terminal caller gets, while still writing through to the real
+# stream (the container log is unchanged).
+#
+# Routing is per THREAD IDENT, not global: FastAPI runs each sync endpoint and each
+# background task on its own worker thread, so two concurrent runs keep their output
+# apart instead of interleaving into whichever one registered last. A thread with no
+# sink — uvicorn's own, anything at import time — just passes through.
+
+_MAX_LOG_LINES = 500
+
+_log_sinks: dict[int, list] = {}
+
+
+def _append_log(sink: list, text: str) -> None:
+    """Append one console line, keeping only the tail. The list object never changes,
+    so a job entry holding a reference to it sees the trim."""
+    if not text.strip():
+        return
+    sink.append({"t": time.time(), "text": text.rstrip()})
+    if len(sink) > _MAX_LOG_LINES:
+        del sink[:-_MAX_LOG_LINES]
+
+
+class _TeeStream:
+    """sys.stdout / sys.stderr replacement that copies a captured thread's lines out."""
+
+    def __init__(self, wrapped):
+        self._wrapped = wrapped
+        self._partial: dict[int, str] = {}
+
+    def write(self, text: str) -> int:
+        ident = threading.get_ident()
+        sink = _log_sinks.get(ident)
+        if sink is not None:
+            # print() emits the value and the newline as separate write() calls, and
+            # progress lines redraw themselves with \r, so buffer per thread until a
+            # break: a stored record is always one whole line.
+            buf = self._partial.get(ident, "") + text.replace("\r", "\n")
+            *lines, self._partial[ident] = buf.split("\n")
+            for line in lines:
+                _append_log(sink, line)
+        return self._wrapped.write(text)
+
+    def flush(self) -> None:
+        self._wrapped.flush()
+
+    def release(self, ident: int, sink: Optional[list] = None) -> None:
+        """Flush a finished thread's trailing partial line and forget the thread.
+
+        The sink is passed in rather than looked up, so the caller can deregister the
+        thread FIRST — a thread must never be left capturing into a stale sink.
+        """
+        tail = self._partial.pop(ident, "")
+        if tail and sink is not None:
+            _append_log(sink, tail)
+
+    def __getattr__(self, name):        # isatty / encoding / fileno / …
+        return getattr(self._wrapped, name)
+
+
+# Guarded so a module reload cannot wrap an already-wrapped stream twice.
+if not isinstance(sys.stdout, _TeeStream):
+    sys.stdout = _TeeStream(sys.stdout)
+if not isinstance(sys.stderr, _TeeStream):
+    sys.stderr = _TeeStream(sys.stderr)
+
+
+@contextmanager
+def _capture_logs(sink: list):
+    """Route everything this thread prints into `sink` for the duration."""
+    ident = threading.get_ident()
+    _log_sinks[ident] = sink
+    try:
+        yield sink
+    finally:
+        _log_sinks.pop(ident, None)
+        sys.stdout.release(ident, sink)
+        sys.stderr.release(ident, sink)
+
 
 router = APIRouter(prefix="/cardio", tags=["cardio"])
 
@@ -79,6 +170,19 @@ class RunRequest(BaseModel):
     model_name: str = ""                 # provenance only, stored in /config
     scenario_name: str = ""              # provenance only, stored in /config
     simulation_params: dict = {}         # numeric overrides on top of the scenario
+
+    # Node sends both configs as raw JSON TEXT straight out of Postgres (config::text)
+    # rather than as parsed objects, and they are parsed HERE. JS has a single number
+    # type, so a jsonb column read in Node collapses every integral float — 760.0 -> 760,
+    # 1.0 -> 1 — and re-serialises them into the request as ints; for cpet.json that is
+    # 636 values arriving with a different type than utils.loadJSONfile reads off disk.
+    # Postgres keeps the decimal, so text + json.loads reproduces the disk types exactly.
+    # A dict is still accepted: an inline unsaved scenario edited in the browser has been
+    # through JS regardless, and older callers keep working.
+    @field_validator("model_json", "scenario_json", mode="before")
+    @classmethod
+    def _parse_config_text(cls, value):
+        return json.loads(value) if isinstance(value, str) else value
 
 class ValidateRequest(BaseModel):
     model_json: dict
@@ -107,12 +211,12 @@ def _download_hdf5(run_id: str, tmp_path: str) -> None:
 # ── runConfig assembly ─────────────────────────────────────────────────────────
 
 def _build_run_config(req: RunRequest) -> dict:
-    """The web equivalent of a notebook's runConfig cell.
+    """The web equivalent of a driver script's runConfig dict.
 
     `runner.buildSimulationParams` is the ONE adapter from runConfig + scenario to the
     simulationParams the library consumes, so the route builds a runConfig rather than
     a simulationParams dict — the scenario stays canonical and only the keys the caller
-    actually sent override it (same precedence a notebook gets).
+    actually sent override it (the same precedence any caller gets).
     """
     sp = req.simulation_params or {}
     cfg = {
@@ -129,7 +233,10 @@ def _build_run_config(req: RunRequest) -> dict:
         # Post-processing is a separate endpoint against a stored run, so the run
         # itself never carries one.
         "postProcessing": None,
-        "printStatus": bool(sp.get("printStatus", False)),
+        # On by default here, unlike a bare library call: the console pane is the only window
+        # a web caller has onto a run, and the per-stage/per-run lines are what make a
+        # slow or diverging solve legible. Still overridable per run.
+        "printStatus": bool(sp.get("printStatus", True)),
         # "legacy" (modelClass, diffrax.Euler only) or "SI" (modelClassSI, honours
         # solver.type). The scenario's own solver choice reaches the SI stack through
         # shared.integration.solver.
@@ -161,7 +268,23 @@ def _assert_mode_supported(mode: str, scenario: dict) -> None:
 # ── Simulation thread ──────────────────────────────────────────────────────────
 
 def _run_simulation(job_id: str, req: RunRequest) -> None:
-    _jobs[job_id]["status"] = "running"
+    """Background-thread entry point: run one simulation with its console captured.
+
+    The solve itself lives in _solve; this wrapper owns only the capture window, so
+    every line the library prints between the two banners below reaches /status —
+    and the Simulator's console pane — instead of only the container log.
+    """
+    job = _jobs[job_id]
+    job["status"] = "running"
+    t0 = time.time()
+    with _capture_logs(job.setdefault("logs", [])):
+        print(f"[web] {req.mode} run · model={req.model_name or '(database)'} "
+              f"· scenario={req.scenario_name or '(database)'} · run_id={req.run_id}")
+        _solve(job_id, req)
+        print(f"[web] {job['status']} after {round(time.time() - t0, 2)} s")
+
+
+def _solve(job_id: str, req: RunRequest) -> None:
     t0 = time.time()
     tmp_path = None
     try:
@@ -185,7 +308,7 @@ def _run_simulation(job_id: str, req: RunRequest) -> None:
             runner.run(simulationParams)
 
         # raw/ holds the signals; T is stored separately as the time vector. Mirrors
-        # library/run/runIO.saveRun, which writes this exact artifact from a notebook.
+        # library/run/runIO.saveRun, which writes this exact artifact.
         signals     = {k: v for k, v in results.items() if k != "T"}
         state_names = list(states.keys())
         return_freq = (int(round(1 / simulationParams["dtDense"]))
@@ -233,6 +356,9 @@ def _run_simulation(job_id: str, req: RunRequest) -> None:
         })
 
     except Exception:
+        # Printed as well as stored: printing puts it in the captured console (and the
+        # container log) in place, so the pane reads like a terminal session.
+        traceback.print_exc()
         _jobs[job_id].update({
             "status": "error",
             "error":  traceback.format_exc(),
@@ -485,10 +611,34 @@ def process_run(run_id: str, req: ProcessRequest):
     Apply a post-processing config to a completed run and append the results into
     /processed/{proc_run_name}/ in the same HDF5 file.
 
-    The config is replayed through the ResultsEngine DAG — the same engine the
-    notebooks use via runIO.processResults — so a signal computed here and one
-    computed in a notebook come out identical.
+    The config is replayed through the ResultsEngine DAG — the same engine
+    runIO.processResults drives — so a signal computed here and one computed
+    straight off the library come out identical.
+
+    Unlike a run this is synchronous, so there is no job registry to park the console
+    in: the captured lines ride back on the response instead (and inside the error
+    detail when it fails), which is what the Simulator's console pane reads.
     """
+    logs: list[dict] = []
+    with _capture_logs(logs):
+        print(f"[web] post-processing '{req.proc_run_name}' with config "
+              f"'{req.proc_config_name or req.proc_config_id}' on run {run_id}")
+        try:
+            payload = _process_run(run_id, req)
+        except HTTPException:
+            raise
+        except Exception as e:
+            traceback.print_exc()
+            raise HTTPException(status_code=500, detail={
+                "error":     str(e),
+                "traceback": traceback.format_exc(),
+                "logs":      logs,
+            })
+        print(f"[web] post-processing done · {len(payload['outputs'])} outputs")
+    return {**payload, "logs": logs}
+
+
+def _process_run(run_id: str, req: ProcessRequest) -> dict:
     tmp_path = None
     try:
         _, tmp_path = tempfile.mkstemp(suffix='.hdf5')
@@ -536,10 +686,6 @@ def process_run(run_id: str, req: ProcessRequest):
                 "errors": [{"name": n, "op": o, "reason": r}
                            for n, o, r in proc_engine.errors]}
 
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
     finally:
         if tmp_path and os.path.exists(tmp_path):
             os.remove(tmp_path)

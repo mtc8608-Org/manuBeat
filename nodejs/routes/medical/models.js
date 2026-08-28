@@ -5,6 +5,18 @@ const { pool } = require('../../db');
 const router = express.Router();
 const PYTHON = () => `http://python:${process.env.PYTHON_PORT}`;
 
+// Lines of captured Python console kept on the run row. While a run is polling, the
+// Simulator reads the full buffer straight from Python's in-memory job registry;
+// this is the tail that has to outlive the poll ending, a page reload and a Python
+// restart, so it sits in the run's metadata JSONB.
+//
+// A failed run keeps the whole tail with its traceback — that is the run someone
+// comes back to and asks what happened. A successful one keeps only the last few
+// lines: the live view already showed them, and modelRuns hands the runs list up to
+// 100 rows of metadata on every refresh.
+const FAILED_LOG_LINES  = 200;
+const SUCCESS_LOG_LINES = 20;
+
 // REST enforces its own auth — the GraphQL gate never sees these routes
 // (backend-api.md). Applied as router-level middleware rather than per handler
 // so a new endpoint added to this file cannot ship unguarded: every route below
@@ -37,32 +49,48 @@ const requireAdmin = (req, res, next) => {
 // Python holds no credentials — so both configs are fetched here and POSTed in the
 // body. The client may send scenario_json inline (the Simulator's unsaved edits);
 // otherwise scenario_id is resolved against scenario_configs.
+//
+// Both are read as `config::text` and forwarded as raw JSON TEXT, never as parsed
+// objects. JS has a single number type, so reading a jsonb column into Node collapses
+// every integral float — 760.0 -> 760, 1.0 -> 1 — and re-serialising sends those to
+// the solver as ints; for cpet.json that is 636 values differing in type from what
+// utils.loadJSONfile reads off disk. Postgres keeps the decimal, and Python parses
+// the text, so the model receives exactly the JSON the library expects. The
+// model config is fetched here for the same reason: routing it through the browser
+// (GraphQL out, request body back) is another JS round trip.
 router.post('/cardio/run', async (req, res) => {
   const { config_id, model_json, scenario_id, scenario_json, mode, simulation_params, name } = req.body;
   const runMode = mode ?? 'baseline';
   let runId;
   try {
-    let scenario = scenario_json;
+    let scenarioText = null;
     let scenarioName = '';
     if (scenario_id) {
       const scRes = await pool.query(
-        'SELECT name, config FROM scenario_configs WHERE id = $1::uuid', [scenario_id],
+        'SELECT name, config::text AS config FROM scenario_configs WHERE id = $1::uuid', [scenario_id],
       );
       if (!scRes.rows.length) return res.status(404).json({ error: 'scenario_config not found' });
       scenarioName = scRes.rows[0].name;
-      scenario = scenario ?? scRes.rows[0].config;
+      scenarioText = scRes.rows[0].config;
     }
+    // An inline scenario_json is an unsaved edit made in the browser — it has been
+    // through JS whatever we do here, so it wins only when it is actually sent.
+    const scenario = scenario_json ?? scenarioText;
     if (!scenario) {
       return res.status(400).json({ error: 'scenario_id or scenario_json is required' });
     }
 
     let modelName = '';
+    let modelText = null;
     if (config_id) {
       const mcRes = await pool.query(
-        'SELECT name FROM model_configs WHERE id = $1::uuid', [config_id],
+        'SELECT name, config::text AS config FROM model_configs WHERE id = $1::uuid', [config_id],
       );
       modelName = mcRes.rows[0]?.name ?? '';
+      modelText = mcRes.rows[0]?.config ?? null;
     }
+    // The client's copy is the fallback for a run with no stored model row.
+    const model = modelText ?? model_json ?? {};
 
     const runRes = await pool.query(
       `INSERT INTO model_runs (config_id, scenario_id, mode, status)
@@ -73,7 +101,7 @@ router.post('/cardio/run', async (req, res) => {
 
     const pythonRes = await axios.post(
       `${PYTHON()}/cardio/run`,
-      { run_id: runId, model_json, scenario_json: scenario, mode: runMode,
+      { run_id: runId, model_json: model, scenario_json: scenario, mode: runMode,
         model_name: modelName, scenario_name: scenarioName, simulation_params },
       { timeout: 10000 },
     );
@@ -89,9 +117,15 @@ router.post('/cardio/run', async (req, res) => {
   } catch (err) {
     console.error('cardio/run error:', err.message);
     if (runId) {
+      // The row is created before Python is called, so a launch failure (Python down,
+      // 400 from the request models) lands here with no job to poll — without the
+      // message the run would sit at 'error' with nothing to explain it.
       await pool.query(
-        'UPDATE model_runs SET status = $1, completed_at = now() WHERE id = $2::uuid',
-        ['error', runId],
+        `UPDATE model_runs
+         SET status = $1, completed_at = now(),
+             metadata = coalesce(metadata, '{}'::jsonb) || $2::jsonb
+         WHERE id = $3::uuid`,
+        ['error', JSON.stringify({ error: err.response?.data?.detail ?? err.message }), runId],
       ).catch(() => {});
     }
     res.status(500).json({ error: err.message });
@@ -112,7 +146,7 @@ router.get('/cardio/status/:jobId', async (req, res) => {
       await pool.query(
         `UPDATE model_runs
          SET status = $1, completed_at = now(),
-             metadata = metadata || $2::jsonb
+             metadata = coalesce(metadata, '{}'::jsonb) || $2::jsonb
          WHERE metadata->>'job_id' = $3`,
         [
           job.status,
@@ -121,6 +155,12 @@ router.get('/cardio/status/:jobId', async (req, res) => {
               state_count:     job.state_count,
               file_size_bytes: job.file_size_bytes ?? null,
               max_rss_mb:      job.max_rss_mb      ?? null,
+              // Python's job registry is in memory: the moment the poll stops (or the
+              // service restarts) the traceback and the console are gone. This is the
+              // copy that lets the Simulator still explain an old failed run.
+              error:           job.error ?? null,
+              logs:            (job.logs ?? []).slice(
+                                 -(job.status === 'error' ? FAILED_LOG_LINES : SUCCESS_LOG_LINES)),
             }),
           req.params.jobId,
         ],
@@ -330,7 +370,16 @@ router.post('/cardio/process/:runId', async (req, res) => {
   } catch (err) {
     console.error('cardio/process error:', err.message);
     const status = err.response?.status ?? 500;
-    res.status(status).json({ error: err.message });
+    // Python answers a failed replay with { detail: { error, traceback, logs } }
+    // (a plain string for HTTPExceptions it raises itself). Flattening that to
+    // err.message threw away the traceback and the console the page wants to show.
+    const detail = err.response?.data?.detail;
+    res.status(status).json(
+      detail && typeof detail === 'object'
+        ? { error: detail.error ?? err.message, traceback: detail.traceback ?? null,
+            logs: detail.logs ?? [] }
+        : { error: typeof detail === 'string' ? detail : err.message },
+    );
   }
 });
 

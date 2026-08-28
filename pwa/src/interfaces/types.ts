@@ -136,19 +136,38 @@ export interface CardioProgress {
   bestRel:     number;
 }
 
+// One captured console line from the Python service — the model stack's own print()
+// narration, teed out of the run thread by api/domains/medical/cardio_routes.py.
+export interface CardioLogLine {
+  t:    number;   // epoch seconds, stamped python-side
+  text: string;
+}
+
 export interface CardioJobStatus {
   job_id:      string;
   status:      'pending' | 'running' | 'done' | 'error';
   mode:        RunMode;
   progress:    CardioProgress[];
+  logs:        CardioLogLine[];
   duration_s:  number | null;
   state_count: number | null;
   minio_key:   string | null;
   error:       string | null;
 }
 
+// POST /cardio/process — the outputs appended to the artifact, plus the console the
+// replay produced. A failure comes back instead as { error, traceback, logs }.
+export interface CardioProcessResult {
+  ok:             boolean;
+  proc_name:      string;
+  proc_config_id: string;
+  outputs:        string[];
+  errors:         { name: string; op: string; reason: string }[];
+  logs:           CardioLogLine[];
+}
+
 // Mirrors library/hdf5/schema_sim.read_run_result, which in turn mirrors
-// ResultsEngine.toPayload — one payload shape across notebook and web.
+// ResultsEngine.toPayload — one payload shape across library and web.
 export interface CardioResult {
   stateNames:   string[];
   t:            number[];

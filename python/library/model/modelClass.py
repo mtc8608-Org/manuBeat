@@ -30,7 +30,6 @@ import os
 import time
 import copy
 import math
-from functools import partial
 
 import numpy as np
 import jax
@@ -518,7 +517,22 @@ class CardioPulmonaryModelArray(eqx.Module):
 # here as the fallback when a model is built without that key.
 _DT_DENSE_DEFAULT = 1e-2
 
-@partial(jax.jit, static_argnames=['cpModel', 'runTime', 'dt0'])
+# eqx.filter_jit, NOT jax.jit(static_argnames=[...]): cpModel is an eqx.Module whose
+# fields are Python lists (the equation buckets, the slot lists), and equinox >= 0.13
+# hashes a Module by its field VALUES —
+#     def __hash__(self): return hash(tuple((k, getattr(self, k)) for k in names_tuple))
+# — so handing it to jax as a static argument raises "TypeError: unhashable type:
+# 'list'" during the compile-cache lookup, before a single step is integrated.
+# (equinox <= 0.12 hashed tuple(tree_leaves(self)), which walks INTO the lists, which
+# is why the same code ran there.)
+#
+# filter_jit partitions instead of hashing fields: hashable_partition flattens to
+# (dynamic leaves, (static leaves, treedef)), so a list is traversed as a container and
+# never hashed. The traced/static split is unchanged — arrays (states, constants) are
+# traced, non-arrays (runTime, dt0, the whole model) are static, so runTime/dt0 stay
+# concrete for the max_steps / nDense arithmetic — and the cache still keys on values,
+# not identity. Valid on equinox 0.12 as well, so the notebooks are unaffected.
+@eqx.filter_jit
 def solveModelArray(cpModel, runTime: float, states, constants, dt0: float, startTime: float = 0.0):
     # Integrate with the SAME solver the dict oracle uses (models.solveModel):
     # diffrax.Euler + ConstantStepSize. With the array RHS already matching the

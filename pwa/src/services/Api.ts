@@ -4,7 +4,7 @@ import { API_BASE, GQL_URL, ENDPOINT, WS_BASE } from '../constants';
 import {
   ComponentResults, FileRecord, Survey, SurveyAnswer,
   ModelConfig, ScenarioConfig, RunMode, ModelRun, CardioJobStatus, CardioResult,
-  CardioPlotConfig, CardioProcConfig, HdfNode, HdfDataset,
+  CardioProcessResult, CardioPlotConfig, CardioProcConfig, HdfNode, HdfDataset,
   Patient, Bed, BedsideNode, BedAssignment,
   BedsideStream, BedsideSegment, NodeHeartbeat,
 } from '../interfaces/types';
@@ -769,8 +769,13 @@ const deleteHdf5Dataset = async (run_id: string, path: string): Promise<void> =>
   await http.delete(`/cardio/hdf5/dataset/${run_id}`, { data: { path } });
 };
 
-const processRun = async (run_id: string, proc_config_id: string, proc_run_name: string): Promise<void> => {
-  await http.post(`/cardio/process/${run_id}`, { proc_config_id, proc_run_name });
+// Resolves with the appended outputs and the replay's console; a failure rejects
+// with { error, traceback, logs } in the response body (see routes/medical/models.js).
+const processRun = async (
+  run_id: string, proc_config_id: string, proc_run_name: string,
+): Promise<CardioProcessResult> => {
+  const res = await http.post(`/cardio/process/${run_id}`, { proc_config_id, proc_run_name });
+  return res.data;
 };
 
 const getProcessedGroups = async (run_id: string): Promise<string[]> => {
