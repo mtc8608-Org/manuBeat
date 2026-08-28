@@ -73,6 +73,55 @@ describe('fixtures', () => {
 
 // ── 1. Coverage: can the sandbox author everything that ships? ────────────────
 
+// ── 0. Completeness against the library, not just against the configs ────────
+
+describe('the registry covers every type modelGen dispatches', () => {
+  /** Transcribed from python/library/model/modelGen.py — the exhaustive accepted-type list
+   *  of each dispatch point. A type the library gains (or the sandbox invents) fails here.
+   *  Excluded on purpose: `resistorMultiFlow` / `diodeMultiFlow` /
+   *  `resistorInputPressureMultiFlow` are SYNTHESISED at :529-534 by rewriting a gas-side
+   *  resistor — never written in JSON, so never offered. */
+  const LIBRARY_TYPES: Record<Section, string[]> = {
+    compartments: ['elastance', 'capacitor', 'thorax', 'elastanceInput', 'sigmoidCapacitor',
+                   'doubleSigmoidCapacitor', 'constantPressure', 'ventilator', 'ventilatorFile'],
+    resistive:    ['diode', 'resistor', 'diode_inertial', 'inertial', 'resistorInputPressure'],
+    membrane:     ['diode', 'resistor', 'resistorAlveoli'],
+    // initTimekeeping never reads `type` — the cycle/ramp/sine chain is inside a dead
+    // triple-quoted literal, so every entry becomes a PeriodicTrigger.
+    cycles:       ['cycle'],
+    other:        ['movingAverage', 'movingAverageCycle', 'cycleIntegral', 'cycleKeeper',
+                   'cycleMax', 'cycleMin', 'pressureToConcentration', 'mmolpH', 'constant',
+                   'stateRatio', 'stateSummation', 'stateSubstraction', 'ramp', 'atp_Prod',
+                   'constant_Multiplication', 'sigmoid', 'heldtParamVariation', 'stiffness',
+                   'elastanceCalc', 'lungVolume', 'concentrationHenrysLaw'],
+    reactions:    ['equilibrium', 'oneWayReaction', 'creation'],
+    // calibration and control run through the same initParameterVariation function.
+    calibration:  ['localController', 'localStateController', 'ladder', 'cosine', 'ramp',
+                   'rampGated', 'rampLocalGated', 'rampLocal', 'sigmoid', 'sigmoidCTRL',
+                   'cubicController', 'cubicStateController', 'stressStateController',
+                   'polynomialController'],
+    control:      ['localController', 'localStateController', 'ladder', 'cosine', 'ramp',
+                   'rampGated', 'rampLocalGated', 'rampLocal', 'sigmoid', 'sigmoidCTRL',
+                   'cubicController', 'cubicStateController', 'stressStateController',
+                   'polynomialController'],
+  };
+
+  it.each(SECTIONS)('%s — offers exactly the library\'s types', section => {
+    expect(Object.keys(SCHEMA[section].types).sort()).toEqual([...LIBRARY_TYPES[section]].sort());
+  });
+
+  it('every type declares a label and at least one way to be identified', () => {
+    for (const section of SECTIONS) {
+      for (const [type, spec] of Object.entries(SCHEMA[section].types)) {
+        expect(`${section}/${type} label`).toBe(spec.label ? `${section}/${type} label` : `${section}/${type} MISSING label`);
+        const named = SCHEMA[section].meta.length > 0
+          || spec.fields.some(f => ['newVarName', 'varIn', 'varToControl'].includes(f.name));
+        expect(`${section}/${type} identifiable`).toBe(named ? `${section}/${type} identifiable` : `${section}/${type} HAS NO KEY SOURCE`);
+      }
+    }
+  });
+});
+
 describe('coverage of the shipped configs', () => {
   it.each(MODEL_FILES)('%s — every type is implemented', file => {
     const model = MODELS[file];
