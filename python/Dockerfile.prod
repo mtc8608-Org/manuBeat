@@ -20,8 +20,7 @@ WORKDIR /src
 COPY api ./api
 # [MEDICAL] the cardiopulmonary model and its config JSONs. library/utils.py derives
 # PROJECT_ROOT as the parent of the package, so config/ must land beside library/ —
-# do not move either without moving both. The notebooks (python/run_*/) are a dev
-# tool and are deliberately not baked in.
+# do not move either without moving both.
 COPY library ./library
 COPY config ./config
 

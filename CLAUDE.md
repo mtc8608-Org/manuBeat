@@ -59,8 +59,6 @@ pwa (React + Ionic + Vite)
       → postgres (schema in init-scripts/)
       → minio (file storage)
   → python (FastAPI, computation only — no DB writes)
-
-jupyter (JupyterLab over python/library)   — dev only, [MEDICAL], no credentials
 ```
 
 ### Frontend (`pwa/src/`)
@@ -125,22 +123,12 @@ operators dt-independent and adds solver dispatch (euler/rk4/adaptive) selected 
 Two HARD RULES came with this code and still apply:
 
 - **Single config surface.** A configurable value exists in exactly three places: a
-  default at the definition site, the model/scenario JSON, or the notebook `runConfig`
-  (wired through `buildSimulationParams`). Never add a knob that needs a library edit,
+  default at the definition site, the model/scenario JSON, or the caller's `runConfig`
+  dict (wired through `buildSimulationParams`). Never add a knob that needs a library edit,
   and never invent a second override mechanism.
 - **GPU is off by default.** Benchmarked 1.7–2.7× *slower* than CPU for this workload —
   a long sequential `lax.scan` over a tiny state vector is launch-latency bound
   ([[gpu-no-benefit]]). Both images install `jax[cpu]`; never commit `useGpu: True`.
-
-### Notebooks (`python/run_*/`)
-
-`run_cpet/`, `run_test/`, `run_convergence/`, `run_sepsis/` hold the source repo's
-driver notebooks, committed **with outputs stripped**. They are I/O only — load
-config, set the `runConfig` dict, call a runner entry point, save/process/plot; never
-physics, integrator loops, or hand-rolled saves. They run in the `jupyter` service
-(`http://localhost:8888`), which mounts the same `./python` as the API service, and
-write their artefacts to `python/notebookData/` (gitignored). Cell conventions:
-`.claude/rules/notebook-cells.md`.
 
 ### DB init (`init-scripts/`)
 Files run alphabetically on a fresh postgres volume:
@@ -150,7 +138,7 @@ Files run alphabetically on a fresh postgres volume:
 - `seed-physiology.sql` — **generated**, never hand-edit a config blob in it: every
   shipped model / scenario / processing / plot config, produced by
   `scripts/gen-physiology-seed.py` from `python/config/**`. Disk stays canonical (the
-  notebooks read it directly); re-run the generator and commit both after changing a
+  library loads it directly); re-run the generator and commit both after changing a
   config file.
 
 **UUID convention**: framework seeds use the prefix `c51c1e5f-5cc1-4b77-8832-2d10cc97XXXX`. Content seeds use `00000000-0000-0000-0000-XXXXXXXXXXXX`. Always hardcode UUIDs for seeds referenced from code (e.g. `constants.ts` `FORM_ID`, `EDITOR_ID`, `CONTENT_EDITOR_ID`).

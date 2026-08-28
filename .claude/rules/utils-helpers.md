@@ -1,7 +1,6 @@
 ---
 paths:
   - "python/library/**"
-  - "**/*.ipynb"
 ---
 
 # Utils helpers (don't hand-roll)
@@ -9,8 +8,8 @@ paths:
 `python/library/utils.py` is the shared helper module, imported everywhere as
 `import library.utils as utils`. Before writing a path build, a JSON load/dump, a
 clamp, a unit conversion, or a display label, check whether utils already provides
-it — it almost certainly does. Never re-implement one of these inline (in library
-code or a notebook cell); never invent a second copy under a different name.
+it — it almost certainly does. Never re-implement one of these inline; never
+invent a second copy under a different name.
 
 ## The current surface — reach for these
 
@@ -37,29 +36,13 @@ code or a notebook cell); never invent a second copy under a different name.
   **Unit conversions** → `utils.paTOmmHg` / `mmHgTOPa` / … .
 - **Dict lookups** → `utils.findKeyInDictionaryReturnValue`, `utils.findStrInDictionaryAndAddPrefix`.
 
-This list is the source of record for the helper surface. See [[utils-tier2-findings]]
-for domain-coupled duplicates that intentionally do NOT live here.
-
-## The notebook wrapper pattern for atm-closing helpers
-
-`obsOffset` / `steadyState` take `atm` explicitly, but notebooks call them by bare name in
-later cells (comprehensions, Phase-2 reload). So each notebook keeps a **one-line local
-wrapper** that closes over its `ATM = runConfig["analysis"]["atm"]`:
-
-```python
-ATM = runConfig["analysis"]["atm"]
-def obsOffset(name):   return utils.obsOffset(name, ATM)
-def steadyState(r, n): return utils.steadyState(r, n, ATM)
-```
-
-This dedups the logic to utils while keeping downstream bare calls working and `ATM` out
-of utils. Closure-free helpers (labels, `baseVarName`) are inlined to the `utils.` call
-directly — no local alias.
+This list is the source of record for the helper surface. Domain-coupled helpers
+(twin schema, model stack, HDF5 layout) intentionally do NOT live here.
 
 ## Adding a new generic helper
 
 A new generic, domain-free helper (path/JSON/string/numeric/label) goes **into utils.py**
-with a default at the definition site — not into a notebook cell or a second library
+with a default at the definition site — not into a call site or a second library
 module. If the helper is domain-coupled (knows the twin schema, the model stack, the HDF5
 layout), it does NOT belong in utils — place it by kind per [[model-stack]]
 (run/ orchestration, postproc DAG, viz, hdf5 schema).

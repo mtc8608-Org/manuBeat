@@ -44,21 +44,12 @@ htmlcov/
 *.egg-info/
 .ipynb_checkpoints/
 *.ipynb
-# [MEDICAL] the ported model notebooks ARE tracked — they are the debugging
-# surface for python/library/ (see CLAUDE.md "Cardiopulmonary model stack").
-# Committed with outputs stripped; regenerate them by running, never commit outputs.
-!python/run_*/*.ipynb
 
 # ── Database & persistent storage ────────────────────────────
 .persist/
 # Scratch dir for the local prod-compose smoke test (stand-in for the
 # on-box /srv/apps/<app>/public mount) — never committed.
 /public/
-
-# [MEDICAL] everything the notebooks generate — populations, LaTeX tables,
-# figures. Sits beside python/run_*/ and is never committed.
-python/notebookData/*
-!python/notebookData/.gitkeep
 
 # ── Large data files — never commit ──────────────────────────
 *.pdf

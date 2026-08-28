@@ -21,6 +21,4 @@
 - [GPU gives no benefit](gpu-no-benefit.md) — POLICY: GPU off by default everywhere; benchmarked 1.7–2.7x SLOWER than CPU for the batched SI calibration
 - [Model initialisation](model-initialisation.md) — how Y0 is seeded via stateSetup.configureStates: the injected inputs beyond the structural JSON, and where they come from
 - [SI default migration plan](si-default-migration-plan.md) — inherited upstream plan to make SI the one stack and delete legacy modelClass/modelEq; 0% built
-- [Utils tier-2 findings](utils-tier2-findings.md) — inherited dedup backlog from the utils audit; domain-coupled, NOT for utils.py
-- [Name notebook cells by heading](name-notebook-cells-by-heading.md) — never say "cell 17"; reference the `# region ->` text or markdown heading
 - [Project file tree](project-file-tree.md) — annotated repo map (upstream's; manuBeat adds its bedside/medical/models/surveys dirs); consult before asserting structure or placing files; update in the same commit as any directory add/move/remove

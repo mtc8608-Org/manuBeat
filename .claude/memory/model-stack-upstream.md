@@ -8,9 +8,10 @@ metadata:
 
 `python/library/` and `python/config/` came verbatim from
 `/home/cabsman/Documents/projects/CardioPulmonaryModel` (`library/`, `config/`) on
-2026-08-27, together with the 14 notebooks now in `python/run_*/`. That repo remains
-the source of truth for the model stack — manuBeat is a **second** consumer of it,
-not its owner.
+2026-08-27. The source repo's 14 driver notebooks came across with it and were
+**removed again on 2026-08-28** — manuBeat keeps only the library; the notebooks
+live on in CardioPulmonaryModel. That repo remains the source of truth for the model
+stack — manuBeat is a **second** consumer of it, not its owner.
 
 **Why verbatim matters:** every intra-package import is absolute (`import
 library.utils as utils`) and `utils.PROJECT_ROOT` is derived as the parent of the
@@ -20,8 +21,8 @@ next sync an rsync instead of a merge.
 
 **How to sync:** rsync `library/` and `config/` (minus `archive/`) from the source
 repo over `python/`, then re-apply the three divergences below and re-run the
-smoke-test skill. Notebooks come across the same way, with outputs stripped and
-`data/` rewritten to `notebookData/` (see [[project-file-tree]]).
+smoke-test skill. Do **not** bring the source repo's notebooks across — they were
+deliberately dropped (see [[project-file-tree]]).
 
 ## The three deliberate divergences — port these back upstream
 
@@ -47,6 +48,11 @@ model / six scenario / two processing / nine plot configs, seeded into Postgres 
 `scripts/gen-physiology-seed.py`. `library/hdf5/HDF5_PORT_DESIGN.md` travelled with
 the code and is the spec for that layer; its "manuBeat port" section is now history.
 
+`library/run/runIO.py` and `library/viz/plots.py` have **no caller left in manuBeat**
+(the notebooks were their only consumers) and `matplotlib` is not in the python image, so
+they are not importable here. They stay because the tree is kept byte-identical to
+upstream — do not delete them to "clean up".
+
 Still open, inherited from the source repo:
 
 - `schema_pop` and `schema_calib` have never been exercised on real population /
@@ -55,11 +61,11 @@ Still open, inherited from the source repo:
   blob is Python-only, so browser inference is blocked until a tf.js/ONNX export
   exists. `tensorflow` is deliberately absent from both images until then.
 - The SI-as-default migration ([[si-default-migration-plan]]) is 0% built, and the
-  utils dedup backlog ([[utils-tier2-findings]]) is untouched. Both are upstream
-  work — do them there.
+  utils dedup backlog it inherited is untouched. Both are upstream work — do them
+  there.
 
 Left behind on purpose: `config/archive/` (35 pre-scenario JSONs), the 130 GB
-`data/` tree (manuBeat generates its own into `python/notebookData/`), the
+`data/` tree, the driver notebooks, the
 `codeArchive/` directory, and the entire `EFC_Paper/` manuscript with its LaTeX
 rules, skills and memories. Calibration-method verdicts from that work
 (emcee burn-in fix, NUTS parked, per-parameter MCMC rejected) stay in the source

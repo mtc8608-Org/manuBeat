@@ -1,7 +1,6 @@
 ---
 paths:
   - "python/library/**"
-  - "**/*.ipynb"
 ---
 
 # Code reuse (non-negotiable)
@@ -12,10 +11,10 @@ exists. The array stack (`modelEq` → `modelGen` → `modelClass`/`modelClassSI
 orchestrated by `run/runner.py`, is the pattern authority — see the "Cardiopulmonary model stack"
 section in `CLAUDE.md` and the Internals section at the bottom of this file.
 
-**Why:** physics inlined in a notebook, a bespoke integrator loop, an ad-hoc
-save format, or a per-notebook config constant all diverge from the
+**Why:** physics inlined at a call site, a bespoke integrator loop, an ad-hoc
+save format, or a per-caller config constant all diverge from the
 JSON-driven, single-config-surface design and rot immediately. This holds even
-for "quick" one-off cells.
+for "quick" one-off scripts.
 
 Before writing new code, map the need onto the guide below and confirm against
 the cited source.
@@ -24,12 +23,12 @@ the cited source.
 
 A configurable value exists in exactly three places (`CLAUDE.md`, "Cardiopulmonary model stack" → single config surface): (1) a default at the definition site, (2) `python/config/models/*`
 or `python/config/scenarios/*` JSON if it's part of the experiment definition, (3) the
-notebook `runConfig` dict as the per-run override, wired through
+caller's `runConfig` dict as the per-run override, wired through
 `runner.buildSimulationParams` → `simulationParams`. Never add a knob that needs
 editing library source, and never invent a second override mechanism (env var,
-module global, extra config cell, hard-coded literal). **Why:** a tunable that
+module global, extra config surface, hard-coded literal). **Why:** a tunable that
 lands only in library source or scenario JSON (as `maxCubicFactor` once did) can't
-be swept from a notebook and silently rots — every knob must reach `runConfig`.
+be swept by a caller and silently rots — every knob must reach `runConfig`.
 
 ## Decision guide (the single right choice for each need)
 
@@ -37,7 +36,7 @@ be swept from a notebook and silently rots — every knob must reach `runConfig`
   exchange, cycle/timing op) → add an `eqx.Module` class in `model/modelEq.py`
   under the matching `# region` (CAPACITORS / RESISTORS / Cycles / GAS EXCHANGE
   / MATH OTHER), and wire it from JSON via `modelGen`. Never write ODE math
-  inline in `modelClass`, the runner, or a notebook.
+  inline in `modelClass` or the runner.
 - **New controller law** → a new class in modelEq's `# region Controllers`,
   mirroring `LocalCubicController` (its `cube()` is already
   `error³·cubicFactor + error·linearFactor`, so cubic/linear is a config knob —
@@ -46,35 +45,35 @@ be swept from a notebook and silently rots — every knob must reach `runConfig`
 - **New / different integrator** → extend the solver dispatch in
   `modelClassSI.solveModelArray` / `solveFinalArray` (`euler`/`rk4`/adaptive
   diffrax already wired), selected via `runConfig` `solver`. Never hand-roll an
-  Euler/RK loop in a notebook.
-- **New tunable / constant** → the single config surface above. A new notebook
+  Euler/RK loop at a call site.
+- **New tunable / constant** → the single config surface above. A new caller
   knob = a new `runConfig` key consumed with a `.get(key, default)` fallback.
 - **Initial state / equilibrium setup** → `run/stateSetup.py`
   (`configureStates` + the per-mode configurators like `_configureCalibration`);
-  see `CLAUDE.md` "Cardiopulmonary model stack". Never build init vectors ad hoc in a notebook.
+  see `CLAUDE.md` "Cardiopulmonary model stack". Never build init vectors ad hoc.
 - **Run orchestration** (baseline / control / calibration, single or staged) →
   the `run/runner.py` entry points (`runBaseline`, `runControl`,
   `runCalibration`, `runCalibrationSI`, `run`) fed by `buildSimulationParams`.
-  Notebooks are I/O only (`CLAUDE.md` "Cardiopulmonary model stack") — no physics/orchestration
-  in a cell.
+  Callers are I/O only (`CLAUDE.md` "Cardiopulmonary model stack") — no physics/orchestration
+  outside the library.
 - **Population / batched runs** → `run/runnerBatchSI.batchedCalibration`
-  (vmapped `(N,P)` sweep). Never loop the model sample-by-sample in a notebook.
+  (vmapped `(N,P)` sweep). Never loop the model sample-by-sample.
 - **Post-processing / derived variables** → the `postproc/resultsEngine.py` DAG
   (`ResultsEngine` / `runEngine`; `dataProcessing.processVariables` is the shim;
   `toPayload` for web, `computeModelDerived` for model-backed ops). See the repo
   `CLAUDE.md` Architecture. Never compute derived quantities inline in plot/analysis
-  cells.
+  code.
 - **Plotting** → the `viz/plots.py` builders (`buildPlot` dispatcher +
   `build*` functions; `plotCalibrationConvergence` for convergence traces).
-  Never hand-roll matplotlib per notebook.
+  Never hand-roll matplotlib per call site.
 - **Persistent storage** → the `python/library/hdf5/` module (`engine.py`, `schema_sim` /
   `schema_pop` / `schema_calib`, `raw_stream.py` for streaming, `migrate.py`).
   See [[model-stack-upstream]]. Never invent a new save format or pickle.
-- **Single-run save → process → plot** (the notebook I/O sequence after a
+- **Single-run save → process → plot** (the I/O sequence after a
   `runner.run`) → `run/runIO.py` (`saveRun` / `saveConfig` / `processResults` /
   `saveProcessed` / `plotResults`, wrapping hdf5.schema_sim + resultsEngine + viz).
-  Never re-inline the save/process/plot block in a notebook — call `runIO.*`.
-  (Population/sweep notebooks persist via `schema_pop` + `raw_stream` instead.)
+  Never re-inline the save/process/plot block — call `runIO.*`.
+  (Population/sweep runs persist via `schema_pop` + `raw_stream` instead.)
 - **Config / structure file paths** → `utils.configPath(*parts)` and
   `utils.loadModelStructure`. Never hard-code a path.
 
@@ -87,7 +86,7 @@ Classify the need as exactly one of:
 - **(c) Genuinely new** — justify why no parameter expresses it, then place it
   by kind: physics → a modelEq class; orchestration → a runner function;
   derived output → a resultsEngine op; storage → an hdf5 schema. A new
-  standalone constant or notebook config cell is never the answer.
+  standalone constant or second config surface is never the answer.
 
 ## Internals & invariants (don't break)
 

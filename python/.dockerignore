@@ -1,10 +1,4 @@
 __pycache__/
 *.py[cod]
 
-# [MEDICAL] dev-only, never COPYed by any image — the jupyter container gets the
-# notebooks through the ./python:/src bind mount, and notebookData/ holds run
-# artefacts that can reach many GB. Keeping both out of the build context stops
-# every rebuild shipping them to the docker daemon.
-notebookData/
-run_*/
 .ipynb_checkpoints/

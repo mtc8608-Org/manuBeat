@@ -3,7 +3,7 @@
 
     python3 scripts/gen-physiology-seed.py
 
-Disk is canonical: the notebooks (python/run_*/) read config/ directly through
+Disk is canonical: the library reads config/ directly through
 library/utils.configPath, and the seeded rows are the web app's editable copies.
 Re-run whenever a shipped config JSON is added or changed, and commit both.
 
@@ -90,7 +90,7 @@ chunks.append(
     "--  seed-physiology.sql — the shipped cardiopulmonary configs\n"
     "--\n"
     "--  GENERATED from python/config/** — do not hand-edit a config blob here.\n"
-    "--  Disk is canonical: the notebooks (python/run_*/) read config/ directly through\n"
+    "--  Disk is canonical: the library reads config/ directly through\n"
     "--  library/utils.configPath, and these rows are the web app's editable copies of\n"
     "--  the same files. Editing a row in a Sandbox page deliberately diverges it from\n"
     "--  disk; re-running this generator does NOT overwrite it (ON CONFLICT DO NOTHING).\n"

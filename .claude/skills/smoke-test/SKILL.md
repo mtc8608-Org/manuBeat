@@ -33,26 +33,32 @@ Write the script into the scratchpad (or `python/`, which is bind-mounted at `/s
 then give the user one command and wait for the output they paste back:
 
 ```bash
-docker compose exec jupyter python /src/<your-script>.py
+docker compose exec python python /src/<your-script>.py
 ```
 
-Target the `jupyter` service rather than `python`: the notebook image carries the
-full stack, and both mount `./python` at `/src`, so `import library.*` resolves
-either way. Nothing needs forcing onto CPU — both images install `jax[cpu]` and GPU
-is off by design ([[gpu-no-benefit]]).
+The `python` service mounts `./python` at `/src`, so `import library.*` resolves.
+Nothing needs forcing onto CPU — the image installs `jax[cpu]` and GPU is off by
+design ([[gpu-no-benefit]]).
+
+**Import ceiling:** the image has no `matplotlib`, so `library.viz.plots` and
+`library.run.runIO` (which imports it at module level) are NOT importable there.
+Everything else — `runner`, `utils`, `model/*`, `postproc/*`, `hdf5/*` — is. A
+smoke script must therefore never import `runIO`; do saves and post-processing the
+way `api/domains/medical/cardio_routes.py` does, via `library.hdf5.schema_sim` and
+`library.postproc.resultsEngine` directly.
 
 If the stack is not running, say so and let the user start it.
 
 `jax.config.update("jax_enable_x64", True)` before the first solve to match the
-notebooks' float64 default. Keep `output.save=False`, `plots=[]`,
-`postProcessing=None`, `printStatus=False` unless the change is in one of those.
+stack's float64 default (the containers set `JAX_ENABLE_X64=1`). Keep
+`output.save=False`, `plots=[]`, `postProcessing=None`, `printStatus=False` unless
+the change is in one of those.
 
 ## Tiers — climb only as far as the change requires
 
-### Tier 0 — byte-compile (no solve)
-Cheapest check; catches syntax/import breakage. For a touched notebook, compile
-every code cell; for library code, import the module. Do this first whenever a
-notebook or a broadly-imported module changed.
+### Tier 0 — import (no solve)
+Cheapest check; catches syntax/import breakage: import the touched module. Do this
+first whenever a broadly-imported module changed.
 
 ### Tier 1 — one short baseline solve (DEFAULT)
 Baseline mode skips the whole calibration stage-walk, so it is the cheapest
@@ -66,7 +72,7 @@ import jax; jax.config.update("jax_enable_x64", True)
 
 scenario  = utils.loadScenario("smoketest.json")   # already tiny — no shrinking needed
 runConfig = {"model": "cvModel_linear.json", "scenario": "smoketest.json", "mode": "baseline",
-             "output": {"save": False, "path": "notebookData", "name": "smoke"},
+             "output": {"save": False, "path": "smokeData", "name": "smoke"},
              "postProcessing": None, "plots": [], "printStatus": False}
 sp = runner.buildSimulationParams(runConfig, scenario)   # baseline: one 10 s solve
 
@@ -103,9 +109,12 @@ pick the matching entry:
   same single-stage shrink; assert the streamed `raw` tensor is `(1, T, C)` and
   finite. This is the ceiling for an unprompted smoke — do not raise lane count
   or add stages without asking.
-- **hdf5 / postproc only**: run Tier 1 with `output.save=True` (or
-  `postProcessing="hr_test.json"`) and reload the artifact / check the engine
-  output, instead of touching the solver.
+- **hdf5 / postproc only**: run Tier 1, then hand the results to
+  `library.hdf5.schema_sim` (write + reload the artifact) or
+  `library.postproc.resultsEngine` (check the engine output) directly, instead of
+  touching the solver. Note `runConfig["output"]["save"]` only lands in
+  `simulationParams["saveToHDF5"]` — nothing in the library acts on it, so the
+  caller does the write.
 
 ## Reporting
 

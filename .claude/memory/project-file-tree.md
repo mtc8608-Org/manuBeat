@@ -132,20 +132,15 @@ python/
 │   ├── model/                #   modelEq(SI), modelGen, modelClass(SI), treeCreation
 │   ├── run/                  #   runner, runnerBatchSI, stateSetup, progress, runIO
 │   ├── postproc/             #   resultsEngine (post-processing DAG), dataProcessing
-│   ├── viz/plots.py          #   matplotlib builders — notebook-side only
+│   ├── viz/plots.py          #   matplotlib builders — NO caller in manuBeat and no
+│   │                         #   matplotlib in the image; kept only to stay byte-
+│   │                         #   identical to upstream (same for run/runIO.py)
 │   ├── hdf5/                 #   engine + schema_sim/_pop/_calib, migrate, raw_stream
 │   └── utils.py              #   configPath/loadScenario/labelFor/… PROJECT_ROOT is
 │                             #   this file's parent, which PINS config/ as its sibling
-├── config/                   # [MEDICAL] models/ scenarios/ processing/ plots/ +
-│                             #   labels.json, metadata.json — canonical for the
-│                             #   notebooks, seeded into Postgres by scripts/
-├── run_cpet/ run_test/ run_convergence/ run_sepsis/
-│                             # [MEDICAL] 14 driver notebooks, committed with outputs
-│                             #   stripped; run in the jupyter service, write to
-│                             #   notebookData/
-├── notebookData/             # [MEDICAL] notebook artefacts — gitignored (.gitkeep only)
-├── Dockerfile.notebook       # [MEDICAL] the jupyter image (full scientific stack)
-└── requirements.notebook.txt # [MEDICAL] its intent file (+ .lock, user-generated)
+└── config/                   # [MEDICAL] models/ scenarios/ processing/ plots/ +
+                              #   labels.json, metadata.json — canonical on disk,
+                              #   seeded into Postgres by scripts/
 
 scripts/                      # manuBeat's own — upstream has none. Laptop-side repo
 └── gen-physiology-seed.py    #   maintenance, never run by a container.

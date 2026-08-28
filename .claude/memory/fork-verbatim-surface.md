@@ -94,14 +94,13 @@ outside these sets that differs is worth the same blob-history check:
 - **`python/`** — `api/main.py` (router includes) and `Dockerfile` (domain system
   deps, e.g. TeX Live), plus fork-only `api/domains/<domain>/`. manuBeat widens
   this: `Dockerfile.prod` gains `hdf5-tools` plus `COPY library ./library` /
-  `COPY config ./config`, and the fork adds four top-level dirs under `python/`
-  (`library/`, `config/`, `run_*/`, `notebookData/`) with `Dockerfile.notebook`
-  and `requirements.notebook.txt`. All [MEDICAL]-commented — see
+  `COPY config ./config`, and the fork adds two top-level dirs under `python/`
+  (`library/`, `config/`). All [MEDICAL]-commented — see
   [[model-stack-upstream]].
 - **`docker-compose.yml`** — manuBeat's three deviations, all commented in the file:
-  the five MinIO variables handed to the `python` service, the fork-only `jupyter`
-  service (both `[MEDICAL]`), and MinIO's host ports moved to `9100`/`9101` because
-  9000/9001 collide constantly on a dev box. Only the host side moved — in-network
+  the five MinIO variables handed to the `python` service, the two `JAX_*` env vars
+  beside them (both `[MEDICAL]`), and MinIO's host ports moved to `9100`/`9101`
+  because 9000/9001 collide constantly on a dev box. Only the host side moved — in-network
   MinIO is still `minio:9000`, so `MINIO_PORT` stays 9000. The prod compose has none
   of the three (it publishes no ports at all). A `pull-upstream` merge must keep all
   three and never widen the first.
