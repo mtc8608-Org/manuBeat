@@ -227,6 +227,19 @@ router.get('/cardio/configs', async (req, res) => {
   }
 });
 
+// GET /api/cardio/metadata — config/metadata.json, the gas-region + prefix table the
+// model generator resolves every compartment's `gasRegion` against. The Model Sandbox
+// reads it to offer the real regions and their species instead of a second hard-coded copy.
+router.get('/cardio/metadata', async (req, res) => {
+  try {
+    const pythonRes = await axios.get(`${PYTHON()}/cardio/metadata`, { timeout: 5000 });
+    res.json(pythonRes.data);
+  } catch (err) {
+    console.error('cardio/metadata error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/cardio/scenarios — the scenario JSONs shipped on disk in python/config.
 // The app reads scenario_configs from Postgres; these two expose the disk originals
 // the seeds were generated from, for diffing a DB row against the shipped file.

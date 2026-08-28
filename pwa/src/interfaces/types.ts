@@ -95,6 +95,23 @@ export interface ModelConfig {
   created_at:  string;
 }
 
+// python/config/metadata.json, served by GET /api/cardio/metadata. Every compartment's
+// `gasRegion` is a key into `gasRegions`: `state` picks how the generator builds it
+// (a `gas` region gets one partial volume V_<species>_<comp>, a `dissolved` one gets a
+// concentration Y_<species>_<comp>), and `gases` lists the species with their initial
+// values — a -1.0 entry means the species is ABSENT there and produces no state.
+export interface GasRegion {
+  state: 'gas' | 'dissolved';
+  total: number;
+  gases: Record<string, number>;
+}
+
+export interface ModelMetadata {
+  gasRegions: Record<string, GasRegion>;
+  data:       Record<string, any>;
+  constants?: Record<string, any>;
+}
+
 // A scenario carries the VALUES of a run — twin targets, integration numerics and
 // the baseline/calibration/control stage stacks — against a model's STRUCTURE.
 // Same row shape as ModelConfig; the tables are separate because the model stack

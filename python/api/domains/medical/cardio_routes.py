@@ -476,6 +476,16 @@ def get_scenario_file(filename: str):
         return json.load(f)
 
 
+@router.get("/metadata")
+def get_metadata():
+    """config/metadata.json — the gas-region table the model generator resolves every
+    compartment's `gasRegion` against (state gas|dissolved + the species map, where a
+    -1.0 entry means the species is absent), plus the variable prefix/label table.
+    The Model Sandbox needs it to offer the right regions and species, so it reads the
+    same file the library does rather than keeping a second copy."""
+    return utils.loadJSONfile(utils.configPath("metadata.json"))
+
+
 @router.post("/validate")
 def validate_model(req: ValidateRequest):
     required = ["configurations", "compartments", "connections", "states"]

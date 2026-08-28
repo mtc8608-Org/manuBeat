@@ -3,7 +3,7 @@ import { createClient } from 'graphql-http';
 import { API_BASE, GQL_URL, ENDPOINT, WS_BASE } from '../constants';
 import {
   ComponentResults, FileRecord, Survey, SurveyAnswer,
-  ModelConfig, ScenarioConfig, RunMode, ModelRun, CardioJobStatus, CardioResult,
+  ModelConfig, ModelMetadata, ScenarioConfig, RunMode, ModelRun, CardioJobStatus, CardioResult,
   CardioProcessResult, CardioPlotConfig, CardioProcConfig, HdfNode, HdfDataset,
   Patient, Bed, BedsideNode, BedAssignment,
   BedsideStream, BedsideSegment, NodeHeartbeat,
@@ -743,6 +743,15 @@ const getCardioModel = async (filename: string): Promise<Record<string, any>> =>
   return res.data;
 };
 
+// config/metadata.json — the gas-region table (state gas|dissolved + species map, -1.0
+// meaning absent) the model generator resolves every compartment's gasRegion against.
+// The Model Sandbox reads it so its region/species pickers come from the same file the
+// library does, never a second hard-coded copy.
+const getCardioMetadata = async (): Promise<ModelMetadata> => {
+  const res = await http.get('/cardio/metadata');
+  return res.data;
+};
+
 const getHdf5Tree = async (run_id: string): Promise<HdfNode> => {
   const res = await http.get(`/cardio/hdf5/tree/${run_id}`);
   return res.data;
@@ -1054,6 +1063,7 @@ const ApiService = {
   getProcConfigs, createProcConfig, updateProcConfig, deleteProcConfig,
   // [MEDICAL] cardio REST
   runCardioModel, getCardioStatus, getCardioResult, getCardioResultByRunId, getCardioConfigs, getCardioModel,
+  getCardioMetadata,
   // [MEDICAL] HDF5
   getHdf5Tree, getHdf5Dataset, repackHdf5, deleteHdf5Dataset,
   // [MEDICAL] processing
