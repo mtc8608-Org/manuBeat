@@ -20,11 +20,12 @@ rather than inside `api/domains/medical/`. Keeping the tree byte-identical makes
 next sync an rsync instead of a merge.
 
 **How to sync:** rsync `library/` and `config/` (minus `archive/`) from the source
-repo over `python/`, then re-apply the three divergences below and re-run the
-smoke-test skill. Do **not** bring the source repo's notebooks across — they were
-deliberately dropped (see [[project-file-tree]]).
+repo over `python/`, then re-apply the four divergences below, re-run
+`scripts/gen-physiology-seed.py`, and re-run the smoke-test skill. Do **not** bring the
+source repo's notebooks across — they were deliberately dropped (see
+[[project-file-tree]]).
 
-## The three deliberate divergences — port these back upstream
+## The four deliberate divergences — port these back upstream
 
 1. **`modelClass.initialiseModel` / `modelClassSI.initialiseModel`** accept an
    optional `simulationParams['modelStructure']`: a pre-loaded model dict used in
@@ -36,7 +37,19 @@ deliberately dropped (see [[project-file-tree]]).
    `run/runner.py` and `run/runnerBatchSI.py`. Fires per emitted convergence line so
    a web UI polling a minutes-long calibration can show progress; `records` alone is
    only handed over when the run finishes. Exceptions in the callback are swallowed.
-3. Nothing else. If a fix is needed in `python/library/`, make it in
+3. **`config/models/cvModel_*.json` (all five) have `configurations`, `modelParams`
+   and `savedd` stripped** (2026-08-28), leaving the structure-only shape `cpet.json`
+   already had. All three are dead: `modelClass.initialiseModel` overwrites
+   `configurations` wholesale from the scenario before the generator runs;
+   `volumeDistribution` is read from `shared.twin`, never from the model's
+   `modelParams` (`modelGen`'s `modelParams` is an unrelated internal bucket); and
+   `savedd` has no reader anywhere and held stale `L_*` values that disagree with the
+   connections' own `params.L`. Removing them is behaviour-neutral and lets the Model
+   Sandbox present one shape. **Re-apply after every rsync** — the disk configs are the
+   canonical source and `init-scripts/seed-physiology.sql` is generated from them.
+   `pwa/src/pages/models/modelSchema.test.ts` reads these files directly, so a re-sync
+   that restores the keys fails that suite immediately.
+4. Nothing else. If a fix is needed in `python/library/`, make it in
    CardioPulmonaryModel first and re-sync — a local patch becomes a permanent
    conflict, exactly as with manuSpine ([[project_framework_upstream]]).
 

@@ -20,5 +20,6 @@
 - [Model stack upstream](model-stack-upstream.md) — python/library is a verbatim port of CardioPulmonaryModel's library/; the three deliberate divergences, the sync recipe, and what stayed behind
 - [GPU gives no benefit](gpu-no-benefit.md) — POLICY: GPU off by default everywhere; benchmarked 1.7–2.7x SLOWER than CPU for the batched SI calibration
 - [Model initialisation](model-initialisation.md) — how Y0 is seeded via stateSetup.configureStates: the injected inputs beyond the structural JSON, and where they come from
+- [Model Sandbox schema](model-sandbox-schema.md) — the sandbox is driven by modelSchema.ts, a pure registry mirroring modelGen's dispatch; where to add an equation type, and the config drifts its tests pin
 - [SI default migration plan](si-default-migration-plan.md) — inherited upstream plan to make SI the one stack and delete legacy modelClass/modelEq; 0% built
 - [Project file tree](project-file-tree.md) — annotated repo map (upstream's; manuBeat adds its bedside/medical/models/surveys dirs); consult before asserting structure or placing files; update in the same commit as any directory add/move/remove
