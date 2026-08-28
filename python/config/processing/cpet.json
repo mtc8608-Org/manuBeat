@@ -1762,24 +1762,6 @@
 
 
   },
-  "gasDiffs#":{
-    "Diff_AtmFlow": {
-      "operation": "sumOfArrays",
-      "params": {
-        "resultNames": [
-          "dv_Air",
-          "TotalFlow"
-        ]
-      }
-    },
-    "Diff_AtmFlow_int": {
-      "operation": "integral",
-      "params": {
-        "resultName": "Diff_AtmFlow",
-        "step": 0.01
-      }
-    }
-  },
   "tidalVolumes#": {
     "Q_C2_Comp0_Lt_-1": {
       "operation": "constantMultiplication",

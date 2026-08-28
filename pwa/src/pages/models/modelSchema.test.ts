@@ -49,15 +49,10 @@ const stable = (v: any): string => JSON.stringify(v, (_k, val) =>
     : val);
 
 /** States the generator builds that a shipped config never declares, so the run falls back
- *  to the generator default. Only one case exists: the two `*_inertial*` configs make
- *  `Hl_As` a `diode_inertial` — which registers `L_Hl_As` — but park a stale 0.0002 in the
- *  dead `savedd` block instead of declaring it. The run uses `params.L` (0.01) either way,
- *  so the sandbox seeding it on the next edit changes nothing. Named here so a NEW
- *  divergence still fails the suite. */
-const KNOWN_UNDECLARED: Record<string, string[]> = {
-  'cvModel_linear_inertial.json':    ['L_Hl_As'],
-  'cvModel_linear_inertialAlt.json': ['L_Hl_As'],
-};
+ *  to the generator default. There are none left — the two `*_inertial*` configs now declare
+ *  `L_Hl_As` at the value their `Hl_As` params carry. Kept as the seam a NEW divergence
+ *  lands in, so the failure names the file instead of an opaque array mismatch. */
+const KNOWN_UNDECLARED: Record<string, string[]> = {};
 
 /** Every editable section, in the order the sandbox lists them. */
 const SECTIONS: Section[] = [
@@ -172,22 +167,11 @@ describe('coverage of the shipped configs', () => {
 // ── 2. State parity: does the registry reproduce the library's state vector? ──
 
 describe('state derivation against the shipped states blocks', () => {
-  /** Two documented, behaviour-neutral discrepancies between the shipped configs and the
-   *  state vector the generator actually builds. Both are config drift, not schema bugs —
-   *  keep them named here so a NEW divergence still fails the suite.
-   *
-   *  1. `Q_<from>_<to>` on a non-inertial connection: the flow is algebraic, so the name is
-   *     not in `stateNames` and `encodeStates` ignores the key. The cvModel configs carry
-   *     one per connection; cpet carries only the four inertial ones.
-   *  2. `L_Hl_As` missing from the two `*_inertial*` configs: their `Hl_As` is
-   *     `diode_inertial`, so the generator registers `L_Hl_As`; the configs park a stale
-   *     0.0002 in the dead `savedd` block instead, and the run falls back to the
-   *     generator default (`params.L` = 0.01). */
-  const inertFlowKey = (model: ModelJson, name: string): boolean => {
-    if (!name.startsWith('Q_')) return false;
-    const entry = (model.connections?.resistive ?? {})[name.slice(2)];
-    return !!entry && !['inertial', 'diode_inertial'].includes(entry.type);
-  };
+  /** The shipped configs now declare exactly the state vector the generator builds — no
+   *  tolerated drift in either direction. Both halves used to carry an exemption: the
+   *  cvModels declared a `Q_<from>_<to>` per non-inertial connection (algebraic, so
+   *  `encodeStates` ignored it) and the `*_inertial*` pair omitted `L_Hl_As`. Both were
+   *  fixed in the configs, so the assertions are now unconditional. */
   it.each(MODEL_FILES)('%s — the derived state set matches the config', file => {
     const model   = MODELS[file];
     const derived = new Set(Object.keys(deriveStates(model, META)));
@@ -198,7 +182,7 @@ describe('state derivation against the shipped states blocks', () => {
     expect(undeclared).toEqual(KNOWN_UNDECLARED[file] ?? []);
 
     // Declared but never built: a stale key the state vector has no slot for.
-    const unbuilt = [...stated].filter(n => !derived.has(n) && !inertFlowKey(model, n)).sort();
+    const unbuilt = [...stated].filter(n => !derived.has(n)).sort();
     expect(unbuilt).toEqual([]);
   });
 
@@ -603,14 +587,9 @@ describe('validateModel', () => {
       }
       return [...kinds].map(([kind, n]) => `${file} x${n} ${kind}`);
     });
-    expect(profile).toEqual([
-      // cpet's connections.regions/cycles keep five keys (Ah, Aa, Al, Va, Vl) from an
-      // older, finer arterial/venous split. Harmless — nothing ever looks them up.
-      'cpet.json x5 warning: connections.regions has an orphan key "…" with no matching compartment.',
-      // The documented L_Hl_As gap in the two inertial variants.
-      'cvModel_linear_inertial.json x1 warning: states is missing "…"; the run falls back to the generator default.',
-      'cvModel_linear_inertialAlt.json x1 warning: states is missing "…"; the run falls back to the generator default.',
-    ]);
+    // Clean: cpet's five orphan connections.regions/cycles keys (Ah, Aa, Al, Va, Vl) from the
+    // older arterial/venous split are gone, and the inertial pair now declares L_Hl_As.
+    expect(profile).toEqual([]);
   });
 
   it('catches a membrane with no bias entry', () => {

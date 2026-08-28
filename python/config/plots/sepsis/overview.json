@@ -125,8 +125,8 @@
       "type": "multiSideBySide",
 
       "params": {
-        "left": ["P_As","avg_P_As","keep_min_P_As","keep_max_P_As_"],
-        "right": ["P_As","avg_P_As","keep_min_P_As","keep_max_P_As_"],
+        "left": ["P_As","avg_P_As","keep_min_P_As","keep_max_P_As"],
+        "right": ["P_As","avg_P_As","keep_min_P_As","keep_max_P_As"],
         "colorsLeft": "Reds",
         "colorsRight": "Reds",
         "title": "Systemic Arterial Pressures"
@@ -271,8 +271,8 @@
       "type": "multiSideBySide",
 
       "params": {
-        "left": ["P_Cs","avg_P_Cs","keep_min_P_Cs","keep_max_P_Cs"],
-        "right": ["P_Cs","avg_P_Cs","keep_min_P_Cs","keep_max_P_Cs"],
+        "left": ["P_Cs","avg_P_Cs"],
+        "right": ["P_Cs","avg_P_Cs"],
         "colorsLeft": "Reds",
         "colorsRight": "Reds",
         "title": "Systemic Cappilary Pressures"
@@ -307,8 +307,8 @@
       "type": "multiSideBySide",
 
       "params": {
-        "left": ["P_Vs","avg_P_Vs","keep_min_P_Vs","keep_max_P_Vs"],
-        "right": ["P_Vs","avg_P_Vs","keep_min_P_Vs","keep_max_P_Vs"],
+        "left": ["P_Vs","avg_P_Vs"],
+        "right": ["P_Vs","avg_P_Vs"],
         "colorsLeft": "Reds",
         "colorsRight": "Reds",
         "title": "Systemic Cappilary Pressures"
@@ -345,8 +345,8 @@
       "type": "multiSideBySide",
 
       "params": {
-        "left": ["P_Cp","avg_P_Cp","keep_min_P_Cp","keep_max_P_Cp"],
-        "right": ["P_Cp","avg_P_Cp","keep_min_P_Cp","keep_max_P_Cp"],
+        "left": ["P_Cp","avg_P_Cp"],
+        "right": ["P_Cp","avg_P_Cp"],
         "colorsLeft": "Reds",
         "colorsRight": "Reds",
         "title": "Systemic Cappilary Pressures"

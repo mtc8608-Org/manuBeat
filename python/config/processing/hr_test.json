@@ -58,7 +58,7 @@
         "resultName": "keep_min_P_As"
       }
     },
-    "keep_max_P_As_": {
+    "keep_max_P_As": {
       "operation": "constantSubstraction",
       "params": {
         "constant": 760.0,

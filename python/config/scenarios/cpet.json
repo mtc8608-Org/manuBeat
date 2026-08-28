@@ -60,7 +60,6 @@
         "description": "Initial run to allow the system to settle",
         "runsToIgnore": 1,
         "runsToSave": 10,
-        "multiplier": 0.0,
         "multiplierC": 0.0,
         "parameters": [
           "C_Vs",
@@ -101,7 +100,6 @@
         "description": "CO Balancing",
         "runsToIgnore": 0,
         "runsToSave": 10,
-        "multiplier": 0.0,
         "multiplierC": 0.1,
         "parameters": [
           "C_Vs",
@@ -142,7 +140,6 @@
         "description": "Final run to allow the system to recover the metabolism",
         "runsToIgnore": 0,
         "runsToSave": 60,
-        "multiplier": 0.0,
         "multiplierC": 1.0,
         "parameters": [
           "C_Vs",
@@ -168,10 +165,6 @@
           "C_Vp",
           "V0_As",
           "V0_Ap",
-          "area_R_La_Cp",
-          "area_R_Cl_TissueLeg",
-          "area_R_Ch_TissueHead",
-          "area_R_Ca_TissueAbdomen",
           "k_C6H12O6_C3H6O3",
           "k_Head_C6H12O6_C3H6O3",
           "k_Physio_C6H12O6_C3H6O3",
@@ -186,7 +179,6 @@
         "description": "Final run to allow the system to recover the metabolism",
         "runsToIgnore": 0,
         "runsToSave": 100,
-        "multiplier": 0.0,
         "multiplierC": 10.0,
         "parameters": [
           "C_Vs",
@@ -212,10 +204,6 @@
           "C_Vp",
           "V0_As",
           "V0_Ap",
-          "area_R_La_Cp",
-          "area_R_Cl_TissueLeg",
-          "area_R_Ch_TissueHead",
-          "area_R_Ca_TissueAbdomen",
           "k_C6H12O6_C3H6O3",
           "k_Head_C6H12O6_C3H6O3",
           "k_Physio_C6H12O6_C3H6O3",
@@ -230,7 +218,6 @@
         "description": "Final run to allow the system to recover the metabolism",
         "runsToIgnore": 0,
         "runsToSave": 20,
-        "multiplier": 0.0,
         "multiplierC": 0.0,
         "parameters": [
           "C_Vs",
@@ -256,10 +243,6 @@
           "C_Vp",
           "V0_As",
           "V0_Ap",
-          "area_R_La_Cp",
-          "area_R_Cl_TissueLeg",
-          "area_R_Ch_TissueHead",
-          "area_R_Ca_TissueAbdomen",
           "k_C6H12O6_C3H6O3",
           "k_Head_C6H12O6_C3H6O3",
           "k_Physio_C6H12O6_C3H6O3",
@@ -274,21 +257,6 @@
   },
   "control": {
     "params": {
-      "L_": {
-        "max": 0.003,
-        "min": 1e-05,
-        "rate": 0.0
-      },
-      "V0_As": {
-        "max": 500.0,
-        "min": 10.0,
-        "rate": 0.0
-      },
-      "C_As": {
-        "max": 9.0,
-        "min": 0.01,
-        "rate": 0.0
-      },
       "updateNAD": true,
       "Y_NAD+_": 0.005,
       "k_C3H6O3_O2": 10000.0,
@@ -419,11 +387,6 @@
         "linear": 0.0,
         "quadratic": 0.0
       },
-      "C_Ap": {
-        "dc": 0.0,
-        "linear": 0.0,
-        "quadratic": 0.0
-      },
       "t_Sys_HC": {
         "dc": 0.688,
         "linear": -0.278,
@@ -453,18 +416,6 @@
             "rate": 0.0
           },
           "Upt_TissuesAbdomen": {
-            "rate": 0.0
-          },
-          "area_R_La_Cp": {
-            "rate": 0.0
-          },
-          "area_R_Cl_TissueLeg": {
-            "rate": 0.0
-          },
-          "area_R_Ch_TissueHead": {
-            "rate": 0.0
-          },
-          "area_R_Ca_TissueAbdomen": {
             "rate": 0.0
           },
           "Cyc_HC": {

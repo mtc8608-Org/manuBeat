@@ -59,7 +59,6 @@
         "multiplierL": 0.0,
         "runsToIgnore": 5,
         "runsToSave": 0,
-        "multiplier": 0.0,
         "parameters": [
           "C_Vs",
           "R_Ap_Cp",
@@ -211,7 +210,6 @@
         "multiplierL": 0.0,
         "runsToIgnore": 0,
         "runsToSave": 5,
-        "multiplier": 0.0,
         "parameters": [
           "C_Vs",
           "R_Ap_Cp",

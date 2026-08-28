@@ -40,19 +40,25 @@ Non-obvious invariants the registry encodes (all verified against modelGen):
 - Removal prunes only the names `deriveStates` attributes to the entry. The old page swept
   `key.endsWith('_' + name)`, which deleted `avg_P_As` and `Q_Hl_As` with compartment `As`.
 
-## Two config drifts the tests pin (not bugs in the schema)
+## The shipped configs carry no drift — `validateModel` returns zero findings
 
-Both are named in `modelSchema.test.ts` so a *new* divergence still fails:
+There used to be three tolerated divergences; all were fixed in the configs on 2026-08-28
+and `modelSchema.test.ts` now asserts a clean profile (`expect(profile).toEqual([])` and an
+unconditional derived-vs-declared match), so any NEW drift fails the suite rather than being
+added to an exemption list. What was removed, for when one of these reappears:
 
-1. The shipped cvModel configs carry `Q_<from>_<to>` for plain resistors/diodes. Those
-   flows are algebraic, so the names are not in `stateNames` and `encodeStates` ignores
-   them. cpet carries only the four inertial ones.
-2. `cvModel_linear_inertial*.json` make `Hl_As` a `diode_inertial` — which registers
-   `L_Hl_As` — but never declare it in `states`; the run falls back to `params.L`.
+1. The cvModel configs declared a `Q_<from>_<to>` per plain resistor/diode. Those flows are
+   algebraic, so the names were never in `stateNames` and `encodeStates` ignored them.
+2. `cvModel_linear_inertial*.json` make `Hl_As` a `diode_inertial`, which registers
+   `L_Hl_As`, but did not declare it; the run fell back to `params.L`. They now declare
+   `L_Hl_As: 0.01`, the same value, so nothing about the run changed.
+3. `cpet.json` kept five orphan `connections.regions` AND `connections.cycles` keys (`Ah`,
+   `Aa`, `Al`, `Va`, `Vl`) from an older arterial/venous split — 10 keys, though the checks
+   panel only walks `regions` and so reported 5.
 
-`cpet.json` also keeps five orphan `connections.regions`/`cycles` keys (`Ah`, `Aa`, `Al`,
-`Va`, `Vl`) from an older arterial/venous split. Nothing looks them up; the checks panel
-reports them as warnings and they are deliberately left in place.
+The same sweep cleaned the other three config kinds (dead scenario stage keys, a
+zero-producing processing stage, archived plot `saved`/`axes_Saved` blocks); the audit that
+found them cross-references disk against `resultsEngine.opDependencies` and `buildPlot`.
 
 ## The canvas mirrors the registry too, and is pinned the same way
 

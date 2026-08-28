@@ -608,10 +608,10 @@
       "colSpan": 1,
       "type": "multiSideBySide",
       "params": {
-        "left": ["Y_HCO3-_TissueLeg","Y_HCO3-_TissueAbdomen","Y_HCO3-_Cl","Y_HCO3-_Vt","Y_HCO3-_As","Y_HCO3-_Cp","Y_HCO3-_La"],
+        "left": ["Y_HCO3-_TissueLeg","Y_HCO3-_TissueAbdomen","Y_HCO3-_Cl","Y_HCO3-_Vt","Y_HCO3-_As","Y_HCO3-_Cp"],
         "title": "Blood & Tissue [CO2]",
         "colorsLeft": "coolwarm",
-        "right": ["Y_HCO3-_TissueLeg","Y_HCO3-_TissueAbdomen","Y_HCO3-_Cl","Y_HCO3-_Vt","Y_HCO3-_As","Y_HCO3-_Cp","Y_HCO3-_La"],
+        "right": ["Y_HCO3-_TissueLeg","Y_HCO3-_TissueAbdomen","Y_HCO3-_Cl","Y_HCO3-_Vt","Y_HCO3-_As","Y_HCO3-_Cp"],
         "colorsRight": "coolwarm"
       },
       "options": {

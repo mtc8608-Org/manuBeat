@@ -57,7 +57,6 @@
         "description": "Settle from the sampled initial state (controllers off)",
         "runsToIgnore": 5,
         "runsToSave": 5,
-        "multiplier": 0.0,
         "multiplierC": 0.0,
         "multiplierL": 0.0,
         "parameters": [
@@ -139,7 +138,6 @@
         "description": "Settle from the sampled last state (controllers off)",
         "runsToIgnore": 0,
         "runsToSave": 10,
-        "multiplier": 0.0,
         "multiplierC": 0.0,
         "multiplierL": 0.0,
         "parameters": [

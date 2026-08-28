@@ -56,7 +56,6 @@
         "description": "Settle from the sampled initial state (controllers off)",
         "runsToIgnore": 5,
         "runsToSave": 2,
-        "multiplier": 0.0,
         "multiplierC": 0.0,
         "parameters": [
           "C_Vs",

@@ -196,10 +196,10 @@
       "colSpan": 1,
       "type": "multiSideBySide",
       "params": {
-        "left": ["P_Ch","P_Cl","P_Ca","P_Va","P_Vl","P_Vs","P_Vh","P_Vt"],
+        "left": ["P_Ch","P_Cl","P_Ca","P_Vs","P_Vh","P_Vt"],
         "title": "Capilary and Venous Pressure",
         "colorsLeft": "jet",
-        "right": ["P_Ch","P_Cl","P_Ca","P_Va","P_Vl","P_Vs","P_Vh","P_Vt"],
+        "right": ["P_Ch","P_Cl","P_Ca","P_Vs","P_Vh","P_Vt"],
         "colorsRight": "jet"
       },
       "options": {
@@ -340,8 +340,8 @@
       "type": "multiSideBySide",
 
       "params": {
-        "left": ["P_As","P_Aa","P_Ah"],
-        "right": ["P_As","P_Aa","P_Ah"],
+        "left": ["P_As"],
+        "right": ["P_As"],
         "colorsLeft": "Reds",
         "colorsRight": "Reds",
         "title": "Systemic Arterial Pressures"
@@ -549,8 +549,6 @@
     
     
     
-  },
-  "axes_Saved":{
   }
 }
 
