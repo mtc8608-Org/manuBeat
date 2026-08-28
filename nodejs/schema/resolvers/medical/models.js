@@ -13,6 +13,9 @@ const ModelConfigType = new GraphQLObjectType({
     name:        { type: GraphQLString },
     description: { type: GraphQLString },
     config:      { type: GraphQLJSON },
+    // Model Sandbox canvas presentation (node positions, viewport, layer toggles).
+    // Never read by the model stack — see 02-init-medical.sql.
+    layout:      { type: GraphQLJSON },
     created_at:  { type: GraphQLString, resolve: r => r.created_at?.toISOString() ?? null },
   }),
 });
@@ -88,13 +91,15 @@ const modelMutations = {
       name:        { type: GraphQLString },
       description: { type: GraphQLString },
       config:      { type: GraphQLJSON },
+      layout:      { type: GraphQLJSON },
     },
-    async resolve(_, { id, name, description, config }) {
+    async resolve(_, { id, name, description, config, layout }) {
       const sets = [];
       const vals = [];
       if (name        !== undefined) { vals.push(name);                   sets.push(`name = $${vals.length}`); }
       if (description !== undefined) { vals.push(description);            sets.push(`description = $${vals.length}`); }
       if (config      !== undefined) { vals.push(JSON.stringify(config)); sets.push(`config = $${vals.length}`); }
+      if (layout      !== undefined) { vals.push(JSON.stringify(layout)); sets.push(`layout = $${vals.length}`); }
       if (!sets.length) throw new Error('Nothing to update');
       vals.push(id);
       const res = await pool.query(

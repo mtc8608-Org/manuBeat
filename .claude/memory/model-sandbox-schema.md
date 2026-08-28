@@ -1,6 +1,6 @@
 ---
 name: model-sandbox-schema
-description: The Model Sandbox is driven by modelSchema.ts, a pure registry mirroring modelGen's JSON dispatch — where to change it, and the two config drifts its tests pin
+description: The Model Sandbox is driven by modelSchema.ts, a pure registry mirroring modelGen's JSON dispatch — where to change it, the two config drifts its tests pin, and how ModelCanvas + model_configs.layout hang off it
 metadata:
   node_type: memory
   type: project
@@ -54,11 +54,40 @@ Both are named in `modelSchema.test.ts` so a *new* divergence still fails:
 `Va`, `Vl`) from an older arterial/venous split. Nothing looks them up; the checks panel
 reports them as warnings and they are deliberately left in place.
 
+## The canvas mirrors the registry too, and is pinned the same way
+
+`components/charts/ModelCanvas.tsx` draws every structural key a model carries, each behind
+a layer toggle: compartments (styled by `capacitor.type`), `connections.resistive` (valve
+and inductor glyphs per type), `connections.membrane` (dashed, arrowless — diffusion runs
+both ways), `connections.bias`, `connections.regions` (containment envelopes),
+`connections.cycles` and `reactions` (badges, the latter resolved through the compartment's
+`gasRegion`). Its three style maps — `NODE_STYLE`, `EDGE_STYLE`, `MEMBRANE_STYLE` — are
+keyed on the registry's own type strings and **`ModelCanvas.test.ts` asserts set equality
+against `SCHEMA`**, so adding an equation type to `modelSchema.ts` without styling it fails
+the suite. It used to know 3 of 9 compartment and 2 of 5 resistive types, which is why
+cpet's `elastanceInput` hearts and `diode_inertial` valves rendered as anonymous grey blobs
+and the three tissue compartments floated unconnected.
+
+`autoLayout` is pure and deterministic, from structure alone — no compartment name is
+hardcoded, because the shipped configs disagree on them (`cvModel`'s `Cs` vs cpet's
+`Ch`/`Ca`/`Cl`). It bands the graph: pump-free flow components (the airway) on top, then
+each circulation split at its pumps into a pulmonary and a systemic half — the half holding
+an alveolar membrane's partner is pulmonary, and consecutive halves alternate column
+direction so the loop closes as a racetrack — then membrane-only compartments under their
+partner, then the unwired rail of references and containers.
+
+**Canvas state is NOT in the model JSON.** Node positions, the pan/zoom transform and the
+layer toggles live in `model_configs.layout` (`ModelLayout` in `interfaces/types.ts`), added
+to `02-init-medical.sql` with `DEFAULT '{}'`. The model config stays exactly the document
+`python/library` consumes, `scripts/gen-physiology-seed.py` never writes the column, and the
+Sandbox's one Save button writes both through `updateModelConfig`. A commit always emits the
+**resolved** positions (auto ∪ dragged), so freezing captures what is on screen.
+
+`ModelCanvas.tsx` and its test are fork-only files sitting in the verbatim `components/`
+tree — pre-existing drift ([[fork-verbatim-surface]]), deliberately left in place.
+
 ## Known gaps
 
-- `components/charts/ModelCanvas.tsx` still draws only compartments and resistive
-  connections — membranes, gas regions and controllers are invisible on it. (That file is
-  also fork-only while sitting in the verbatim `components/` tree — pre-existing drift.)
 - `POST /cardio/validate` (`python/api/domains/medical/cardio_routes.py`) is a stub that
   requires `configurations`, so it would reject every current config. Nothing calls it.
   The real structural check is `validateModel` in the schema module.

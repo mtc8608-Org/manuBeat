@@ -87,11 +87,23 @@ export interface PanelConfig {
 // ║                          MEDICAL / PHYSIOLOGY                                ║
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
+// The Model Sandbox canvas is presentation, so its state lives beside the model config
+// rather than inside it: `config` stays exactly the document python/library consumes.
+// Persisted in model_configs.layout (02-init-medical.sql), written by the page's Save.
+export type CanvasLayer = 'flow' | 'membranes' | 'bias' | 'regions' | 'cycles' | 'reactions';
+
+export interface ModelLayout {
+  positions?: Record<string, { x: number; y: number }>;  // compartment id → model-space point
+  view?:      { x: number; y: number; k: number };       // pan offset + zoom factor
+  layers?:    Partial<Record<CanvasLayer, boolean>>;
+}
+
 export interface ModelConfig {
   id:          string;
   name:        string;
   description: string | null;
   config:      Record<string, any>;
+  layout:      ModelLayout | null;
   created_at:  string;
 }
 

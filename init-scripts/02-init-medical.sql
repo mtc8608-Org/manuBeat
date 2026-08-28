@@ -21,6 +21,10 @@ CREATE TABLE model_configs (
     name        TEXT NOT NULL,
     description TEXT,
     config      JSONB NOT NULL,
+    -- Model Sandbox canvas only: frozen node positions, viewport and layer toggles.
+    -- Presentation, never physics — python/library never reads this column, and
+    -- scripts/gen-physiology-seed.py never writes it (the default covers every seed).
+    layout      JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

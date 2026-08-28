@@ -3,7 +3,7 @@ import { createClient } from 'graphql-http';
 import { API_BASE, GQL_URL, ENDPOINT, WS_BASE } from '../constants';
 import {
   ComponentResults, FileRecord, Survey, SurveyAnswer,
-  ModelConfig, ModelMetadata, ScenarioConfig, RunMode, ModelRun, CardioJobStatus, CardioResult,
+  ModelConfig, ModelLayout, ModelMetadata, ScenarioConfig, RunMode, ModelRun, CardioJobStatus, CardioResult,
   CardioProcessResult, CardioPlotConfig, CardioProcConfig, HdfNode, HdfDataset,
   Patient, Bed, BedsideNode, BedAssignment,
   BedsideStream, BedsideSegment, NodeHeartbeat,
@@ -535,7 +535,7 @@ const fetchFileBlob = async (id: string): Promise<Blob> => {
 
 const getModelConfigs = async (): Promise<ModelConfig[]> => {
   try {
-    const result = await gql(`{ modelConfigs { id name description config created_at } }`);
+    const result = await gql(`{ modelConfigs { id name description config layout created_at } }`);
     return result?.data?.modelConfigs ?? [];
   } catch (e) { console.error('getModelConfigs error:', e); return []; }
 };
@@ -544,7 +544,7 @@ const createModelConfig = async (name: string, description: string, config: Reco
   const result = await gql(
     `mutation CreateModelConfig($name: String!, $description: String, $config: JSON!) {
        createModelConfig(name: $name, description: $description, config: $config) {
-         id name description config created_at
+         id name description config layout created_at
        }
      }`,
     { name, description, config },
@@ -552,11 +552,11 @@ const createModelConfig = async (name: string, description: string, config: Reco
   return result?.data?.createModelConfig;
 };
 
-const updateModelConfig = async (id: string, fields: { name?: string; description?: string; config?: Record<string, any> }): Promise<ModelConfig> => {
+const updateModelConfig = async (id: string, fields: { name?: string; description?: string; config?: Record<string, any>; layout?: ModelLayout }): Promise<ModelConfig> => {
   const result = await gql(
-    `mutation UpdateModelConfig($id: ID!, $name: String, $description: String, $config: JSON) {
-       updateModelConfig(id: $id, name: $name, description: $description, config: $config) {
-         id name description config created_at
+    `mutation UpdateModelConfig($id: ID!, $name: String, $description: String, $config: JSON, $layout: JSON) {
+       updateModelConfig(id: $id, name: $name, description: $description, config: $config, layout: $layout) {
+         id name description config layout created_at
        }
      }`,
     { id, ...fields },

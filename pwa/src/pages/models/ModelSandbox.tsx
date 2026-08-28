@@ -26,7 +26,7 @@ import JsonViewer from '../../components/shell/JsonViewer';
 import FormRenderer from '../../components/forms/FormRenderer';
 import EmptyState from '../../components/shell/EmptyState';
 import ModelCanvas from '../../components/charts/ModelCanvas';
-import { ModelConfig, ModelMetadata, ComponentResults } from '../../interfaces/types';
+import { ModelConfig, ModelLayout, ModelMetadata, ComponentResults } from '../../interfaces/types';
 import { AREA_NAV, PANEL_CONFIG, FORM_ID } from '../../constants';
 import { downloadBlob } from '../../utils/download';
 import {
@@ -152,6 +152,10 @@ const ModelSandbox: React.FC = () => {
   // Working model — local edit buffer loaded from selectedConfig.config
   const [workingModel, setWorkingModel]     = useState<ModelJson | null>(null);
 
+  // Canvas layout — the same buffer treatment for model_configs.layout. Presentation only,
+  // deliberately never folded into the model JSON, and saved by the same Save button.
+  const [workingLayout, setWorkingLayout]   = useState<ModelLayout>({});
+
   // config/metadata.json — the gas-region and species table every picker resolves against
   const [metadata, setMetadata]             = useState<ModelMetadata | null>(null);
 
@@ -194,6 +198,7 @@ const ModelSandbox: React.FC = () => {
 
   useEffect(() => {
     setWorkingModel(selectedConfig ? JSON.parse(JSON.stringify(selectedConfig.config)) : null);
+    setWorkingLayout(selectedConfig?.layout ?? {});
     setSelected({});
   }, [selectedConfig?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -349,7 +354,11 @@ const ModelSandbox: React.FC = () => {
     setSaving(true); setSaveError(null);
     try {
       // Save what the JSON viewer and the download show — one canonical shape everywhere.
-      const updated = await ApiService.updateModelConfig(selectedConfig.id, { config: canonicalModelJson(workingModel) });
+      // The canvas layout rides along, which is what freezes the arrangement on screen.
+      const updated = await ApiService.updateModelConfig(selectedConfig.id, {
+        config: canonicalModelJson(workingModel),
+        layout: workingLayout,
+      });
       setSelectedConfig(updated);
     } catch (err: any) {
       setSaveError(err.message ?? 'Save failed');
@@ -549,7 +558,12 @@ const ModelSandbox: React.FC = () => {
                   <IonRow>
                     <IonCol size="12">
                       <ModelCanvas
+                        // Remount on model switch so the canvas re-seeds its viewport and
+                        // layer toggles from the newly selected config's saved layout.
+                        key={selectedConfig?.id ?? 'none'}
                         modelJson={workingModel}
+                        layout={workingLayout}
+                        onLayoutChange={setWorkingLayout}
                         selectedNode={selected.compartments ?? null}
                         onSelectNode={name => openEntityModal('compartments', name)}
                       />
