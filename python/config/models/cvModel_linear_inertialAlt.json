@@ -1,32 +1,4 @@
 {
- "configurations": {
-  "simulationParameters": {
-   "dt": 0.0005,
-   "calibration": true
-  }
- },
- "modelParams": {
-  "volumeDistribution": {
-   "As": 0.13,
-   "Cs": 0.07,
-   "Vs": 0.61,
-   "Vt": 0.04,
-   "Hr": 0.025,
-   "Ap": 0.04,
-   "Cp": 0.025,
-   "Vp": 0.035,
-   "Hl": 0.025
-  },
-  "flowDistribution": {
-   "R_As_Cs": 1.0
-  }
- },
- "savedd": {
-  "L_Vt_Hr": 0.0002,
-  "L_Hr_Ap": 0.0002,
-  "L_Vp_Hl": 0.0002,
-  "L_Hl_As": 0.0002
- },
  "states": {
   "C_Ap": 1.3902192115783691,
   "C_As": 0.36856532096862793,
