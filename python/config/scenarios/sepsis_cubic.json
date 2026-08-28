@@ -50,34 +50,7 @@
     }
   },
   "calibration": {
-    "strategy": "staged",
     "maxCubicFactor": 10.0,
-    "adaptive": {
-      "parameters": [
-        "C_Vs",
-        "R_Ap_Cp",
-        "R_Cs_Vs",
-        "R_As_Cs",
-        "E_Hl",
-        "E_Hr",
-        "C_As",
-        "C_Ap",
-        "V0_As",
-        "V0_Ap",
-        "e_Hl",
-        "e_Hr",
-        "C_Cs",
-        "C_Vt",
-        "C_Cp",
-        "C_Vp"
-      ],
-      "warmupRunsToIgnore": 5,
-      "initialMultiplier": 1.0,
-      "maxLoops": 8,
-      "runsToIgnorePerLoop": 1,
-      "runsToSavePerLoop": 0,
-      "holdRunsToSave": 20
-    },
     "stages": [
       {
         "description": "Settle from the sampled initial state (controllers off)",

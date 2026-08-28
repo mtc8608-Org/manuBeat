@@ -50,36 +50,8 @@
     }
   },
   "calibration": {
-    "strategy": "staged",
     "maxCubicFactor": 10.0,
     "maxLinearFactor": 1.0,
-    "controllerLaw": "linear",
-    "adaptive": {
-      "parameters": [
-        "C_Vs",
-        "R_Ap_Cp",
-        "R_Cs_Vs",
-        "R_As_Cs",
-        "E_Hl",
-        "E_Hr",
-        "C_As",
-        "C_Ap",
-        "V0_As",
-        "V0_Ap",
-        "e_Hl",
-        "e_Hr",
-        "C_Cs",
-        "C_Vt",
-        "C_Cp",
-        "C_Vp"
-      ],
-      "warmupRunsToIgnore": 5,
-      "initialMultiplier": 1.0,
-      "maxLoops": 8,
-      "runsToIgnorePerLoop": 1,
-      "runsToSavePerLoop": 0,
-      "holdRunsToSave": 20
-    },
     "stages": [
       {
         "description": "Settle from the sampled initial state (controllers off)",
@@ -87,6 +59,7 @@
         "runsToSave": 5,
         "multiplier": 0.0,
         "multiplierC": 0.0,
+        "multiplierL": 0.0,
         "parameters": [
           "C_Vs",
           "R_Ap_Cp",
@@ -112,7 +85,8 @@
         "description": "Aggressive calibration (multiplierC = 10.0)",
         "runsToIgnore": 0,
         "runsToSave": 50,
-        "multiplierC": 0.1,
+        "multiplierC": 0.0,
+        "multiplierL": 0.1,
         "parameters": [
           "R_Ap_Cp",
           "R_Cs_Vs",
@@ -138,7 +112,8 @@
         "description": "Aggressive calibration (multiplierC = 10.0)",
         "runsToIgnore": 0,
         "runsToSave": 300,
-        "multiplierC": 0.25,
+        "multiplierC": 0.0,
+        "multiplierL": 0.25,
         "parameters": [
           "R_Ap_Cp",
           "R_Cs_Vs",
@@ -166,6 +141,7 @@
         "runsToSave": 10,
         "multiplier": 0.0,
         "multiplierC": 0.0,
+        "multiplierL": 0.0,
         "parameters": [
           "C_Vs",
           "R_Ap_Cp",

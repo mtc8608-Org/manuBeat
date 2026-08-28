@@ -28,12 +28,11 @@ import library.model.modelClass as modelClass
 # gain. Configurable per scenario via calibration.maxCubicFactor (default 1.0), or per
 # notebook via runConfig["calibration"] (see buildSimulationParams).
 #
-# The calibration controller law is selectable via calibration.controllerLaw:
-#   * "cubic" (default): adjustment = error^3 * cubicFactor (linearFactor held at 0.0) —
-#     the existing behaviour.
-#   * "linear": adjustment = error * linearFactor (cubicFactor held at 0.0). The linear
-#     gain is seeded per-parameter in the model JSON's linearFactor and clamped to
-#     +/-maxLinearFactor (default 1.0). Used by the cubic-vs-linear comparison notebook.
+# The calibration controller law is always hybrid: adjustment = error^3 * cubicFactor +
+# error * linearFactor. A stage scales the model-seeded factors with multiplierC and
+# multiplierL, each defaulting to 0.0 when the stage omits it, so a stage is cubic
+# (multiplierL 0) / linear (multiplierC 0) / hybrid (both) purely by which multiplier it
+# sets. The linear gain is clamped to +/-maxLinearFactor (default 1.0).
 _DEFAULT_MAX_CUBIC_FACTOR = 1.0
 _DEFAULT_MAX_LINEAR_FACTOR = 1.0
 
@@ -84,7 +83,7 @@ def buildSimulationParams(cfg, scenario):
         progressCfg.update({"observations": convObs, "targetArr": tArr, "offsetArr": oArr})
     # Calibration config: the scenario's calibration section is canonical; an optional
     # runConfig["calibration"] overrides per-key (quick notebook experiments, e.g.
-    # maxCubicFactor or adaptive.maxLoops). Dict values merge one level deep so a single
+    # maxCubicFactor or a stage's multipliers). Dict values merge one level deep so a single
     # nested key can be overridden without restating the rest of that sub-dict. The merge
     # happens on a copy — the caller's scenario dict is never mutated.
     calOverride = cfg.get("calibration") or {}
@@ -158,33 +157,22 @@ def controllerUpdater(stage, calibrationStruct, otherStruct, states):
 
 def calibratorUpdater(stage, i, calibrationStruct, modelStruct,
                       maxCubicFactor=_DEFAULT_MAX_CUBIC_FACTOR,
-                      maxLinearFactor=_DEFAULT_MAX_LINEAR_FACTOR,
-                      controllerLaw="cubic"):
+                      maxLinearFactor=_DEFAULT_MAX_LINEAR_FACTOR):
     # Twin per-stage gains: multiplierC scales the model's cubicFactor seed, multiplierL the
     # linearFactor seed, each clamped independently. cube() sums both terms, so a stage is
     # cubic (mL=0) / linear (mC=0) / hybrid (both) purely by which multiplier is nonzero, all
     # from the scenario JSON. The model is the source of truth (it seeds both factors).
     multiplierC = stage.get('multiplierC', 0.0)
-    multiplierL = stage.get('multiplierL', None)   # None -> legacy default via controllerLaw
+    multiplierL = stage.get('multiplierL', 0.0)
     for parameter, value in calibrationStruct.items():
         if parameter in stage['parameters']:
             seed = modelStruct['calibration'][parameter]['params']
             k = seed['k']
 
-            # An explicit per-stage multiplierL selects the twin-multiplier path. Otherwise a
-            # bare multiplierC feeds the cubic term, or the linear term when the scenario
-            # declares controllerLaw="linear" -- keeping existing single-law scenarios intact.
-            if multiplierL is not None:
-                mC, mL = multiplierC, multiplierL
-            elif controllerLaw == "linear":
-                mC, mL = 0.0, multiplierC
-            else:
-                mC, mL = multiplierC, 0.0
-
             value['params']['cubicFactor'] = utils.clamp(
-                mC * seed['cubicFactor'], -maxCubicFactor, maxCubicFactor)
+                multiplierC * seed['cubicFactor'], -maxCubicFactor, maxCubicFactor)
             value['params']['linearFactor'] = utils.clamp(
-                mL * seed.get('linearFactor', 0.0), -maxLinearFactor, maxLinearFactor)
+                multiplierL * seed.get('linearFactor', 0.0), -maxLinearFactor, maxLinearFactor)
             value['params']['k'] = k
 
             if parameter in stage['targets']:
@@ -200,81 +188,6 @@ def calibratorUpdater(stage, i, calibrationStruct, modelStruct,
 
 # endregion
 ####################################################################################################
-
-####################################################################################################
-# region calibration strategy selector
-####################################################################################################
-# Two calibration weight schedules, selectable per scenario via calibration.strategy:
-#   * "staged"   (default): the hand-authored calibration.stages[] list (existing behaviour).
-#   * "adaptive": a geometric doubling ramp ported from My-ICU-Twin's updateControllerWeights.
-#                 Each loop doubles the base cubic gain (loop k -> multiplierC = initialMultiplier
-#                 * 2^(k-1)), which is exactly what calibratorUpdater applies + clamps. So the
-#                 strategy is just a generated stage list; the runCalibration / batch loops are
-#                 unchanged. Upstream's error-gated early stop is dropped (it can't vmap across the
-#                 batched population's shared loop count) — instead we run the full maxLoops to
-#                 completion. Converged params sit still under further doubling (error^3 ~ 0), and
-#                 maxCubicFactor bounds the gain, so the extra loops are harmless.
-####################################################################################################
-
-
-def buildAdaptiveStages(calibrationConf):
-    """Generate the adaptive doubling stage list from calibrationConf['adaptive'].
-
-    Layout: a controllers-off warm-up (the upstream "run uncalibrated first"), maxLoops doubling
-    stages, then a controllers-off hold-and-measure stage at the converged parameters."""
-    adaptive = calibrationConf["adaptive"]
-    parameters = adaptive["parameters"]
-    initialMultiplier = adaptive.get("initialMultiplier", 1.0)
-    maxLoops = adaptive["maxLoops"]
-    ignorePerLoop = adaptive.get("runsToIgnorePerLoop", 1)
-    savePerLoop = adaptive.get("runsToSavePerLoop", 0)
-
-    # Each loop stage integrates (runsToIgnore + runsToSave) runs; with both 0 the doubled gain
-    # is baked into the model but the model is never stepped, so parameters never move and the
-    # whole ramp is a silent no-op. Require >=1 integrated run per loop.
-    if maxLoops > 0 and (ignorePerLoop + savePerLoop) == 0:
-        raise ValueError(
-            "calibration.adaptive needs runsToIgnorePerLoop + runsToSavePerLoop >= 1, otherwise "
-            "each doubling loop integrates zero runs and no calibration happens. Set "
-            "runsToIgnorePerLoop to at least 1.")
-
-    def _stage(description, multiplierC, params, runsToIgnore, runsToSave):
-        return {
-            "description": description,
-            "runsToIgnore": runsToIgnore,
-            "runsToSave": runsToSave,
-            "multiplier": 0.0,
-            "multiplierC": multiplierC,
-            "parameters": params,
-            "targets": {},
-            "states": {},
-        }
-
-    stages = [_stage(
-        "Settle uncalibrated (controllers off)", 0.0, [],
-        adaptive.get("warmupRunsToIgnore", 5), 0)]
-
-    for k in range(1, maxLoops + 1):
-        stages.append(_stage(
-            f"Adaptive loop {k} (multiplierC = {initialMultiplier * 2 ** (k - 1)})",
-            initialMultiplier * 2 ** (k - 1), parameters, ignorePerLoop, savePerLoop))
-
-    stages.append(_stage(
-        "Hold and measure (controllers off, steady-state capture)", 0.0, parameters,
-        0, adaptive.get("holdRunsToSave", 20)))
-    return stages
-
-
-def resolveStages(calibrationConf):
-    """Return the calibration stage list for the configured strategy. Defaults to the existing
-    hand-authored 'staged' schedule so behaviour is unchanged when strategy is absent."""
-    if calibrationConf.get("strategy") == "adaptive":
-        return buildAdaptiveStages(calibrationConf)
-    return calibrationConf["stages"]
-
-# endregion
-####################################################################################################
-
 
 ####################################################################################################
 # region runners
@@ -353,18 +266,16 @@ def runCalibration(simulationParams, stateOverrides=None):
         states.update(stateOverrides)
 
     calibrationConf = simulationParams["simulationConf"]["calibration"]
-    stack = resolveStages(calibrationConf)
+    stack = calibrationConf["stages"]
     maxCubicFactor = calibrationConf.get("maxCubicFactor", _DEFAULT_MAX_CUBIC_FACTOR)
     maxLinearFactor = calibrationConf.get("maxLinearFactor", _DEFAULT_MAX_LINEAR_FACTOR)
-    controllerLaw = calibrationConf.get("controllerLaw", "cubic")
     modelStructureOriginal = copy.deepcopy(modelStructure)
     calibrationStruct = modelStructure["calibration"]
 
     runsRes, modelObjects, structures = {}, None, None
     for i, stage in enumerate(stack):
         calibratorUpdater(stage, i, calibrationStruct, modelStructureOriginal,
-                          maxCubicFactor=maxCubicFactor, maxLinearFactor=maxLinearFactor,
-                          controllerLaw=controllerLaw)
+                          maxCubicFactor=maxCubicFactor, maxLinearFactor=maxLinearFactor)
         for state in stage["states"]:
             states[state] = stage["states"][state]
 

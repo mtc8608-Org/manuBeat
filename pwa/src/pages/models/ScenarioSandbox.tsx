@@ -18,7 +18,6 @@ import {
   IonSelectOption,
   IonSpinner,
   IonText,
-  IonTextarea,
   IonToggle,
 } from '@ionic/react';
 import ApiService from '../../services/Api';
@@ -29,7 +28,7 @@ import ModalShell from '../../components/shell/ModalShell';
 import EmptyState from '../../components/shell/EmptyState';
 import JsonViewer from '../../components/shell/JsonViewer';
 import FormRenderer from '../../components/forms/FormRenderer';
-import { ComponentResults, ScenarioConfig } from '../../interfaces/types';
+import { ComponentResults, ModelConfig, ScenarioConfig } from '../../interfaces/types';
 import { AREA_NAV, FORM_ID, PANEL_CONFIG } from '../../constants';
 
 
@@ -68,16 +67,33 @@ const BLANK_SCENARIO: Record<string, any> = {
     },
   },
   baseline: { runs: { ignore: 1, save: 20 } },
-  calibration: { strategy: 'staged', stages: [] },
+  calibration: { stages: [] },
 };
 
-const BLANK_STAGE = {
-  description: '',
-  runsToIgnore: 0,
-  runsToSave: 10,
-  multiplier: 0.0,
-  multiplierC: 0.0,
-  parameters: [] as string[],
+// The two stage shapes are different objects: a calibration stage carries the twin
+// gains and the controller list calibratorUpdater walks, a control stage carries the
+// per-controller sensitivity overrides controllerUpdater pushes into the model. The
+// runner indexes `parameters` / `targets` / `states` and `controlSensitivities` /
+// `states` DIRECTLY, so a stage missing one of its section's keys KeyErrors mid-run.
+const BLANK_STAGE: Record<StageSection, Record<string, any>> = {
+  calibration: {
+    description: '',
+    runsToIgnore: 0,
+    runsToSave: 10,
+    multiplier: 0.0,
+    multiplierC: 0.0,
+    multiplierL: 0.0,
+    parameters: [] as string[],
+    targets: {} as Record<string, number>,
+    states: {} as Record<string, number>,
+  },
+  control: {
+    description: '',
+    runsToIgnore: 0,
+    runsToSave: 10,
+    controlSensitivities: {} as Record<string, Record<string, number>>,
+    states: {} as Record<string, number>,
+  },
 };
 
 
@@ -151,9 +167,17 @@ const ScenarioSandbox: React.FC = () => {
   const [selectedStage, setSelectedStage]   = useState<number | null>(null);
   const [stageModalOpen, setStageModalOpen] = useState(false);
   const [stageModalMode, setStageModalMode] = useState<'add' | 'edit'>('add');
-  const [stageDraft, setStageDraft]         = useState<Record<string, any>>(BLANK_STAGE);
-  const [stageParamsText, setStageParamsText] = useState('');
+  const [stageDraft, setStageDraft]         = useState<Record<string, any>>(BLANK_STAGE.calibration);
   const [stageError, setStageError]         = useState<string | null>(null);
+
+  // The stage modal's name dropdowns are sourced from a model config: the controller,
+  // calibration-parameter and state names a stage may reference all live in the MODEL,
+  // not the scenario. The choice is modal-local UI state — never written to the scenario.
+  const [stageModels, setStageModels]   = useState<ModelConfig[]>([]);
+  const [stageModelId, setStageModelId] = useState<string | null>(null);
+  const [sensAdd, setSensAdd]           = useState({ controller: '', key: '', value: 0 });
+  const [targetAdd, setTargetAdd]       = useState({ name: '', value: 0 });
+  const [stateAdd, setStateAdd]         = useState({ name: '', value: 0 });
 
 
 /*
@@ -174,6 +198,7 @@ const ScenarioSandbox: React.FC = () => {
 
   useEffect(() => {
     ApiService.getComponentByName(FORM_ID.ADD_SCENARIO_CONFIG).then(f => setNewForm(f ?? null));
+    ApiService.getModelConfigs().then(setStageModels);
   }, []);
 
 
@@ -276,21 +301,23 @@ const ScenarioSandbox: React.FC = () => {
   );
 
   const openStageModal = (mode: 'add' | 'edit', index?: number) => {
+    // An existing stage is edited as-is; a new one starts from its section's shape so
+    // every key the runner indexes directly is present from the first save.
     const draft = mode === 'edit' && index !== undefined
       ? JSON.parse(JSON.stringify(stages[index]))
-      : { ...BLANK_STAGE };
+      : JSON.parse(JSON.stringify(BLANK_STAGE[stageSection]));
     setStageModalMode(mode);
     setSelectedStage(index ?? null);
     setStageDraft(draft);
-    setStageParamsText((draft.parameters ?? []).join('\n'));
+    setSensAdd({ controller: '', key: '', value: 0 });
+    setTargetAdd({ name: '', value: 0 });
+    setStateAdd({ name: '', value: 0 });
     setStageError(null);
     setStageModalOpen(true);
   };
 
   const commitStage = () => {
-    const parameters = stageParamsText
-      .split('\n').map(s => s.trim()).filter(Boolean);
-    const stage: Record<string, any> = { ...stageDraft, parameters };
+    const stage: Record<string, any> = { ...stageDraft };
     if (!stage.description) { setStageError('Description is required'); return; }
     const next = [...stages];
     if (stageModalMode === 'add') next.push(stage);
@@ -371,6 +398,225 @@ const ScenarioSandbox: React.FC = () => {
             </IonRow>
           ))}
         </IonGrid>
+      </>
+    );
+  };
+
+  // ── Stage modal editors ────────────────────────────────────────────────────
+
+  // Every name a stage may reference comes out of the model config picked in the modal.
+  // controllerUpdater walks the model's `control` block and then its `other` block, so a
+  // control stage's sensitivity keys may name either — the picker offers the union.
+  const stageModel = stageModels.find(m => m.id === stageModelId) ?? null;
+  const modelBlock = (name: string): Record<string, any> =>
+    (stageModel?.config?.[name] ?? {}) as Record<string, any>;
+  const controllerBlocks = { ...modelBlock('control'), ...modelBlock('other') };
+  const controllerNames  = Object.keys(controllerBlocks).sort();
+  const calibrationNames = Object.keys(modelBlock('calibration')).sort();
+  const modelStateNames  = Object.keys(modelBlock('states')).sort();
+
+  const setDraft = (path: string, value: any) =>
+    setStageDraft(d => setPath(d, path, value));
+
+  const removeDraftEntry = (mapPath: string, key: string) =>
+    setStageDraft(d => {
+      const map = { ...(getPath(d, mapPath) ?? {}) };
+      delete map[key];
+      return setPath(d, mapPath, map);
+    });
+
+  // Dropping the last param of a controller drops the controller too, so the stage
+  // never carries an empty sensitivity object the runner would walk for nothing.
+  const removeSensitivity = (controller: string, key: string) =>
+    setStageDraft(d => {
+      const all: Record<string, Record<string, number>> =
+        JSON.parse(JSON.stringify(d.controlSensitivities ?? {}));
+      if (all[controller]) {
+        delete all[controller][key];
+        if (Object.keys(all[controller]).length === 0) delete all[controller];
+      }
+      return { ...d, controlSensitivities: all };
+    });
+
+  // A name→number map inside the stage draft (calibration targets, per-stage state
+  // overrides). Rows already in the stage stay editable whatever model is picked; only
+  // the add-row is gated on one, so a stage is never silently stripped of a name the
+  // chosen model happens not to declare.
+  const draftMapEditor = (
+    title: string,
+    mapPath: string,
+    options: string[],
+    add: { name: string; value: number },
+    setAdd: React.Dispatch<React.SetStateAction<{ name: string; value: number }>>,
+    note: string,
+  ) => {
+    const map: Record<string, number> = getPath(stageDraft, mapPath) ?? {};
+    const entries = Object.entries(map);
+    const free = options.filter(o => !(o in map));
+    return (
+      <>
+        <IonItem lines="none">
+          <IonLabel><strong>{title}</strong></IonLabel>
+          <IonNote slot="end">{entries.length} entries</IonNote>
+        </IonItem>
+        <IonGrid>
+          {entries.map(([key, value]) => (
+            <IonRow key={key} className="ion-align-items-center">
+              <IonCol size="6">
+                <IonItem lines="none"><IonLabel>{key}</IonLabel></IonItem>
+              </IonCol>
+              <IonCol size="4">
+                <IonItem lines="none">
+                  <IonInput
+                    type="number"
+                    value={value}
+                    onIonInput={e => setDraft(`${mapPath}.${key}`, numberOrKeep(e.detail.value, value))}
+                  />
+                </IonItem>
+              </IonCol>
+              <IonCol size="2">
+                <IonButton size="small" fill="clear" color="danger"
+                           onClick={() => removeDraftEntry(mapPath, key)}>
+                  Remove
+                </IonButton>
+              </IonCol>
+            </IonRow>
+          ))}
+          <IonRow className="ion-align-items-center">
+            <IonCol size="6">
+              <IonItem lines="none">
+                <IonSelect
+                  placeholder={stageModel ? 'name' : 'pick a model first'}
+                  disabled={!stageModel}
+                  value={add.name}
+                  onIonChange={e => setAdd(a => ({ ...a, name: e.detail.value }))}
+                >
+                  {free.map(o => <IonSelectOption key={o} value={o}>{o}</IonSelectOption>)}
+                </IonSelect>
+              </IonItem>
+            </IonCol>
+            <IonCol size="4">
+              <IonItem lines="none">
+                <IonInput
+                  type="number"
+                  value={add.value}
+                  onIonInput={e => setAdd(a => ({ ...a, value: numberOrKeep(e.detail.value, a.value) }))}
+                />
+              </IonItem>
+            </IonCol>
+            <IonCol size="2">
+              <IonButton size="small" fill="clear" disabled={!add.name}
+                         onClick={() => {
+                           setDraft(`${mapPath}.${add.name}`, add.value);
+                           setAdd({ name: '', value: 0 });
+                         }}>
+                Add
+              </IonButton>
+            </IonCol>
+          </IonRow>
+        </IonGrid>
+        <IonItem lines="none"><IonNote>{note}</IonNote></IonItem>
+      </>
+    );
+  };
+
+  // controlSensitivities is two levels deep — controller name → a key of that
+  // controller's own `params` → the value pushed in for this stage. Flattened to one
+  // row per (controller, key) pair, which is how the scenario JSON reads.
+  const sensitivityEditor = () => {
+    const all: Record<string, Record<string, number>> = stageDraft.controlSensitivities ?? {};
+    const rows = Object.entries(all).flatMap(([controller, params]) =>
+      Object.entries(params ?? {}).map(([key, value]) => ({ controller, key, value })));
+    const addKeys = Object.keys(controllerBlocks[sensAdd.controller]?.params ?? {})
+      .filter(k => !(k in (all[sensAdd.controller] ?? {})));
+    return (
+      <>
+        <IonItem lines="none">
+          <IonLabel><strong>Control sensitivities</strong></IonLabel>
+          <IonNote slot="end">{rows.length} entries</IonNote>
+        </IonItem>
+        <IonGrid>
+          {rows.map(({ controller, key, value }) => (
+            <IonRow key={`${controller}.${key}`} className="ion-align-items-center">
+              <IonCol size="5">
+                <IonItem lines="none"><IonLabel>{controller}</IonLabel></IonItem>
+              </IonCol>
+              <IonCol size="3">
+                <IonItem lines="none"><IonLabel>{key}</IonLabel></IonItem>
+              </IonCol>
+              <IonCol size="2">
+                <IonItem lines="none">
+                  <IonInput
+                    type="number"
+                    value={value}
+                    onIonInput={e => setDraft(
+                      `controlSensitivities.${controller}.${key}`,
+                      numberOrKeep(e.detail.value, value))}
+                  />
+                </IonItem>
+              </IonCol>
+              <IonCol size="2">
+                <IonButton size="small" fill="clear" color="danger"
+                           onClick={() => removeSensitivity(controller, key)}>
+                  Remove
+                </IonButton>
+              </IonCol>
+            </IonRow>
+          ))}
+          <IonRow className="ion-align-items-center">
+            <IonCol size="5">
+              <IonItem lines="none">
+                <IonSelect
+                  placeholder={stageModel ? 'controller' : 'pick a model first'}
+                  disabled={!stageModel}
+                  value={sensAdd.controller}
+                  onIonChange={e => setSensAdd(a => ({ ...a, controller: e.detail.value, key: '' }))}
+                >
+                  {controllerNames.map(o => <IonSelectOption key={o} value={o}>{o}</IonSelectOption>)}
+                </IonSelect>
+              </IonItem>
+            </IonCol>
+            <IonCol size="3">
+              <IonItem lines="none">
+                <IonSelect
+                  placeholder="param"
+                  disabled={!sensAdd.controller}
+                  value={sensAdd.key}
+                  onIonChange={e => setSensAdd(a => ({ ...a, key: e.detail.value }))}
+                >
+                  {addKeys.map(o => <IonSelectOption key={o} value={o}>{o}</IonSelectOption>)}
+                </IonSelect>
+              </IonItem>
+            </IonCol>
+            <IonCol size="2">
+              <IonItem lines="none">
+                <IonInput
+                  type="number"
+                  value={sensAdd.value}
+                  onIonInput={e => setSensAdd(a => ({ ...a, value: numberOrKeep(e.detail.value, a.value) }))}
+                />
+              </IonItem>
+            </IonCol>
+            <IonCol size="2">
+              <IonButton size="small" fill="clear"
+                         disabled={!sensAdd.controller || !sensAdd.key}
+                         onClick={() => {
+                           setDraft(`controlSensitivities.${sensAdd.controller}.${sensAdd.key}`, sensAdd.value);
+                           setSensAdd({ controller: '', key: '', value: 0 });
+                         }}>
+                Add
+              </IonButton>
+            </IonCol>
+          </IonRow>
+        </IonGrid>
+        <IonItem lines="none">
+          <IonNote>
+            Each row overrides one param of one controller for the length of this stage.
+            The controller must exist in the model's `control` or `other` block; the param
+            is one of that controller's own params (a ramp's `rate`, a regulated
+            controller's `chemoSensitivity` / `baroSensitivity`, …).
+          </IonNote>
+        </IonItem>
       </>
     );
   };
@@ -470,7 +716,10 @@ const ScenarioSandbox: React.FC = () => {
         config={PANEL_CONFIG.SCENARIO_STAGES}
         selectedId={selectedStage !== null ? String(selectedStage) : undefined}
         getLabel={s => s.description || `Stage ${s.index + 1}`}
-        getSubLabel={s => `${(s.parameters ?? []).length} parameters · ignore ${s.runsToIgnore} · save ${s.runsToSave}`}
+        getSubLabel={s => (stageSection === 'control'
+          ? `${Object.keys(s.controlSensitivities ?? {}).length} controllers`
+          : `${(s.parameters ?? []).length} parameters`)
+          + ` · ignore ${s.runsToIgnore} · save ${s.runsToSave}`}
         onSelect={s => openStageModal('edit', s.index)}
         onDelete={s => deleteStage(s.index)}
         onAdd={() => openStageModal('add')}
@@ -570,6 +819,22 @@ const ScenarioSandbox: React.FC = () => {
       >
         {stageError && <IonText color="danger" style={{ padding: '4px 16px', display: 'block' }}>{stageError}</IonText>}
         <IonItem>
+          <IonSelect
+            label="Model" labelPlacement="stacked"
+            placeholder="pick the model this scenario runs against"
+            value={stageModelId}
+            onIonChange={e => setStageModelId(e.detail.value)}
+          >
+            {stageModels.map(m => <IonSelectOption key={m.id} value={m.id}>{m.name}</IonSelectOption>)}
+          </IonSelect>
+        </IonItem>
+        <IonItem lines="none">
+          <IonNote>
+            The model supplies the names below and is not stored in the scenario — a
+            scenario is paired with a model at run time, in the Simulator.
+          </IonNote>
+        </IonItem>
+        <IonItem>
           <IonInput
             label="Description" labelPlacement="stacked"
             placeholder="What this stage does"
@@ -591,35 +856,59 @@ const ScenarioSandbox: React.FC = () => {
             onIonInput={e => setStageDraft(d => ({ ...d, runsToSave: numberOrKeep(e.detail.value, d.runsToSave) }))}
           />
         </IonItem>
-        <IonItem>
-          <IonInput
-            label="Linear gain (multiplier)" labelPlacement="stacked" type="number"
-            value={stageDraft.multiplier}
-            onIonInput={e => setStageDraft(d => ({ ...d, multiplier: numberOrKeep(e.detail.value, d.multiplier) }))}
-          />
-        </IonItem>
-        <IonItem>
-          <IonInput
-            label="Cubic gain (multiplierC)" labelPlacement="stacked" type="number"
-            value={stageDraft.multiplierC}
-            onIonInput={e => setStageDraft(d => ({ ...d, multiplierC: numberOrKeep(e.detail.value, d.multiplierC) }))}
-          />
-        </IonItem>
-        <IonItem>
-          <IonTextarea
-            label="Parameters (one per line)" labelPlacement="stacked"
-            autoGrow rows={8}
-            placeholder={'C_Vs\nR_As_Cs\nE_Hl'}
-            value={stageParamsText}
-            onIonInput={e => setStageParamsText(e.detail.value ?? '')}
-          />
-        </IonItem>
-        <IonItem lines="none">
-          <IonNote>
-            Parameter names are the model's calibration controllers — they must exist in
-            the model config's `calibration` block for this stage to drive them.
-          </IonNote>
-        </IonItem>
+        {stageSection === 'calibration' ? (
+          <>
+            <IonItem>
+              <IonInput
+                label="Cubic gain (multiplierC)" labelPlacement="stacked" type="number"
+                value={stageDraft.multiplierC}
+                onIonInput={e => setStageDraft(d => ({ ...d, multiplierC: numberOrKeep(e.detail.value, d.multiplierC) }))}
+              />
+            </IonItem>
+            <IonItem>
+              <IonInput
+                label="Linear gain (multiplierL)" labelPlacement="stacked" type="number"
+                value={stageDraft.multiplierL}
+                onIonInput={e => setStageDraft(d => ({ ...d, multiplierL: numberOrKeep(e.detail.value, d.multiplierL) }))}
+              />
+            </IonItem>
+            <IonItem lines="none">
+              <IonNote>
+                The two gains scale the model's own cubicFactor and linearFactor seeds and
+                are summed, so a stage is cubic (multiplierL 0), linear (multiplierC 0) or
+                hybrid purely by which one it sets.
+              </IonNote>
+            </IonItem>
+            <IonItem>
+              <IonSelect
+                label="Parameters" labelPlacement="stacked" multiple
+                placeholder={stageModel ? 'select calibration controllers' : 'pick a model first'}
+                value={stageDraft.parameters ?? []}
+                onIonChange={e => setStageDraft(d => ({ ...d, parameters: e.detail.value ?? [] }))}
+              >
+                {Array.from(new Set([...calibrationNames, ...(stageDraft.parameters ?? [])])).sort()
+                  .map(p => <IonSelectOption key={p} value={p}>{p}</IonSelectOption>)}
+              </IonSelect>
+            </IonItem>
+            <IonItem lines="none">
+              <IonNote>
+                The controllers this stage drives — every name is a key of the model
+                config's `calibration` block. Names already on the stage stay selectable
+                even if the picked model does not declare them.
+              </IonNote>
+            </IonItem>
+            {draftMapEditor(
+              'Target overrides', 'targets', calibrationNames, targetAdd, setTargetAdd,
+              'Overrides a controller\'s targetValue for this stage only; anything left out '
+              + 'keeps the target seeded in the model config.')}
+          </>
+        ) : (
+          sensitivityEditor()
+        )}
+        {draftMapEditor(
+          'State overrides', 'states', modelStateNames, stateAdd, setStateAdd,
+          'Written into the state vector as this stage starts — the seam for stepping a '
+          + 'state (an exercise level, a drug effect) between stages.')}
         <div style={{ padding: '8px 16px' }}>
           <IonButton expand="block" onClick={commitStage}>
             {stageModalMode === 'add' ? 'Add stage' : 'Save stage'}

@@ -55,7 +55,6 @@
     }
   },
   "calibration": {
-    "strategy": "staged",
     "stages": [
       {
         "description": "Initial run to allow the system to settle",

@@ -35,7 +35,7 @@ import jax.numpy as jnp
 import library.model.modelClassSI as mc
 import library.run.stateSetup as stateSetup
 import library.run.progress as progressLib
-from library.run.runner import calibratorUpdater, resolveStages   # per-stage gain updater + strategy selector (reused)
+from library.run.runner import calibratorUpdater   # per-stage gain updater (reused)
 
 
 def _floatDtype():
@@ -57,10 +57,9 @@ def _prepareStages(sp):
         sp, modelStructure, "calibration", twinTargets=twinTargets)
 
     calibrationConf = sp["simulationConf"]["calibration"]
-    stack = resolveStages(calibrationConf)
+    stack = calibrationConf["stages"]
     maxCubicFactor = calibrationConf.get("maxCubicFactor", 1.0)
     maxLinearFactor = calibrationConf.get("maxLinearFactor", 1.0)
-    controllerLaw = calibrationConf.get("controllerLaw", "cubic")
     modelStructureOriginal = copy.deepcopy(modelStructure)
     calibrationStruct = modelStructure["calibration"]
 
@@ -75,8 +74,7 @@ def _prepareStages(sp):
         # mutates calibrationStruct in place — reads from the frozen Original, so building the
         # stages in order reproduces the inline runCalibration loop's per-stage cpModels.
         calibratorUpdater(stage, i, calibrationStruct, modelStructureOriginal,
-                          maxCubicFactor=maxCubicFactor, maxLinearFactor=maxLinearFactor,
-                          controllerLaw=controllerLaw)
+                          maxCubicFactor=maxCubicFactor, maxLinearFactor=maxLinearFactor)
         eqDict, namesDict, mdd = mc.prepareModel(sp, modelStructure)
         cpModel = mc.CardioPulmonaryModelArray(eqDict, namesDict, modelStructure)
         assert namesDict["stateNames"] == canonNames, (
