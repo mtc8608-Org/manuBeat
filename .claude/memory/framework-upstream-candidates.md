@@ -18,7 +18,7 @@ here in manuSpine (never cherry-picked), and moved to **Landed**. Forks then run
   conflict map. Keep the per-item deviations and merge notes accurate — they are
   read by the next fork session before it merges.
 
-## Fork status (as of 2026-08-26)
+## Fork status (as of 2026-08-27)
 
 - **manuHunter** (`master`) — **fully merged and verbatim-clean, through
   `4416c02` on 2026-08-26** (merge commits `2e23707`, `f0f29f0`, then `876d546`):
@@ -61,22 +61,59 @@ here in manuSpine (never cherry-picked), and moved to **Landed**. Forks then run
   `UserSecretType` exported twice — the fork's list plus upstream's appended. Grep
   merged export blocks for duplicate keys; `node --check` will not catch it.
 
-- **manuBeat** (`master`) — has NOT merged; last merged upstream **pre-port**
-  (at 67c3a10), so its next pull brings the entire batch at once — and the
-  security-critical GraphQL gate fix: its `schema/index.js` carries the
-  first-selection-only bypass until it merges. Heaviest follow-up is auth: the
-  tier-based lockdown defaults every GraphQL op to admin-only and adds REST
-  guards, so manuBeat's domain surface (bedside telemetry ingest, device-token
-  routes, WebSocket monitor, medical content) must be explicitly placed in tiers
-  during the merge or it breaks silently. Review device-token auth paths against
-  the new REST guards; `SECRETS_MASTER_KEY` must be added to its env. The
-  2026-07-04 survey reframe hits it hardest: its `bedside` domain models a
-  patient as a survey answer on `f000` — see that item's merge note below. It
-  additionally receives the whole 2026-08-26 security batch below, of which the
-  **deactivation check** and **device-token routes** need real thought: the JWT
-  middleware now requires a live `users.is_active` row, so any device or agent
-  authenticating with something that is not a real user row will start getting
-  `req.user = null`.
+- **manuBeat** (`master`) — **merged the entire backlog through `9d05b7a` on
+  2026-08-27**, in one merge from `67c3a10` (107 commits, 24 conflicted files).
+  Verified after: `tsc --noEmit` clean, all backend files parse, no conflict
+  markers, identity sweep clean. Caveat recorded fork-side: that `tsc` ran
+  against the container's stale `echarts@5` — the echarts 6 bump is only proven
+  on its next image rebuild.
+
+  **Deviations now in force:**
+  - **The survey stats layer lives on, as a fork domain.** manuBeat kept its
+    Stats tab, so the code manuSpine deleted on 2026-07-04 was recreated under
+    `nodejs/schema/resolvers/surveys/`, `nodejs/routes/surveys/` and
+    `python/api/domains/surveys/` — deliberately NOT patched back into
+    `framework/survey.js` or `routes/framework/compute.js`, so no framework file
+    carries a local edit. `surveyStats` sits in its `admin` tier. If manuSpine
+    ever re-adds a stats layer, expect a name collision on the `surveys` domain.
+  - **Its python service is not credential-free.** `docker-compose.yml` and
+    `docker-compose.prod.yml` give the python container an explicit
+    `environment:` block with the five `MINIO_*` vars (never `env_file`), because
+    `domains/medical/cardio_routes.py` reads and writes patient HDF5 files in
+    MinIO directly. Narrower than the old `env_file: .env`, still a deviation
+    from `python-compute.md`; the fix is moving that storage access into the Node
+    caller.
+  - **`requirements.lock` extended, not regenerated.** Upstream's 30 pins are
+    untouched; 13 lines were appended for pandas/numpy/jax/jaxlib/scipy/h5py/
+    equinox and their transitives. None of the new packages constrain
+    fastapi/starlette/uvicorn/pydantic, so the shared pins stayed put.
+  - **`.gitignore` keeps its `*.pdf / *.h5 / *.hdf5 / *.he5` block**, which
+    upstream removed — patient HDF5 data must never be committed. It also does
+    NOT ignore `pre-deployment-todo.md` (private repo; its copy commits).
+  - **`express.json` is mounted twice**: 16 MB scoped to `/api/bedside/ingest`
+    before the global 2 MB parser, because a full manuEdge batch
+    (`batch_records` 200 × `max_samples` 1000 floats) is ~2.4 MB and a 413 there
+    wedges the Pi in a retry loop.
+  - Nav tiers mirror its `permissions.js`, as the rule requires: `PHYSIOLOGY`
+    (medical model/plot/proc ops) is `registered` behind `PrivateRoute`,
+    `DATA_COLLECTION` is `admin` behind `AdminRoute`.
+  - Role-inverting wording re-worded fork-side in four shared files:
+    `agents/ui-composer.md`, `skills/new-api`, `skills/new-role`,
+    `skills/predeploy-audit`. That is its whole `.claude/` divergence.
+
+  **Resolved cleanly, no longer pending:** the f000 collision — its `bedside`
+  domain stopped modelling a patient as a survey answer before this merge
+  (patients are a first-class table), so it took upstream's User Feedback reframe
+  whole and accepted the deletion of `seed-sample-surveys.sql`. The device-token
+  warning also came out benign: `routes/bedside/ingest.js` bcrypt-compares
+  against `bedside_nodes.token_hash` and never reads `req.user`, so the new
+  `is_active` middleware simply leaves it null.
+
+  **Known fork-side follow-ups** (not manuSpine's): `WS_BASE` in `constants.ts`
+  is still an absolute `ws://localhost:3000` — the vite proxy forwards only
+  `/api` and `/graphql`, so the bedside Monitor cannot work behind Caddy until
+  it goes origin-relative and `/ws/bedside` is proxied; `/ws/bedside` itself is
+  unauthenticated; and `SECRETS_MASTER_KEY` must be added to its real `.env`.
 
 ## Landed in manuSpine (all ported 2026-07-02) — merge notes per item
 
@@ -187,11 +224,13 @@ these in the same `merge upstream/master`:
   at manuHunter's `cv/compile.js` + `latex/routes.py` as the compute exemplars.
   On merge: **schema is reset-only, so `owner_id NOT NULL` lands via
   `./run reset`** — any fork with domain code writing/reading `survey_answers`
-  must adapt to the owner column and scoped resolvers. **manuBeat's `bedside`
-  domain is a head-on collision** (a patient IS a survey answer on `f000`):
-  keep its own Patient Registration seed content if it wants it (app-tuned
-  seed wins), but it must take upstream's `survey_answers` DDL + resolver
-  scoping and decide who owns bedside-created answers. Forks keep their own
+  must adapt to the owner column and scoped resolvers. (This entry long warned
+  that manuBeat's `bedside` domain was a head-on collision, a patient being a
+  survey answer on `f000`. It stopped being one before the merge: patients
+  became a first-class table, so on 2026-08-27 manuBeat took the User Feedback
+  reframe whole and dropped `seed-sample-surveys.sql`. Left here because the
+  general point stands — a fork whose domain reads `survey_answers` must adapt
+  to the owner column.) Forks keep their own
   `python/api/domains/<domain>/` and Node compute callers (only the framework
   `compute` domain and its `compute.js` route were deleted); regenerate
   `requirements.lock` if the fork inherits the pandas removal.
