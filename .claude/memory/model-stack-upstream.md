@@ -1,6 +1,6 @@
 ---
 name: model-stack-upstream
-description: python/library is a verbatim port of CardioPulmonaryModel's library/ — the three deliberate divergences, the sync recipe, and the work that stayed behind
+description: python/library is a verbatim port of CardioPulmonaryModel's library/: the three deliberate divergences, the sync recipe, and the work that stayed behind
 metadata:
   node_type: memory
   type: project
@@ -9,9 +9,9 @@ metadata:
 `python/library/` and `python/config/` came verbatim from
 `/home/cabsman/Documents/projects/CardioPulmonaryModel` (`library/`, `config/`) on
 2026-08-27. The source repo's 14 driver notebooks came across with it and were
-**removed again on 2026-08-28** — manuBeat keeps only the library; the notebooks
+**removed again on 2026-08-28**, manuBeat keeps only the library; the notebooks
 live on in CardioPulmonaryModel. That repo remains the source of truth for the model
-stack — manuBeat is a **second** consumer of it, not its owner.
+stack, manuBeat is a **second** consumer of it, not its owner.
 
 **Why verbatim matters:** every intra-package import is absolute (`import
 library.utils as utils`) and `utils.PROJECT_ROOT` is derived as the parent of the
@@ -22,10 +22,10 @@ next sync an rsync instead of a merge.
 **How to sync:** rsync `library/` and `config/` (minus `archive/`) from the source
 repo over `python/`, then re-apply the four divergences below, re-run
 `scripts/gen-physiology-seed.py`, and re-run the smoke-test skill. Do **not** bring the
-source repo's notebooks across — they were deliberately dropped (see
+source repo's notebooks across, they were deliberately dropped (see
 [[project-file-tree]]).
 
-## The four deliberate divergences — port these back upstream
+## The five deliberate divergences: port these back upstream
 
 1. **`modelClass.initialiseModel` / `modelClassSI.initialiseModel`** accept an
    optional `simulationParams['modelStructure']`: a pre-loaded model dict used in
@@ -45,12 +45,20 @@ source repo's notebooks across — they were deliberately dropped (see
    `modelParams` (`modelGen`'s `modelParams` is an unrelated internal bucket); and
    `savedd` has no reader anywhere and held stale `L_*` values that disagree with the
    connections' own `params.L`. Removing them is behaviour-neutral and lets the Model
-   Sandbox present one shape. **Re-apply after every rsync** — the disk configs are the
+   Sandbox present one shape. **Re-apply after every rsync**, the disk configs are the
    canonical source and `init-scripts/seed-physiology.sql` is generated from them.
    `pwa/src/pages/models/modelSchema.test.ts` reads these files directly, so a re-sync
    that restores the keys fails that suite immediately.
-4. Nothing else. If a fix is needed in `python/library/`, make it in
-   CardioPulmonaryModel first and re-sync — a local patch becomes a permanent
+4. **`ResultsEngine.assembleLegacy(zeroNaN=True)` / `_assembleMetadata(..., zeroNaN=True)`**
+   in `postproc/resultsEngine.py` (2026-10-06). The default keeps upstream behaviour:
+   a signal holding any NaN is replaced by zeros tagged `toAdd`, which `viz/plots.py`
+   relies on (its tick code calls `min()`/`max()`). `cardio_routes._process_run` passes
+   `zeroNaN=False` so a run that diverged part-way keeps its data and normal prefix
+   metadata; `/signals` already serves NaN as null. Found on the 610 s cpet control
+   runs, which go NaN at about 510 s here and so stored 255 of 279 processed outputs
+   as flat zeros.
+5. Nothing else. If a fix is needed in `python/library/`, make it in
+   CardioPulmonaryModel first and re-sync, a local patch becomes a permanent
    conflict, exactly as with manuSpine ([[project_framework_upstream]]).
 
 ## What the port covers, and what it does not
@@ -64,17 +72,17 @@ the code and is the spec for that layer; its "manuBeat port" section is now hist
 `library/run/runIO.py` and `library/viz/plots.py` have **no caller left in manuBeat**
 (the notebooks were their only consumers) and `matplotlib` is not in the python image, so
 they are not importable here. They stay because the tree is kept byte-identical to
-upstream — do not delete them to "clean up".
+upstream, do not delete them to "clean up".
 
 Still open, inherited from the source repo:
 
 - `schema_pop` and `schema_calib` have never been exercised on real population /
-  training data — only the synthetic suite (`python -m library.hdf5.test_hdf5`).
+  training data, only the synthetic suite (`python -m library.hdf5.test_hdf5`).
 - `schema_calib.export_model_for_web` is a `NotImplementedError` stub; the `.keras`
   blob is Python-only, so browser inference is blocked until a tf.js/ONNX export
   exists. `tensorflow` is deliberately absent from both images until then.
 - The SI-as-default migration ([[si-default-migration-plan]]) is 0% built, and the
-  utils dedup backlog it inherited is untouched. Both are upstream work — do them
+  utils dedup backlog it inherited is untouched. Both are upstream work, do them
   there.
 
 Left behind on purpose: `config/archive/` (35 pre-scenario JSONs), the 130 GB

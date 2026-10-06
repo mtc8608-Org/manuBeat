@@ -241,9 +241,15 @@ class ResultsEngine:
                     stack.append(pp)
         return needed
 
-    def assembleLegacy(self):
-        """Rebuild {name: {'data', 'metadata'}} for plots.py / notebook."""
-        return _assembleMetadata(self.signals, self.modelStructure, self.units)
+    def assembleLegacy(self, zeroNaN=True):
+        """Rebuild {name: {'data', 'metadata'}} for plots.py / notebook.
+
+        zeroNaN=True (default) replaces any NaN-bearing signal by zeros tagged
+        'toAdd', which is what plots.py expects; zeroNaN=False keeps the data and
+        its normal prefix metadata, so a run that diverged part-way stays usable up
+        to that point."""
+        return _assembleMetadata(self.signals, self.modelStructure, self.units,
+                                 zeroNaN=zeroNaN)
 
     def toPayload(self, requested=None):
         """JSON-friendly payload for a web server."""
@@ -298,14 +304,15 @@ def _metaFor(name, prefixes):
     return prefixes['unknown']
 
 
-def _assembleMetadata(signals, modelStructure, units=None):
+def _assembleMetadata(signals, modelStructure, units=None, zeroNaN=True):
     prefixes = modelStructure['data']['prefixes']
     nan_meta = prefixes['toAdd']
     units = units or {}
     out = {}
     for name, arr in signals.items():
         arr = np.asarray(arr)
-        if arr.size and np.issubdtype(arr.dtype, np.floating) and np.isnan(arr).any():
+        if (zeroNaN and arr.size and np.issubdtype(arr.dtype, np.floating)
+                and np.isnan(arr).any()):
             out[name] = {'data': np.zeros(arr.shape),
                          'metadata': copy.deepcopy(nan_meta)}
             continue
