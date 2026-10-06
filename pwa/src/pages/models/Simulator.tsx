@@ -10,7 +10,6 @@ import {
   IonItem,
   IonLabel,
   IonNote,
-  IonSearchbar,
   IonSelect,
   IonSelectOption,
   IonSpinner,
@@ -27,7 +26,7 @@ import EmptyState from '../../components/shell/EmptyState';
 import ModalShell from '../../components/shell/ModalShell';
 import { useTheme } from '../../contexts/ThemeContext';
 import {
-  ModelConfig, ScenarioConfig, RunMode, ModelRun, CardioResult, CardioProgress,
+  ModelConfig, ScenarioConfig, RunMode, ModelRun, CardioSummary, CardioSignals, CardioProgress,
   CardioLogLine, CardioPlotConfig, CardioProcConfig,
 } from '../../interfaces/types';
 import { AREA_NAV, ECHARTS_PALETTE, PANEL_CONFIG } from '../../constants';
@@ -72,7 +71,7 @@ const Simulator: React.FC = () => {
   const { theme } = useTheme();
 
   const [runVersion, setRunVersion] = useState(0);
-  const [rightTab, setRightTab]     = useState(0); // 0=results 1=plots
+  const [rightTab, setRightTab]     = useState(0); // 0=results 1=plots 2=process
 
   const [selectedRun, setSelectedRun] = useState<ModelRun | null>(null);
 
@@ -99,15 +98,22 @@ const Simulator: React.FC = () => {
   const [logsOpen, setLogsOpen]         = useState(false);
   const logEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Results
-  const [result, setResult]                 = useState<CardioResult | null>(null);
-  const [resultError, setResultError]       = useState<string | null>(null);
-  const [selectedStates, setSelectedStates] = useState<string[]>([]);
-  const [stateSearch, setStateSearch]       = useState('');
+  // Results — a summary of the selected run; selecting a run loads no signal data
+  const [summary, setSummary]         = useState<CardioSummary | null>(null);
+  const [resultError, setResultError] = useState<string | null>(null);
 
-  // Plots
+  // Plots — signals are fetched only on Load, once a plot config AND a data layer are
+  // chosen: only the names that plot references, over the chosen window and rate
   const [plotConfigs, setPlotConfigs]               = useState<CardioPlotConfig[]>([]);
   const [selectedPlotConfig, setSelectedPlotConfig] = useState<CardioPlotConfig | null>(null);
+  const [selectedLayer, setSelectedLayer]           = useState<string | null>(null); // 'raw' | processed group
+  const [plotData, setPlotData]                     = useState<CardioSignals | null>(null);
+  const [loadingPlotData, setLoadingPlotData]       = useState(false);
+  const [plotError, setPlotError]                   = useState<string | null>(null);
+  const [plotFrom, setPlotFrom]                     = useState('');   // s from start; '' = start of file
+  const [plotTo, setPlotTo]                         = useState('');   // s from start; '' = end of file
+  const [plotRate, setPlotRate]                     = useState('10'); // Hz
+  const plotRequestRef = useRef(0);
 
   // Post-processing
   const [procConfigs, setProcConfigs]                 = useState<CardioProcConfig[]>([]);
@@ -116,9 +122,6 @@ const Simulator: React.FC = () => {
   const [procRunName, setProcRunName]                 = useState('');
   const [processingState, setProcessingState]         = useState<'idle' | 'running' | 'done' | 'error'>('idle');
   const [processingError, setProcessingError]         = useState<string | null>(null);
-  const [selectedProcForPlot, setSelectedProcForPlot] = useState<string | null>(null);
-  const [procOutputs, setProcOutputs]                 = useState<Record<string, number[]>>({});
-  const [loadingProcOutputs, setLoadingProcOutputs]   = useState(false);
 
 
 /*
@@ -144,6 +147,16 @@ const Simulator: React.FC = () => {
     if (logsOpen) logEndRef.current?.scrollIntoView({ block: 'nearest' });
   }, [logs, logsOpen]);
 
+  // Loaded plot data belongs to one run + plot + layer: drop it (and orphan any
+  // request still in flight) when one of them changes. Nothing is refetched here —
+  // that only happens on Load.
+  useEffect(() => {
+    plotRequestRef.current += 1;
+    setPlotData(null);
+    setPlotError(null);
+    setLoadingPlotData(false);
+  }, [selectedRun, selectedPlotConfig, selectedLayer]);
+
   const fetchRuns = useCallback(() => ApiService.getModelRuns(), []);
 
 
@@ -158,7 +171,7 @@ const Simulator: React.FC = () => {
 
   const handleDeleteRun = async (run: ModelRun) => {
     await ApiService.deleteModelRun(run.id);
-    if (selectedRun?.id === run.id) { setSelectedRun(null); setResult(null); }
+    if (selectedRun?.id === run.id) { setSelectedRun(null); setSummary(null); }
     setRunVersion(v => v + 1);
   };
 
@@ -188,14 +201,15 @@ const Simulator: React.FC = () => {
     }, 2000);
   };
 
-  const loadResult = async (run: ModelRun) => {
+  const loadSummary = async (run: ModelRun) => {
+    setSummary(null);
     setResultError(null);
     try {
-      const res = await ApiService.getCardioResultByRunId(run.id);
-      setResult(res);
-      setSelectedStates(res.stateNames.slice(0, 4));
+      const res = await ApiService.getCardioSummary(run.id);
+      setSummary(res);
+      setProcGroupNames(res.layers);
     } catch (err: any) {
-      setResultError(err.message ?? 'Failed to load result');
+      setResultError(err.message ?? 'Failed to load run summary');
     }
   };
 
@@ -207,7 +221,7 @@ const Simulator: React.FC = () => {
     name: string,
   ) => {
     setRunning(true);
-    setResult(null);
+    setSummary(null);
     setProgress([]);
     setLogs([]);
     setConsoleError(null);
@@ -263,17 +277,9 @@ const Simulator: React.FC = () => {
     setProcGroupNames([]);
     setSelectedProcForRun(null);
     setProcRunName('');
-    setSelectedProcForPlot(null);
-    setProcOutputs({});
+    setSelectedLayer(null);
     setProcessingState('idle');
     setProcessingError(null);
-  };
-
-  const loadProcGroups = async (run: ModelRun) => {
-    try {
-      const names = await ApiService.getProcessedGroups(run.id);
-      setProcGroupNames(names);
-    } catch { /* non-fatal */ }
   };
 
   const handleSelectRun = async (run: ModelRun) => {
@@ -286,10 +292,38 @@ const Simulator: React.FC = () => {
     setLogsOpen(run.status === 'error');
     if (run.status === 'done') {
       setRightTab(0);
-      await Promise.all([loadResult(run), loadProcGroups(run)]);
+      await loadSummary(run);
     } else {
-      setResult(null);
+      setSummary(null);
       setResultError(null);
+    }
+  };
+
+  // Fetch the time vector plus the signals the chosen plot config references, from
+  // the chosen layer, over the chosen window and averaged down to the chosen rate.
+  const handleLoadPlot = async () => {
+    if (selectedRun?.status !== 'done' || !selectedPlotConfig || !selectedLayer) return;
+    const names = new Set<string>();
+    for (const ax of Object.values(selectedPlotConfig.config.axes ?? {}) as any[]) {
+      for (const name of [...(ax.params?.left ?? []), ...(ax.params?.right ?? [])]) names.add(name);
+    }
+    const num = (raw: string) => (raw !== '' && !Number.isNaN(Number(raw)) ? Number(raw) : undefined);
+    const request = ++plotRequestRef.current;
+    setPlotData(null);
+    setPlotError(null);
+    setLoadingPlotData(true);
+    try {
+      const data = await ApiService.getCardioSignals(
+        selectedRun.id, selectedLayer, [...names],
+        { t_from: num(plotFrom), t_to: num(plotTo), rate_hz: num(plotRate) },
+      );
+      if (request === plotRequestRef.current) setPlotData(data);
+    } catch (err: any) {
+      if (request === plotRequestRef.current) {
+        setPlotError(err.response?.data?.error ?? err.message ?? 'Failed to load plot data');
+      }
+    } finally {
+      if (request === plotRequestRef.current) setLoadingPlotData(false);
     }
   };
 
@@ -313,18 +347,6 @@ const Simulator: React.FC = () => {
         setLogsOpen(true);
       }
     }
-  };
-
-  const handleLoadProcOutputs = async (name: string) => {
-    if (!selectedRun) return;
-    setSelectedProcForPlot(name);
-    setLoadingProcOutputs(true);
-    setProcOutputs({});
-    try {
-      const outputs = await ApiService.getProcessedOutputs(selectedRun.id, name);
-      setProcOutputs(outputs);
-    } catch { /* empty outputs */ }
-    finally { setLoadingProcOutputs(false); }
   };
 
 
@@ -351,14 +373,14 @@ const Simulator: React.FC = () => {
     return pal[idx % pal.length];
   };
 
-  const buildAxisOption = (ax: any, res: CardioResult): EChartsOption => {
+  const buildAxisOption = (ax: any, res: CardioSignals): EChartsOption => {
     const left:  string[] = ax.params?.left  ?? [];
     const right: string[] = ax.params?.right ?? [];
     const tOff  = ax.options?.zeroTime ? res.t[0] : 0;
     const tAdd  = ax.options?.offset   ?? 0;
     const t     = res.t.map(v => v - tOff + tAdd);
     const hasR  = right.length > 0;
-    const allYs = { ...res.signals, ...procOutputs };
+    const allYs = res.signals;
 
     const mkSeries = (names: string[], yIdx: number, map: string): LineSeriesOption[] =>
       names.map((name, i) => ({
@@ -389,31 +411,6 @@ const Simulator: React.FC = () => {
         ...mkSeries(left,  0, ax.params?.colorsLeft  ?? 'Blues'),
         ...mkSeries(right, 1, ax.params?.colorsRight ?? 'Reds'),
       ],
-    };
-  };
-
-  const stateColor = (name: string) =>
-    ECHARTS_PALETTE[(result?.stateNames.indexOf(name) ?? 0) % ECHARTS_PALETTE.length];
-
-  const chartOption = (): EChartsOption => {
-    if (!result || !selectedStates.length) return {};
-    return {
-      backgroundColor: 'transparent',
-      tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
-      legend: { data: selectedStates, textStyle: { color: 'inherit' } },
-      dataZoom: [{ type: 'inside' }, { type: 'slider', height: 20 }],
-      // No `data` here: a value axis takes none (that is a category-axis prop),
-      // and the series already carry [t, v] pairs.
-      xAxis: { type: 'value', name: 't (s)', min: result.t[0], max: result.t[result.t.length - 1] },
-      yAxis: { type: 'value' },
-      series: selectedStates.map(name => ({
-        name,
-        type: 'line',
-        data: result.signals[name]?.map((v, idx) => [result.t[idx], v]) ?? [],
-        symbol: 'none',
-        lineStyle: { color: stateColor(name) },
-        itemStyle: { color: stateColor(name) },
-      })),
     };
   };
 
@@ -561,7 +558,7 @@ const Simulator: React.FC = () => {
               label: 'Results',
               content: (
                 <>
-                  {!result ? (
+                  {!summary ? (
                     resultError ? (
                       <IonItem lines="none"><IonText color="danger">{resultError}</IonText></IonItem>
                     ) : pollingJobId ? (
@@ -571,48 +568,29 @@ const Simulator: React.FC = () => {
                     )
                   ) : (
                     <>
-                      <IonSearchbar
-                        autocapitalize="off"
-                        value={stateSearch}
-                        onIonInput={e => setStateSearch(e.detail.value ?? '')}
-                        placeholder="Filter states…"
-                        debounce={150}
-                        style={{ '--box-shadow': 'none', padding: '0 4px' }}
-                      />
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, padding: '4px 8px 8px' }}>
-                        {result.stateNames
-                          .filter(n => !stateSearch || n.toLowerCase().includes(stateSearch.toLowerCase()))
-                          .map(name => {
-                            const active = selectedStates.includes(name);
-                            const color  = stateColor(name);
-                            return (
-                              <IonButton
-                                key={name}
-                                size="small"
-                                fill={active ? 'solid' : 'outline'}
-                                style={{ '--background': active ? color : 'transparent', '--border-color': color, '--color': active ? '#fff' : color } as React.CSSProperties}
-                                onClick={() => setSelectedStates(prev =>
-                                  active ? prev.filter(s => s !== name) : [...prev, name]
-                                )}
-                              >
-                                {name}
-                              </IonButton>
-                            );
-                          })
-                        }
-                      </div>
-                      <EChart
-                        key={selectedStates.join(',')}
-                        option={chartOption()}
-                        theme={theme === 'dark' ? 'dark' : undefined}
-                        height={400}
-                        notMerge
-                      />
-                      <IonItem lines="none">
-                        <IonNote style={{ fontSize: '0.75rem' }}>
-                          {result.t.length} time-points · {result.stateNames.length} state variables
-                          {result.metadata?.duration_s != null && ` · ${(result.metadata.duration_s as number).toFixed(2)} s compute`}
+                      <IonItem lines="inset">
+                        <IonLabel>Scenario</IonLabel>
+                        <IonNote slot="end">{summary.scenario || '—'}</IonNote>
+                      </IonItem>
+                      <IonItem lines="inset">
+                        <IonLabel>Simulated time</IonLabel>
+                        <IonNote slot="end">{summary.simulated_s.toFixed(2)} s</IonNote>
+                      </IonItem>
+                      <IonItem lines="inset">
+                        <IonLabel>Stored sampling rate</IonLabel>
+                        <IonNote slot="end">{summary.rate_hz} Hz</IonNote>
+                      </IonItem>
+                      <IonItem lines="inset">
+                        <IonLabel>Compute time</IonLabel>
+                        <IonNote slot="end">
+                          {selectedRun?.metadata?.duration_s != null
+                            ? `${(selectedRun.metadata.duration_s as number).toFixed(2)} s`
+                            : '—'}
                         </IonNote>
+                      </IonItem>
+                      <IonItem lines="none">
+                        <IonLabel>Variables</IonLabel>
+                        <IonNote slot="end">{summary.signal_count}</IonNote>
                       </IonItem>
                     </>
                   )}
@@ -644,46 +622,60 @@ const Simulator: React.FC = () => {
                     <IonSelect
                       label="Data layer"
                       labelPlacement="stacked"
-                      value={selectedProcForPlot ?? ''}
-                      onIonChange={e => {
-                        const name = e.detail.value as string;
-                        if (name) handleLoadProcOutputs(name);
-                        else { setSelectedProcForPlot(null); setProcOutputs({}); }
-                      }}
+                      value={selectedLayer ?? ''}
+                      placeholder="Select a data layer…"
+                      onIonChange={e => setSelectedLayer((e.detail.value as string) || null)}
                     >
-                      <IonSelectOption value="">Raw</IonSelectOption>
+                      <IonSelectOption value="raw">Raw</IonSelectOption>
                       {procGroupNames.map(name => (
                         <IonSelectOption key={name} value={name}>{name}</IonSelectOption>
                       ))}
                     </IonSelect>
                   </IonItem>
 
-                  {loadingProcOutputs && (
-                    <div style={{ padding: '4px 16px' }}><IonSpinner name="dots" style={{ width: 16, height: 16 }} /></div>
-                  )}
-                  {!loadingProcOutputs && Object.keys(procOutputs).length > 0 && (
-                    <div style={{ padding: '2px 12px 6px', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                      {Object.keys(procOutputs).map(k => (
-                        <span
-                          key={k}
-                          style={{
-                            fontSize: '0.7rem',
-                            padding: '1px 6px',
-                            borderRadius: 10,
-                            background: 'var(--ion-color-tertiary)',
-                            color: 'var(--ion-color-tertiary-contrast)',
-                          }}
-                        >
-                          {k}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                  <IonItem lines="none">
+                    <IonInput
+                      label="From (s)" labelPlacement="stacked" type="number"
+                      placeholder="start of file"
+                      value={plotFrom}
+                      onIonInput={e => setPlotFrom(e.detail.value ?? '')}
+                    />
+                    <IonInput
+                      label="To (s)" labelPlacement="stacked" type="number"
+                      placeholder={summary ? `end of file — ${summary.simulated_s.toFixed(0)} s` : 'end of file'}
+                      value={plotTo}
+                      onIonInput={e => setPlotTo(e.detail.value ?? '')}
+                    />
+                    <IonInput
+                      label="Sampling rate (Hz)" labelPlacement="stacked" type="number"
+                      placeholder={summary ? `stored rate — ${summary.rate_hz} Hz` : 'stored rate'}
+                      value={plotRate}
+                      onIonInput={e => setPlotRate(e.detail.value ?? '')}
+                    />
+                  </IonItem>
 
-                  {!selectedPlotConfig ? (
-                    <EmptyState message={plotConfigs.length ? 'Select a plot config above' : 'Create a plot config in Plot Sandbox first'} />
-                  ) : !result ? (
+                  <div style={{ padding: '8px 16px' }}>
+                    <IonButton
+                      expand="block"
+                      disabled={selectedRun?.status !== 'done' || !selectedPlotConfig || !selectedLayer || loadingPlotData}
+                      onClick={handleLoadPlot}
+                    >
+                      {loadingPlotData ? <IonSpinner name="dots" /> : 'Load'}
+                    </IonButton>
+                  </div>
+
+                  {selectedRun?.status !== 'done' ? (
                     <EmptyState message="Select a completed run to see plot data" />
+                  ) : !selectedPlotConfig ? (
+                    <EmptyState message={plotConfigs.length ? 'Select a plot config above' : 'Create a plot config in Plot Sandbox first'} />
+                  ) : !selectedLayer ? (
+                    <EmptyState message="Select a data layer above" />
+                  ) : plotError ? (
+                    <IonItem lines="none"><IonText color="danger">{plotError}</IonText></IonItem>
+                  ) : loadingPlotData ? (
+                    <div style={{ padding: '4px 16px' }}><IonSpinner name="dots" style={{ width: 16, height: 16 }} /></div>
+                  ) : !plotData ? (
+                    <EmptyState message="Press Load to fetch the plot data" />
                   ) : (() => {
                     const cfg  = selectedPlotConfig.config;
                     const axes = Object.entries(cfg.axes ?? {});
@@ -712,7 +704,7 @@ const Simulator: React.FC = () => {
                               }}
                             >
                               <EChart
-                                option={buildAxisOption(a, result)}
+                                option={buildAxisOption(a, plotData)}
                                 theme={theme === 'dark' ? 'dark' : undefined}
                                 height="100%"
                                 notMerge
@@ -728,7 +720,7 @@ const Simulator: React.FC = () => {
             },
             {
               label: 'Process',
-              content: !result ? (
+              content: selectedRun?.status !== 'done' ? (
                 <EmptyState message="Select a completed run first" />
               ) : (
                 <>

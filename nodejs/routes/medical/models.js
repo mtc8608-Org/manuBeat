@@ -174,33 +174,36 @@ router.get('/cardio/status/:jobId', async (req, res) => {
   }
 });
 
-// GET /api/cardio/result/:jobId
-// Fetches the result from Python (uses in-memory job registry).
-router.get('/cardio/result/:jobId', async (req, res) => {
+// GET /api/cardio/summary/:runId
+// A few scalars describing a stored run — no signal data.
+router.get('/cardio/summary/:runId', async (req, res) => {
   try {
     const pythonRes = await axios.get(
-      `${PYTHON()}/cardio/result/${req.params.jobId}`,
+      `${PYTHON()}/cardio/summary/${req.params.runId}`,
       { timeout: 30000 },
     );
     res.json(pythonRes.data);
   } catch (err) {
-    console.error('cardio/result error:', err.message);
+    console.error('cardio/summary error:', err.message);
     const status = err.response?.status ?? 500;
     res.status(status).json({ error: err.message });
   }
 });
 
-// GET /api/cardio/result-by-run/:runId
-// Fetches result directly by DB run_id — survives Python restarts.
-router.get('/cardio/result-by-run/:runId', async (req, res) => {
+// POST /api/cardio/signals/:runId  { layer, names, t_from, t_to, rate_hz }
+// The time vector plus only the named signals of one layer, over a time window
+// (seconds from the first sample) and averaged down to rate_hz.
+router.post('/cardio/signals/:runId', async (req, res) => {
   try {
-    const pythonRes = await axios.get(
-      `${PYTHON()}/cardio/result-by-run/${req.params.runId}`,
-      { timeout: 30000 },
+    const pythonRes = await axios.post(
+      `${PYTHON()}/cardio/signals/${req.params.runId}`,
+      { layer: req.body.layer, names: req.body.names,
+        t_from: req.body.t_from, t_to: req.body.t_to, rate_hz: req.body.rate_hz },
+      { timeout: 60000 },
     );
     res.json(pythonRes.data);
   } catch (err) {
-    console.error('cardio/result-by-run error:', err.message);
+    console.error('cardio/signals error:', err.message);
     const status = err.response?.status ?? 500;
     res.status(status).json({ error: err.message });
   }
@@ -323,36 +326,6 @@ router.post('/cardio/hdf5/repack/:runId', requireAdmin, async (req, res) => {
     res.json(pythonRes.data);
   } catch (err) {
     console.error('cardio/hdf5/repack error:', err.message);
-    const status = err.response?.status ?? 500;
-    res.status(status).json({ error: err.message });
-  }
-});
-
-// GET /api/cardio/processed-groups/:runId
-router.get('/cardio/processed-groups/:runId', async (req, res) => {
-  try {
-    const pythonRes = await axios.get(
-      `${PYTHON()}/cardio/processed-groups/${req.params.runId}`,
-      { timeout: 30000 },
-    );
-    res.json(pythonRes.data);
-  } catch (err) {
-    console.error('cardio/processed-groups error:', err.message);
-    const status = err.response?.status ?? 500;
-    res.status(status).json({ error: err.message });
-  }
-});
-
-// GET /api/cardio/processed/:runId/:procConfigId
-router.get('/cardio/processed/:runId/:procConfigId', async (req, res) => {
-  try {
-    const pythonRes = await axios.get(
-      `${PYTHON()}/cardio/processed/${req.params.runId}/${req.params.procConfigId}`,
-      { timeout: 60000 },
-    );
-    res.json(pythonRes.data);
-  } catch (err) {
-    console.error('cardio/processed error:', err.message);
     const status = err.response?.status ?? 500;
     res.status(status).json({ error: err.message });
   }

@@ -195,17 +195,19 @@ export interface CardioProcessResult {
   logs:           CardioLogLine[];
 }
 
-// Mirrors library/hdf5/schema_sim.read_run_result, which in turn mirrors
-// ResultsEngine.toPayload — one payload shape across library and web.
-export interface CardioResult {
-  stateNames:   string[];
-  t:            number[];
-  signals:      Record<string, number[]>;
-  finalStates:  Record<string, number>;
-  processed:    Record<string, Record<string, number[]>>;
-  units:        Record<string, string>;
-  labels:       Record<string, string>;
-  metadata:     Record<string, any>;
+// GET /cardio/summary — what the Simulator shows for a selected run. No signal data.
+export interface CardioSummary {
+  simulated_s:  number;     // span of the saved time vector, seconds
+  rate_hz:      number;     // stored samples per second
+  signal_count: number;     // datasets under raw/ (states + algebraic flows)
+  scenario:     string;     // '' for an artifact written before /config existed
+  layers:       string[];   // processed group names
+}
+
+// POST /cardio/signals — the time vector plus only the requested signals.
+export interface CardioSignals {
+  t:       number[];
+  signals: Record<string, number[]>;
 }
 
 export interface CardioPlotConfig {

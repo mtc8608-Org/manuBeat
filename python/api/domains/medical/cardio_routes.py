@@ -1,29 +1,37 @@
 """
-[MEDICAL] Cardiopulmonary model routes — the web driver for python/library.
+[MEDICAL] Cardiopulmonary model routes, the web driver for python/library.
 
 What this module computes, numbered:
 
-  1. POST /cardio/run          — expands (model JSON, scenario JSON, mode, numeric
+  1. POST /cardio/run: expands (model JSON, scenario JSON, mode, numeric
                                  overrides) into the library's simulationParams,
                                  solves the 0D lumped-parameter cardiopulmonary ODE
                                  on a worker thread, and writes the run artifact.
-  2. GET  /cardio/status/{id}  — job state, the live convergence trace a
+  2. GET  /cardio/status/{id}: job state, the live convergence trace a
                                  calibration emits while it is still running, and
                                  the run's captured console output (plus the
                                  traceback, if it failed).
-  3. GET  /cardio/result*      — the stored run as a JSON payload for the web app.
-  4. POST /cardio/process/{id} — replays a post-processing config over a stored run
+  3. GET  /cardio/summary/{id}: a few scalars describing a stored run (simulated
+                                 span, signal count, scenario, processed layers),
+                                 read without touching the signal data.
+     POST /cardio/signals/{id}: the time vector plus only the named signals of one
+                                 layer, over a requested time window and bucket-
+                                 averaged down to a requested rate, for the
+                                 Simulator's plots.
+     GET  /cardio/result-by-run/{id}: the whole stored run as one JSON payload;
+                                 no web caller, kept for scripts/verify-run-vs-reference.py.
+  4. POST /cardio/process/{id}: replays a post-processing config over a stored run
                                  through the ResultsEngine DAG and appends the
                                  outputs to the same artifact.
-  5. GET/DELETE/POST /cardio/hdf5/*  — tree, dataset, delete and repack over the
+  5. GET/DELETE/POST /cardio/hdf5/*: tree, dataset, delete and repack over the
                                  stored artifact, for the HDF Inspector page.
 
 The library is imported, never reimplemented: `runner` owns orchestration,
 `resultsEngine` owns post-processing, `schema_sim`/`engine` own persistence. Nothing
-here contains physics, an integrator loop, or a hand-rolled HDF5 write — see
+here contains physics, an integrator loop, or a hand-rolled HDF5 write, see
 .claude/rules/model-stack.md.
 
-Node/Python split: Node owns auth, owner-scoping and every Postgres read — it fetches
+Node/Python split: Node owns auth, owner-scoping and every Postgres read, it fetches
 the model, scenario and processing configs and POSTs them in the request body; this
 service holds no DB credentials and runs no queries. It does hold MinIO credentials,
 the one documented deviation from the framework rule (docker-compose.yml explains
@@ -41,6 +49,7 @@ import uuid
 from contextlib import contextmanager
 from typing import Optional
 
+import numpy as np
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 from pydantic import BaseModel, field_validator
 
@@ -73,7 +82,7 @@ _MAX_PROGRESS_RECORDS = 500
 # ── Console capture ────────────────────────────────────────────────────────────
 # The library narrates through print(): the mode banner, per-run status, solver
 # warnings. From the web that went to the container log only, where the caller who
-# started the run cannot see it — a failed run showed up in the Simulator as a red
+# started the run cannot see it, a failed run showed up in the Simulator as a red
 # badge and nothing else. These shims tee the calling thread's stdout/stderr into
 # whatever sink is registered for that thread, so /status can hand the web app the
 # same narration a terminal caller gets, while still writing through to the real
@@ -82,7 +91,7 @@ _MAX_PROGRESS_RECORDS = 500
 # Routing is per THREAD IDENT, not global: FastAPI runs each sync endpoint and each
 # background task on its own worker thread, so two concurrent runs keep their output
 # apart instead of interleaving into whichever one registered last. A thread with no
-# sink — uvicorn's own, anything at import time — just passes through.
+# sink, uvicorn's own, anything at import time, just passes through.
 
 _MAX_LOG_LINES = 500
 
@@ -126,7 +135,7 @@ class _TeeStream:
         """Flush a finished thread's trailing partial line and forget the thread.
 
         The sink is passed in rather than looked up, so the caller can deregister the
-        thread FIRST — a thread must never be left capturing into a stale sink.
+        thread FIRST, a thread must never be left capturing into a stale sink.
         """
         tail = self._partial.pop(ident, "")
         if tail and sink is not None:
@@ -164,8 +173,8 @@ _MODES = ("baseline", "calibration", "control")
 
 class RunRequest(BaseModel):
     run_id: str                          # stable DB UUID from model_runs
-    model_json: dict                     # model_configs.config — structure/physics
-    scenario_json: dict                  # scenario_configs.config — values + stages
+    model_json: dict                     # model_configs.config, structure/physics
+    scenario_json: dict                  # scenario_configs.config, values + stages
     mode: str = "baseline"               # baseline | calibration | control
     model_name: str = ""                 # provenance only, stored in /config
     scenario_name: str = ""              # provenance only, stored in /config
@@ -173,8 +182,8 @@ class RunRequest(BaseModel):
 
     # Node sends both configs as raw JSON TEXT straight out of Postgres (config::text)
     # rather than as parsed objects, and they are parsed HERE. JS has a single number
-    # type, so a jsonb column read in Node collapses every integral float — 760.0 -> 760,
-    # 1.0 -> 1 — and re-serialises them into the request as ints; for cpet.json that is
+    # type, so a jsonb column read in Node collapses every integral float, 760.0 -> 760,
+    # 1.0 -> 1, and re-serialises them into the request as ints; for cpet.json that is
     # 636 values arriving with a different type than utils.loadJSONfile reads off disk.
     # Postgres keeps the decimal, so text + json.loads reproduces the disk types exactly.
     # A dict is still accepted: an inline unsaved scenario edited in the browser has been
@@ -186,6 +195,16 @@ class RunRequest(BaseModel):
 
 class ValidateRequest(BaseModel):
     model_json: dict
+
+class SignalsRequest(BaseModel):
+    layer: str = "raw"       # "raw" or a /processed/{name} group
+    names: list[str]         # the signals to return, nothing else is read
+    # The window, in seconds from the first saved sample; None = start / end of file.
+    t_from:  Optional[float] = None
+    t_to:    Optional[float] = None
+    # Output rate. None (or anything at/above the stored rate) returns every sample;
+    # below it each output sample is the mean of one bucket of stored samples.
+    rate_hz: Optional[float] = None
 
 class ProcessRequest(BaseModel):
     proc_run_name:    str        # user-given label → HDF5 group key
@@ -215,7 +234,7 @@ def _build_run_config(req: RunRequest) -> dict:
 
     `runner.buildSimulationParams` is the ONE adapter from runConfig + scenario to the
     simulationParams the library consumes, so the route builds a runConfig rather than
-    a simulationParams dict — the scenario stays canonical and only the keys the caller
+    a simulationParams dict, the scenario stays canonical and only the keys the caller
     actually sent override it (the same precedence any caller gets).
     """
     sp = req.simulation_params or {}
@@ -256,7 +275,7 @@ def _assert_mode_supported(mode: str, scenario: dict) -> None:
     if mode not in _MODES:
         raise ValueError(f"mode must be one of {_MODES}, got {mode!r}")
     if mode == "control" and not (scenario.get("control") or {}).get("stages"):
-        raise ValueError("This scenario declares no control.stages — control mode "
+        raise ValueError("This scenario declares no control.stages, control mode "
                          "needs a control stage stack (only the cpet scenario has one).")
     if mode == "calibration" and not (scenario.get("calibration") or {}):
         raise ValueError("This scenario declares no calibration section.")
@@ -271,8 +290,8 @@ def _run_simulation(job_id: str, req: RunRequest) -> None:
     """Background-thread entry point: run one simulation with its console captured.
 
     The solve itself lives in _solve; this wrapper owns only the capture window, so
-    every line the library prints between the two banners below reaches /status —
-    and the Simulator's console pane — instead of only the container log.
+    every line the library prints between the two banners below reaches /status,
+    and the Simulator's console pane, instead of only the container log.
     """
     job = _jobs[job_id]
     job["status"] = "running"
@@ -293,7 +312,7 @@ def _solve(job_id: str, req: RunRequest) -> None:
         run_config = _build_run_config(req)
         simulationParams = runner.buildSimulationParams(run_config, req.scenario_json)
 
-        # The model JSON comes from Postgres, not config/models/ — see the manuBeat
+        # The model JSON comes from Postgres, not config/models/, see the manuBeat
         # divergence note in modelClass.initialiseModel. Passed as a plain dict: the
         # list→ndarray coercion utils.loadJSONfile does only applies to TOP-LEVEL list
         # values, and neither a model nor a scenario JSON has any.
@@ -369,7 +388,7 @@ def _solve(job_id: str, req: RunRequest) -> None:
 
 
 def _progress_recorder(job_id: str):
-    """Callback handed to ProgressReporter.emit — appends each convergence line to the
+    """Callback handed to ProgressReporter.emit, appends each convergence line to the
     job entry as it happens, so /cardio/status shows a calibration converging instead
     of an opaque 'running' for minutes. Bounded to the most recent lines."""
     def record(rec: dict) -> None:
@@ -402,22 +421,10 @@ def get_status(job_id: str):
     return job
 
 
-@router.get("/result/{job_id}")
-def get_result(job_id: str):
-    """Load a run result via the in-memory job registry (used by the Simulator poller)."""
-    job = _jobs.get(job_id)
-    if job is None:
-        raise HTTPException(status_code=404, detail="Job not found")
-    if job["status"] != "done":
-        raise HTTPException(status_code=409, detail=f"Job status is '{job['status']}'")
-    run_id = job.get("run_id", job_id)
-    return _read_result(run_id)
-
-
 @router.get("/result-by-run/{run_id}")
 def get_result_by_run(run_id: str):
     """
-    Load a run result directly by DB run_id — does not require the in-memory
+    Load a run result directly by DB run_id, does not require the in-memory
     job registry, so it works after a Python service restart.
     """
     return _read_result(run_id)
@@ -429,6 +436,115 @@ def _read_result(run_id: str) -> dict:
         _, tmp_path = tempfile.mkstemp(suffix='.hdf5')
         _download_hdf5(run_id, tmp_path)
         return schema_sim.read_run_result(tmp_path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
+
+def _json_floats(arr) -> list:
+    """An array as a JSON-safe list: NaN / ±inf become null.
+
+    The response encoder rejects non-finite floats outright, so one diverged sample
+    would otherwise fail the whole request; null also draws as a gap in the plot.
+    """
+    arr = np.asarray(arr)
+    if arr.dtype.kind != 'f' or np.isfinite(arr).all():
+        return arr.tolist()
+    return np.where(np.isfinite(arr), arr, None).tolist()
+
+
+def _bucket_mean(arr, k: int):
+    """Average consecutive buckets of k samples; a short last bucket is kept."""
+    arr = np.asarray(arr, dtype='float64')
+    if k <= 1 or arr.size == 0:
+        return arr
+    full = arr.size // k
+    out = arr[:full * k].reshape(full, k).mean(axis=1)
+    if arr.size > full * k:
+        out = np.append(out, arr[full * k:].mean())
+    return out
+
+
+@router.get("/summary/{run_id}")
+def get_summary(run_id: str):
+    """A few scalars describing a stored run, no signal data is read."""
+    tmp_path = None
+    try:
+        import h5py as h5
+        _, tmp_path = tempfile.mkstemp(suffix='.hdf5')
+        _download_hdf5(run_id, tmp_path)
+        with h5.File(tmp_path, 'r') as f:
+            time_ds = f['time']
+            n = time_ds.shape[0]
+            simulated_s = (float(time_ds[n - 1]) - float(time_ds[0])) if n else 0.0
+            rate_hz = round((n - 1) / simulated_s, 3) if simulated_s > 0 else 0.0
+            # The scenario's name was recorded with the run recipe; an artifact
+            # written before /config existed has none.
+            run_config = {}
+            if 'config' in f:
+                rc = engine._to_python(f['config'].attrs.get('run_config', ''))
+                run_config = json.loads(rc) if rc else {}
+            return {
+                "simulated_s":  simulated_s,
+                "rate_hz":      rate_hz,
+                "signal_count": len(f['raw']),
+                "scenario":     run_config.get("scenario", ""),
+                "layers":       list(f['processed'].keys()) if 'processed' in f else [],
+            }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
+
+@router.post("/signals/{run_id}")
+def get_signals(run_id: str, req: SignalsRequest):
+    """Return { t, signals } holding only the requested names.
+
+    A name is read from /processed/{layer} when the layer has it and from /raw
+    otherwise, so a plot over a processed layer can still reference raw signals.
+    Names found in neither are left out.
+
+    Only the samples inside [t_from, t_to] (seconds from the first saved sample) are
+    read, and with rate_hz below the stored rate each returned sample, t included,
+    is the mean of one bucket, so t marks the bucket's centre.
+    """
+    tmp_path = None
+    try:
+        import h5py as h5
+        _, tmp_path = tempfile.mkstemp(suffix='.hdf5')
+        _download_hdf5(run_id, tmp_path)
+        signals: dict = {}
+        with h5.File(tmp_path, 'r') as f:
+            raw = f['raw']
+            time = f['time'][()]
+            n = time.shape[0]
+            rel = time - time[0] if n else time
+            i0 = int(np.searchsorted(rel, req.t_from, side='left')) if req.t_from is not None else 0
+            i1 = int(np.searchsorted(rel, req.t_to, side='right')) if req.t_to is not None else n
+            stride = 1
+            if req.rate_hz and req.rate_hz > 0 and n > 1 and rel[-1] > 0:
+                stride = max(1, int(round((n - 1) / rel[-1] / req.rate_hz)))
+            layer = None
+            if req.layer != "raw":
+                grp_path = f'processed/{req.layer}'
+                if '/' in req.layer or grp_path not in f:
+                    raise HTTPException(status_code=404, detail=f"Processed group '{req.layer}' not found")
+                layer = f[grp_path]
+            for name in req.names:
+                if '/' in name:
+                    continue
+                if layer is not None and isinstance(layer.get(name), h5.Dataset):
+                    signals[name] = _json_floats(_bucket_mean(layer[name][i0:i1], stride))
+                elif name in raw:
+                    signals[name] = _json_floats(_bucket_mean(raw[name][i0:i1], stride))
+            t_axis = _json_floats(_bucket_mean(time[i0:i1], stride))
+        return {"t": t_axis, "signals": signals}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
@@ -458,7 +574,7 @@ def get_model_file(filename: str):
 
 @router.get("/scenarios")
 def list_scenarios():
-    """The scenario JSONs shipped on disk in config/scenarios/ — disk counterpart of
+    """The scenario JSONs shipped on disk in config/scenarios/, disk counterpart of
     /configs, and the source the scenario_configs seeds were generated from."""
     scen_dir = utils.configPath("scenarios")
     return [{"filename": fname,
@@ -478,7 +594,7 @@ def get_scenario_file(filename: str):
 
 @router.get("/metadata")
 def get_metadata():
-    """config/metadata.json — the gas-region table the model generator resolves every
+    """config/metadata.json, the gas-region table the model generator resolves every
     compartment's `gasRegion` against (state gas|dissolved + the species map, where a
     -1.0 entry means the species is absent), plus the variable prefix/label table.
     The Model Sandbox needs it to offer the right regions and species, so it reads the
@@ -569,60 +685,14 @@ def hdf5_repack(run_id: str):
             os.remove(tmp_path)
 
 
-@router.get("/processed-groups/{run_id}")
-def get_processed_groups(run_id: str):
-    """Return the user-given names of all processing runs stored in /processed/."""
-    tmp_path = None
-    try:
-        import h5py as h5
-        _, tmp_path = tempfile.mkstemp(suffix='.hdf5')
-        _download_hdf5(run_id, tmp_path)
-        with h5.File(tmp_path, 'r') as f:
-            group_names = list(f.get('processed', {}).keys())
-        return {"group_names": group_names}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        if tmp_path and os.path.exists(tmp_path):
-            os.remove(tmp_path)
-
-
-@router.get("/processed/{run_id}/{proc_name}")
-def get_processed_outputs(run_id: str, proc_name: str):
-    """Return all output arrays for a named processing run as { outputs: { key: [float] } }."""
-    tmp_path = None
-    try:
-        import h5py as h5
-        _, tmp_path = tempfile.mkstemp(suffix='.hdf5')
-        _download_hdf5(run_id, tmp_path)
-        outputs: dict = {}
-        with h5.File(tmp_path, 'r') as f:
-            grp_path = f'processed/{proc_name}'
-            if grp_path not in f:
-                raise HTTPException(status_code=404, detail=f"Processed group '{proc_name}' not found")
-            grp = f[grp_path]
-            for key in grp:
-                node = grp[key]
-                if isinstance(node, h5.Dataset):
-                    outputs[key] = node[()].tolist()
-        return {"outputs": outputs}
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        if tmp_path and os.path.exists(tmp_path):
-            os.remove(tmp_path)
-
-
 @router.post("/process/{run_id}")
 def process_run(run_id: str, req: ProcessRequest):
     """
     Apply a post-processing config to a completed run and append the results into
     /processed/{proc_run_name}/ in the same HDF5 file.
 
-    The config is replayed through the ResultsEngine DAG — the same engine
-    runIO.processResults drives — so a signal computed here and one computed
+    The config is replayed through the ResultsEngine DAG, the same engine
+    runIO.processResults drives, so a signal computed here and one computed
     straight off the library come out identical.
 
     Unlike a run this is synchronous, so there is no job registry to park the console
@@ -676,10 +746,13 @@ def _process_run(run_id: str, req: ProcessRequest) -> dict:
         proc_engine = resultsEngine.ResultsEngine(
             raw_signals, req.proc_config, model_structure, modelObjects=modelObjects)
         proc_engine.evaluate()
-        assembled = proc_engine.assembleLegacy()
+        # A run that diverged part-way carries NaN in its tail. Keep the data rather
+        # than the notebook default of zeroing the whole signal: /signals already
+        # serves NaN as null, which draws as a gap.
+        assembled = proc_engine.assembleLegacy(zeroNaN=False)
 
         # Raw leaves pass through the engine untouched and already live in raw/, so
-        # store only the names the config actually defines — engine.order is exactly
+        # store only the names the config actually defines, engine.order is exactly
         # that set, in first-seen order (mirrors runIO.saveProcessed).
         proc_output = {k: assembled[k] for k in proc_engine.order if k in assembled}
 

@@ -3,7 +3,7 @@ import { createClient } from 'graphql-http';
 import { API_BASE, GQL_URL, ENDPOINT, WS_BASE } from '../constants';
 import {
   ComponentResults, FileRecord, Survey, SurveyAnswer,
-  ModelConfig, ModelLayout, ModelMetadata, ScenarioConfig, RunMode, ModelRun, CardioJobStatus, CardioResult,
+  ModelConfig, ModelLayout, ModelMetadata, ScenarioConfig, RunMode, ModelRun, CardioJobStatus, CardioSummary, CardioSignals,
   CardioProcessResult, CardioPlotConfig, CardioProcConfig, HdfNode, HdfDataset,
   Patient, Bed, BedsideNode, BedAssignment,
   BedsideStream, BedsideSegment, NodeHeartbeat,
@@ -723,13 +723,22 @@ const getCardioStatus = async (job_id: string): Promise<CardioJobStatus> => {
   return res.data;
 };
 
-const getCardioResult = async (job_id: string): Promise<CardioResult> => {
-  const res = await http.get(`/cardio/result/${job_id}`);
+// A few scalars describing a stored run — fetched when a run is selected, so
+// selecting one never pulls signal data.
+const getCardioSummary = async (run_id: string): Promise<CardioSummary> => {
+  const res = await http.get(`/cardio/summary/${run_id}`);
   return res.data;
 };
 
-const getCardioResultByRunId = async (run_id: string): Promise<CardioResult> => {
-  const res = await http.get(`/cardio/result-by-run/${run_id}`);
+// The time vector plus only the named signals. layer is 'raw' or a processed group;
+// a name the processed layer lacks is read from raw. window is in seconds from the
+// first saved sample (omitted bound = start / end of file); below the stored rate,
+// rate_hz makes each returned sample the mean of one bucket.
+const getCardioSignals = async (
+  run_id: string, layer: string, names: string[],
+  window: { t_from?: number; t_to?: number; rate_hz?: number } = {},
+): Promise<CardioSignals> => {
+  const res = await http.post(`/cardio/signals/${run_id}`, { layer, names, ...window });
   return res.data;
 };
 
@@ -785,16 +794,6 @@ const processRun = async (
 ): Promise<CardioProcessResult> => {
   const res = await http.post(`/cardio/process/${run_id}`, { proc_config_id, proc_run_name });
   return res.data;
-};
-
-const getProcessedGroups = async (run_id: string): Promise<string[]> => {
-  const res = await http.get(`/cardio/processed-groups/${run_id}`);
-  return res.data.group_names ?? [];
-};
-
-const getProcessedOutputs = async (run_id: string, proc_config_id: string): Promise<Record<string, number[]>> => {
-  const res = await http.get(`/cardio/processed/${run_id}/${proc_config_id}`);
-  return res.data.outputs ?? {};
 };
 
 // ── [BEDSIDE] Data Collection ─────────────────────────────────────────────────
@@ -1062,12 +1061,12 @@ const ApiService = {
   // [MEDICAL] proc configs
   getProcConfigs, createProcConfig, updateProcConfig, deleteProcConfig,
   // [MEDICAL] cardio REST
-  runCardioModel, getCardioStatus, getCardioResult, getCardioResultByRunId, getCardioConfigs, getCardioModel,
+  runCardioModel, getCardioStatus, getCardioSummary, getCardioSignals, getCardioConfigs, getCardioModel,
   getCardioMetadata,
   // [MEDICAL] HDF5
   getHdf5Tree, getHdf5Dataset, repackHdf5, deleteHdf5Dataset,
   // [MEDICAL] processing
-  processRun, getProcessedGroups, getProcessedOutputs,
+  processRun,
   // [BEDSIDE] Data Collection
   getPatients, getBeds, getBedsideNodes, getBedAssignments,
   createPatient, deletePatient, assignPatientToBed, endBedAssignment,
